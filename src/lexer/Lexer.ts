@@ -234,7 +234,7 @@ export class Lexer {
 
                 // an operator that ends with a character must be followed by a whitespace or an opening parenthesis
                 if (new RegExp('[A-Za-z]').test(operator[length - 1])) {
-                    pattern += '(?=[\\s(])';
+                    pattern += this.level === 3 ? '(?=[\\s()\\[{])' : '(?=[\\s(])';
                 }
 
                 // a space within an operator can be any amount of whitespaces
