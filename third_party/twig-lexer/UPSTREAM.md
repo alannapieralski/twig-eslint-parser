@@ -69,6 +69,10 @@ with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 | TL-06 | Numbers with `_` separators and optionally signed exponents (level 3) | Upstream split `1_000` and `1e3` into a number and a name | Twig 3.17.0 | `numbers.twig` parity |
 | TL-07 | Names may contain any character from U+007F upwards | PHP matches `\x7f-\xff` per byte, so any UTF-8 name is valid; upstream threw on `名前` | None (port fix) | `names.twig` parity |
 | TL-08 | A backslash-escaped line break is allowed inside strings | PHP's `/s` flag lets `\\.` match a newline; JavaScript's `.` does not, so upstream threw | None (port fix) | `strings.twig` parity |
+| TL-09 | Add a derived-and-modified notice to `Lexer.ts`, `Token.ts` and `TokenType.ts` | Apache-2.0 §4(b); applied last so it never shifts other patches | None (licence compliance) | `npm run vendor:check` |
+
+Every shipped file except `SyntaxError.ts` is modified; `SyntaxError.ts` is
+byte-identical to upstream and carries no notice.
 
 ## Commands
 

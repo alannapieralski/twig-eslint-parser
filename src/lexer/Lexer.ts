@@ -1,3 +1,9 @@
+/*
+ * Derived from twig-lexer 1.0.0 (https://gitlab.com/nightlycommit/twig-lexer,
+ * revision dda1882), Copyright Eric MORAND, licensed under the Apache
+ * License, Version 2.0. Modified by Numiko, 2026: see
+ * third_party/twig-lexer/UPSTREAM.md for every change.
+ */
 import {Token} from "./Token.js";
 import {SyntaxError} from "./SyntaxError.js";
 import {TokenType} from "./TokenType.js";
