@@ -29,7 +29,7 @@ can use. Every difference from upstream is a patch file in this directory.
 | `patches/series` | The order in which patches are applied. |
 | `patches/TL-NN-*.patch` | One patch per concern, each with a [DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header. |
 | `LICENSE` | Upstream's licence, unchanged. |
-| `../../src/lexer/` | The shipped lexer: `pristine/src/main/lib/{Lexer,SyntaxError,Token,TokenType}.ts` with every patch applied. Generated, committed, and checked in CI. |
+| `../../src/lexer/` | The shipped lexer: `pristine/src/main/lib/{Lexer,SyntaxError,Token,TokenType}.ts` with every patch applied. Generated, committed, and checked by `npm run vendor:check`. |
 
 Patch headers use the DEP-3 fields `Description`, `Author`, `Origin`,
 `Forwarded` and `Last-Update`, plus two project fields: `Twig-Reference`
@@ -92,8 +92,8 @@ byte-identical to upstream and carries no notice.
 4. Add the file name to `patches/series` and a row to the table above.
 5. `npm run vendor:write && npm run vendor:check && npm run test:upstream && npm test`
 
-Never edit `src/lexer` directly: `npm run vendor:check` fails in CI when it
-drifts from pristine plus patches.
+Never edit `src/lexer` directly: `npm run vendor:check` fails when it drifts
+from pristine plus patches, so run it in CI.
 
 ## Re-syncing
 
