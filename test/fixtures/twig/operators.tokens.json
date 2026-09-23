@@ -3266,10 +3266,214 @@
             "offset": 1246
         },
         {
-            "type": "end of template",
+            "type": "begin of print statement",
             "value": "",
             "line": 18,
             "offset": 1247
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 18,
+            "offset": 1250
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 18,
+            "offset": 1253
+        },
+        {
+            "type": "name",
+            "value": "is",
+            "line": 18,
+            "offset": 1254
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1257
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 18,
+            "offset": 1259
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1260
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 18,
+            "offset": 1263
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 18,
+            "offset": 1266
+        },
+        {
+            "type": "name",
+            "value": "is",
+            "line": 18,
+            "offset": 1268
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1271
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 18,
+            "offset": 1273
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1274
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 18,
+            "offset": 1277
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 18,
+            "offset": 1280
+        },
+        {
+            "type": "name",
+            "value": "is",
+            "line": 18,
+            "offset": 1281
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 18,
+            "offset": 1283
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 18,
+            "offset": 1284
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 18,
+            "offset": 1285
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1287
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 18,
+            "offset": 1289
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1290
+        },
+        {
+            "type": "name",
+            "value": "x",
+            "line": 18,
+            "offset": 1293
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 18,
+            "offset": 1294
+        },
+        {
+            "type": "name",
+            "value": "is",
+            "line": 18,
+            "offset": 1295
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1298
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 18,
+            "offset": 1300
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1301
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 18,
+            "offset": 1304
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 18,
+            "offset": 1307
+        },
+        {
+            "type": "name",
+            "value": "is",
+            "line": 18,
+            "offset": 1308
+        },
+        {
+            "type": "operator",
+            "value": "not",
+            "line": 18,
+            "offset": 1311
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 1315
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 18,
+            "offset": 1317
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 19,
+            "offset": 1318
         }
     ]
 }

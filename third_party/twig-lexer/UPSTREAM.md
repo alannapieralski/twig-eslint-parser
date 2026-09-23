@@ -65,6 +65,7 @@ with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 | TL-02 | Lex `# comment` inside expressions as `INLINE_COMMENT` (level 3) | Upstream throws "Unexpected character #" | Twig 3.15.0 | `comments.twig` parity |
 | TL-03 | Add operators `<=>` (all levels) and `has some`, `has every`, `xor`, `?:`, `===`, `!==`, `?.` (level 3) | Upstream splits `===`/`?.` and reads word operators as names | Twig 2.12.0, 3.5.0, 3.15.0, 3.17.0, 3.23.0 | `operators.twig`, `tags.twig` parity |
 | TL-04 | Word operators may be followed by `(`, `)`, `[` or `{` (level 3) | Upstream only allows whitespace or `(`, so `a or[b]` lexed `or` as a name | Twig 3.1.0 | `operators.twig` parity |
+| TL-05 | Words after `.` or `\|` (optionally one whitespace) are names, including `is` / `is not` (level 3) | Upstream lexed `foo.and`, `x\|matches`, `foo.is` as operators | Twig 3.1.0, whitespace form 3.24.0 | `operators.twig` parity |
 
 ## Commands
 

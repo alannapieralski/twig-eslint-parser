@@ -441,7 +441,7 @@ export class Lexer {
             this.pushToken("SPREAD_OPERATOR", '...');
         }
         // test operator
-        else if ((match = this.testOperatorRegExp.exec(candidate)) !== null) {
+        else if ((match = this.testOperatorRegExp.exec(candidate)) !== null && !this.isWordOperatorAfterDotOrPipe(match[0])) {
             this.pushToken("TEST_OPERATOR", match[0]);
         }
         // arrow
@@ -449,7 +449,7 @@ export class Lexer {
             this.pushToken("ARROW", match[0]);
         }
         // operator
-        else if ((match = this.operatorRegExp.exec(candidate)) !== null) {
+        else if ((match = this.operatorRegExp.exec(candidate)) !== null && !this.isWordOperatorAfterDotOrPipe(match[0])) {
             this.pushToken("OPERATOR", match[0]);
         }
         // name
@@ -640,6 +640,16 @@ export class Lexer {
         else {
             this.lexExpression();
         }
+    }
+
+    private isWordOperatorAfterDotOrPipe(operator: string): boolean {
+        if (this.level !== 3 || !/^[A-Za-z]/.test(operator)) {
+            return false;
+        }
+
+        const precedingCharacters = this.source.substring(Math.max(0, this.cursor - 2), this.cursor);
+
+        return /(?:[.|][ \t\n\v\f\r]|.[.|])$/.test(precedingCharacters);
     }
 
     private moveCoordinates(text: string) {

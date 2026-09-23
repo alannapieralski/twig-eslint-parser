@@ -15,3 +15,4 @@
 {% do x = 1 %} {% do [a, b] = [1, 2] %} {% do {name, age} = user %} {% do {name: userName} = user %}
 {{ items|map(i => i.x)|join(', ') }} {{ items|filter((v, k) => v > k) }} {{ f(name: value) }} {{ f(name=value) }}
 {{ macros.(name)(args) }} {{ foo.bar(some: arg) }} {{ -a }} {{ +a }}
+{{ foo.is }} {{ foo. is }} {{ foo.is(1) }} {{ x|is }} {{ foo.is not }}

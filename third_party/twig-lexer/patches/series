@@ -3,3 +3,4 @@ TL-01-esm-import-specifiers.patch
 TL-02-inline-comments.patch
 TL-03-twig-3-operators.patch
 TL-04-word-operator-lookahead.patch
+TL-05-names-after-dot-or-pipe.patch
