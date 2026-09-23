@@ -1,14 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const vendorRoot = join(repositoryRoot, 'third_party/twig-lexer');
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const resolveDependency = createRequire(import.meta.url).resolve;
+const vendorRoot = join(packageRoot, 'third_party/twig-lexer');
 const pristineRoot = join(vendorRoot, 'pristine');
 const patchesRoot = join(vendorRoot, 'patches');
-const shippedLexerRoot = join(repositoryRoot, 'src/lexer');
+const shippedLexerRoot = join(packageRoot, 'src/lexer');
 const upstreamLibraryDirectory = 'src/main/lib';
 const shippedLexerFiles = ['Lexer.ts', 'SyntaxError.ts', 'Token.ts', 'TokenType.ts'];
 const upstreamTestFiles = [
@@ -118,9 +120,9 @@ function runUpstreamTests(): void {
       },
       files: upstreamTestFiles,
     }));
-    symlinkSync(join(repositoryRoot, 'node_modules'), join(patchedRoot, 'node_modules'), 'dir');
+    symlinkSync(resolve(resolveDependency('tape/package.json'), '../..'), join(patchedRoot, 'node_modules'), 'dir');
 
-    execFileSync(join(repositoryRoot, 'node_modules/.bin/tsc'), ['-p', patchedRoot], { stdio: 'inherit' });
+    execFileSync(process.execPath, [resolveDependency('typescript/bin/tsc'), '-p', patchedRoot], { stdio: 'inherit' });
     const compiledTests = upstreamTestFiles.map((file) => join(patchedRoot, 'out', file.replace(/^src\//, '').replace(/\.ts$/, '.js')));
     const runner = compiledTests.map((file) => `require(${JSON.stringify(file)});`).join('');
     execFileSync(process.execPath, ['-e', runner], { cwd: patchedRoot, stdio: 'inherit' });

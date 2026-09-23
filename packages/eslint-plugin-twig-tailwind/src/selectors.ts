@@ -15,7 +15,3 @@ export const drupalSelectors: readonly ClassSelector[] = [
   { kind: 'callee', path: '^.*\\.(?:addClass|removeClass)$', match: [{ type: 'strings' }] },
   { kind: 'callee', name: '^create_attribute$', match: [{ type: 'objectValues', path: '^class(?:\\[\\d+\\])?$' }] },
 ];
-
-export const recommendedParserOptions = {
-  ignoreInterpolatedAttributes: ['class'],
-} as const;

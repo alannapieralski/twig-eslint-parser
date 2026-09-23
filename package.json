@@ -1,13 +1,14 @@
 {
-  "name": "twig-eslint-parser",
+  "name": "twig-eslint-parser-monorepo",
   "version": "0.0.0",
-  "description": "ESLint parser for Twig templates: HTML markup plus Twig expressions as ESTree nodes with exact source ranges.",
+  "private": true,
   "license": "Apache-2.0",
   "author": "Numiko",
   "type": "module",
-  "engines": {
-    "node": ">=24"
-  },
+  "workspaces": [
+    "packages/twig-eslint-parser",
+    "packages/eslint-plugin-twig-tailwind"
+  ],
   "devEngines": {
     "runtime": {
       "name": "node",
@@ -20,58 +21,14 @@
       "onFail": "error"
     }
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./tailwind": {
-      "types": "./dist/tailwind.d.ts",
-      "default": "./dist/tailwind.js"
-    },
-    "./plugin": {
-      "types": "./dist/plugin.d.ts",
-      "default": "./dist/plugin.js"
-    }
-  },
-  "files": [
-    "dist",
-    "LICENSE",
-    "NOTICE",
-    "third_party/twig-lexer/LICENSE",
-    "third_party/twig-lexer/UPSTREAM.md"
-  ],
-  "keywords": [
-    "eslint",
-    "eslint-parser",
-    "twig",
-    "drupal",
-    "tailwindcss"
-  ],
   "scripts": {
-    "build": "tsc -b tsconfig.build.json",
-    "typecheck": "tsc -b tsconfig.lexer.json && tsc -p tsconfig.json",
-    "test": "vitest run",
-    "test:upstream": "node scripts/vendor-twig-lexer.ts --test",
-    "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
-    "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
-    "vendor:write": "node scripts/vendor-twig-lexer.ts --write"
-  },
-  "dependencies": {
-    "@html-eslint/parser": "0.66.0",
-    "eslint-visitor-keys": "5.0.1",
-    "espree": "11.2.0"
-  },
-  "peerDependencies": {
-    "eslint": "^9.0.0 || ^10.0.0"
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run build -w twig-eslint-parser && npm run typecheck --workspaces",
+    "test": "npm run build -w twig-eslint-parser && npm test --workspaces"
   },
   "devDependencies": {
     "@types/node": "24.13.5",
-    "@types/tape": "5.8.1",
     "eslint": "10.10.0",
-    "eslint-plugin-better-tailwindcss": "4.7.0",
-    "tailwindcss": "4.3.3",
-    "tape": "5.10.2",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
   }

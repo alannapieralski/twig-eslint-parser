@@ -1,12 +1,14 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-    "noEmit": true
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": ".tsbuild/build.tsbuildinfo"
   },
-  "include": ["src", "test", "scripts"],
+  "include": ["src"],
   "exclude": ["src/lexer"],
   "references": [{ "path": "./tsconfig.lexer.json" }]
 }

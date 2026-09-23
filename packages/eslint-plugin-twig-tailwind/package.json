@@ -1,0 +1,54 @@
+{
+  "name": "eslint-plugin-twig-tailwind",
+  "version": "0.0.0",
+  "description": "Lint Tailwind CSS classes in Twig and Drupal templates with eslint-plugin-better-tailwindcss and twig-eslint-parser.",
+  "license": "Apache-2.0",
+  "author": "Numiko",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alannapieralski/twig-eslint-parser.git",
+    "directory": "packages/eslint-plugin-twig-tailwind"
+  },
+  "bugs": "https://github.com/alannapieralski/twig-eslint-parser/issues",
+  "homepage": "https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/eslint-plugin-twig-tailwind#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "LICENSE"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "twig",
+    "drupal",
+    "tailwindcss"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "prepack": "npm run build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "twig-eslint-parser": "0.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0 || ^10.0.0",
+    "eslint-plugin-better-tailwindcss": "^4.7.0"
+  },
+  "devDependencies": {
+    "eslint-plugin-better-tailwindcss": "4.7.0",
+    "tailwindcss": "4.3.3"
+  }
+}

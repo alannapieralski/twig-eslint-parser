@@ -1,5 +1,5 @@
 import type { Rule } from 'eslint';
-import type { TwigParserServices } from '../parse-for-eslint.js';
+import type { TwigParserServices } from 'twig-eslint-parser';
 
 type AttributeNode = {
   readonly type: 'Attribute';
@@ -23,7 +23,7 @@ function containsTwig(attribute: AttributeNode): boolean {
 function readTwigServices(context: Rule.RuleContext): TwigParserServices {
   const services = context.sourceCode.parserServices as { twig?: TwigParserServices } | undefined;
   if (!services?.twig) {
-    throw new Error('twig-eslint-parser/no-interpolated-attributes needs twig-eslint-parser as the parser for this file.');
+    throw new Error('twig-tailwind/no-interpolated-attributes needs twig-eslint-parser as the parser for this file.');
   }
   return services.twig;
 }
@@ -33,6 +33,7 @@ export const noInterpolatedAttributes: Rule.RuleModule = {
     type: 'suggestion',
     docs: {
       description: 'Disallow Twig inside attribute values such as class="", so every class stays visible to linting',
+      url: 'https://github.com/alannapieralski/twig-eslint-parser/blob/main/packages/eslint-plugin-twig-tailwind/docs/rules/no-interpolated-attributes.md',
     },
     schema: [{
       type: 'object',

@@ -1,0 +1,60 @@
+{
+  "name": "twig-eslint-parser",
+  "version": "0.0.0",
+  "description": "ESLint parser for Twig templates: HTML markup plus Twig expressions as ESTree nodes with exact source ranges.",
+  "license": "Apache-2.0",
+  "author": "Numiko",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alannapieralski/twig-eslint-parser.git",
+    "directory": "packages/twig-eslint-parser"
+  },
+  "bugs": "https://github.com/alannapieralski/twig-eslint-parser/issues",
+  "homepage": "https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "third_party/twig-lexer/LICENSE",
+    "third_party/twig-lexer/UPSTREAM.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-parser",
+    "twig",
+    "drupal",
+    "html"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "prepack": "npm run build",
+    "typecheck": "tsc -b tsconfig.lexer.json && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:upstream": "node scripts/vendor-twig-lexer.ts --test",
+    "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
+    "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
+    "vendor:write": "node scripts/vendor-twig-lexer.ts --write"
+  },
+  "dependencies": {
+    "@html-eslint/parser": "0.66.0",
+    "eslint-visitor-keys": "5.0.1",
+    "espree": "11.2.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0 || ^10.0.0"
+  },
+  "devDependencies": {
+    "@types/tape": "5.8.1",
+    "tape": "5.10.2"
+  }
+}
