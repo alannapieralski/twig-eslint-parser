@@ -4,152 +4,152 @@
         {
             "type": "text",
             "value": "\n",
-            "line": 14,
-            "offset": 474
+            "line": 13,
+            "offset": 402
         },
         {
             "type": "begin of print statement",
             "value": "",
-            "line": 16,
-            "offset": 518
+            "line": 15,
+            "offset": 446
         },
         {
             "type": "name",
             "value": "foo",
-            "line": 16,
-            "offset": 521
+            "line": 15,
+            "offset": 449
         },
         {
             "type": "end of print statement",
             "value": "",
-            "line": 17,
-            "offset": 542
+            "line": 16,
+            "offset": 470
         },
         {
             "type": "text",
             "value": "\n",
-            "line": 17,
-            "offset": 544
+            "line": 16,
+            "offset": 472
         },
         {
             "type": "begin of print statement",
             "value": "",
-            "line": 18,
-            "offset": 545
+            "line": 17,
+            "offset": 473
         },
         {
             "type": "name",
             "value": "foo",
-            "line": 18,
-            "offset": 548
+            "line": 17,
+            "offset": 476
         },
         {
             "type": "end of print statement",
             "value": "",
-            "line": 19,
-            "offset": 584
+            "line": 18,
+            "offset": 512
         },
         {
             "type": "text",
             "value": "\n",
-            "line": 19,
-            "offset": 586
+            "line": 18,
+            "offset": 514
         },
         {
             "type": "begin of statement block",
             "value": "",
-            "line": 20,
-            "offset": 587
+            "line": 19,
+            "offset": 515
         },
         {
             "type": "name",
             "value": "set",
-            "line": 20,
-            "offset": 590
+            "line": 19,
+            "offset": 518
         },
         {
             "type": "name",
             "value": "x",
-            "line": 20,
-            "offset": 594
+            "line": 19,
+            "offset": 522
         },
         {
             "type": "operator",
             "value": "=",
-            "line": 20,
-            "offset": 596
+            "line": 19,
+            "offset": 524
         },
         {
             "type": "number",
             "value": 1,
-            "line": 20,
-            "offset": 598
+            "line": 19,
+            "offset": 526
         },
         {
             "type": "end of statement block",
             "value": "",
-            "line": 21,
-            "offset": 628
+            "line": 20,
+            "offset": 556
         },
         {
             "type": "begin of print statement",
             "value": "",
-            "line": 22,
-            "offset": 631
+            "line": 21,
+            "offset": 559
         },
         {
             "type": "operator",
             "value": "[",
-            "line": 22,
-            "offset": 634
+            "line": 21,
+            "offset": 562
         },
         {
             "type": "string",
             "value": "a",
-            "line": 23,
-            "offset": 638
+            "line": 22,
+            "offset": 566
         },
         {
             "type": "punctuation",
             "value": ",",
-            "line": 23,
-            "offset": 641
+            "line": 22,
+            "offset": 569
         },
         {
             "type": "string",
             "value": "b",
-            "line": 24,
-            "offset": 653
+            "line": 23,
+            "offset": 581
         },
         {
             "type": "punctuation",
             "value": ",",
-            "line": 24,
-            "offset": 656
+            "line": 23,
+            "offset": 584
         },
         {
             "type": "punctuation",
             "value": "]",
-            "line": 25,
-            "offset": 667
+            "line": 24,
+            "offset": 595
         },
         {
             "type": "end of print statement",
             "value": "",
-            "line": 25,
-            "offset": 669
+            "line": 24,
+            "offset": 597
         },
         {
             "type": "text",
             "value": "\n",
-            "line": 25,
-            "offset": 671
+            "line": 24,
+            "offset": 599
         },
         {
             "type": "end of template",
             "value": "",
-            "line": 26,
-            "offset": 672
+            "line": 25,
+            "offset": 600
         }
     ]
 }

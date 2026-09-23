@@ -1,14 +1,13 @@
 {#
 /**
  * @file
- * Theme override to display a node.
+ * Fixture: a doc-comment that mentions Twig syntax.
  *
- * - content: All node items. Use {{ content }} to print them all,
- *   or print a subset such as {{ content.field_example }}. Use
- *   {{ content|without('field_example') }} to temporarily suppress the printing
- *   of a given child element.
- * - attributes: HTML attributes for the containing element.
- *   {% if something %} is also fine inside a comment.
+ * - card: the card to render. Printing {{ card }} outputs everything,
+ *   {{ card.title }} outputs one part, and
+ *   {{ card|without('footer') }} leaves the footer out.
+ * - wrapper: markup around the card.
+ *   {% if wrapper %} inside a comment must not start a tag.
  */
 #}
 {# single line #}{#- trimmed -#}{#~ line trimmed ~#}
