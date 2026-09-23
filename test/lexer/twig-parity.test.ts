@@ -74,6 +74,18 @@ function findStartsOfTagsConsumedByTwigLexer(ours: PositionedToken[]): Set<numbe
   return consumedStarts;
 }
 
+function findStartsOfInterpolatedStringQuotes(ours: PositionedToken[]): Set<number> {
+  const quoteStarts = new Set<number>();
+  ours.forEach((token, index) => {
+    if (token.type !== 'OPENING_QUOTE') return;
+
+    const closingIndex = ours.findIndex((candidate, candidateIndex) => candidateIndex > index && candidate.type === 'CLOSING_QUOTE');
+    const isInterpolated = ours.slice(index, closingIndex).some((candidate) => candidate.type === 'INTERPOLATION_START');
+    if (isInterpolated) quoteStarts.add(token.start);
+  });
+  return quoteStarts;
+}
+
 function findEndDelimiterAfterTrimmingModifier(ours: PositionedToken[], modifier: PositionedToken, twigType: string): PositionedToken | undefined {
   const expectedEndType = endDelimiterTypeByTwigType[twigType];
   if (!expectedEndType || !trimmingModifierTypes.has(modifier.type)) return undefined;
@@ -137,9 +149,12 @@ function findParityMismatches(source: string, golden: Golden): string[] {
     }
   }
 
-  const startsConsumedByTwigLexer = findStartsOfTagsConsumedByTwigLexer(ours);
+  const startsWithoutTwigToken = new Set([
+    ...findStartsOfTagsConsumedByTwigLexer(ours),
+    ...findStartsOfInterpolatedStringQuotes(ours),
+  ]);
   for (const token of ours) {
-    if (!typesThatMustAlignWithTwig.has(token.type) || twigStarts.has(token.start) || startsConsumedByTwigLexer.has(token.start)) continue;
+    if (!typesThatMustAlignWithTwig.has(token.type) || twigStarts.has(token.start) || startsWithoutTwigToken.has(token.start)) continue;
     mismatches.push(`our ${token.type} ${JSON.stringify(token.value)} at offset ${token.start} has no Twig token`);
   }
 
