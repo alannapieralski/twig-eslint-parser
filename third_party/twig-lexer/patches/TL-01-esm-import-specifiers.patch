@@ -1,0 +1,36 @@
+Description: Add .js extensions to relative imports
+ twig-lexer 1.0.0 is compiled to CommonJS and extensionless imports such as
+ "./Token" resolve there. This package ships native ES modules, where Node
+ requires the full specifier, so the shipped lexer files import "./Token.js".
+ TypeScript resolves the .js specifier to the .ts source at compile time.
+Author: Numiko
+Origin: vendor
+Forwarded: not-needed
+Twig-Reference: none (port fix, no behaviour change)
+Test: npm run typecheck (TS2835 without this patch); npm run test:upstream
+Last-Update: 2026-09-23
+---
+diff --git a/src/main/lib/Lexer.ts b/src/main/lib/Lexer.ts
+index de715d4..5934ea7 100644
+--- a/src/main/lib/Lexer.ts
++++ b/src/main/lib/Lexer.ts
+@@ -1,6 +1,6 @@
+-import {Token} from "./Token";
+-import {SyntaxError} from "./SyntaxError";
+-import {TokenType} from "./TokenType";
++import {Token} from "./Token.js";
++import {SyntaxError} from "./SyntaxError.js";
++import {TokenType} from "./TokenType.js";
+ 
+ enum LexerState {
+     COMMENT = 'COMMENT',
+diff --git a/src/main/lib/Token.ts b/src/main/lib/Token.ts
+index a068668..b04eed5 100644
+--- a/src/main/lib/Token.ts
++++ b/src/main/lib/Token.ts
+@@ -1,4 +1,4 @@
+-import {TokenType} from "./TokenType";
++import {TokenType} from "./TokenType.js";
+ 
+ export class Token {
+     private readonly _type: TokenType;

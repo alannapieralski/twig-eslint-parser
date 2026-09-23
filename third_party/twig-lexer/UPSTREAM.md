@@ -1,0 +1,95 @@
+# twig-lexer (vendored fork)
+
+```
+Name:              twig-lexer
+URL:               https://gitlab.com/nightlycommit/twig-lexer
+Version:           1.0.0 (npm), identical source to tag 0.9.2
+Revision:          dda1882119651768418e8e8749b3383469f5e4e8
+License:           Apache-2.0
+License File:      LICENSE
+Copyright:         Eric MORAND
+Update Mechanism:  Manual (upstream dormant since April 2024)
+```
+
+## Description
+
+twig-lexer is a TypeScript port of Twig's PHP lexer (Twig 2.x era). It is
+lossless: every character of a template ends up in exactly one token, which is
+what lets this package map tokens back to exact source ranges.
+
+It is forked rather than depended on because upstream has not been released
+since April 2024 and lags behind Twig 3.x syntax that Drupal 10/11 templates
+can use. Every difference from upstream is a patch file in this directory.
+
+## Layout
+
+| Path | What it is |
+|---|---|
+| `pristine/` | Upstream files, byte for byte, from the revision above. Never edited. |
+| `patches/series` | The order in which patches are applied. |
+| `patches/TL-NN-*.patch` | One patch per concern, each with a [DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header. |
+| `LICENSE` | Upstream's licence, unchanged. |
+| `../../src/lexer/` | The shipped lexer: `pristine/src/main/lib/{Lexer,SyntaxError,Token,TokenType}.ts` with every patch applied. Generated, committed, and checked in CI. |
+
+Patch headers use the DEP-3 fields `Description`, `Author`, `Origin`,
+`Forwarded` and `Last-Update`, plus two project fields: `Twig-Reference`
+(the Twig release or commit whose behaviour the patch reproduces) and `Test`
+(what proves it).
+
+## Files not shipped
+
+- `TokenStream.ts`: a token stream and AST visitor this package does not use.
+  It builds functions with `new Function`, which is unwanted in an ESLint
+  parser. It stays in `pristine/` because upstream's `index.ts` and tests
+  import it.
+- `index.ts`: upstream's barrel file. This package imports the lexer files
+  directly.
+- Upstream tests (`pristine/src/test`): not shipped, but run against the
+  patched sources by `npm run test:upstream` to prove patches do not break
+  upstream behaviour. The TokenStream tests are not vendored.
+
+## Build settings
+
+`src/lexer` is compiled as its own TypeScript project (`tsconfig.lexer.json`)
+with upstream's own strictness (`noImplicitAny` only). Compiling it under this
+package's `strict` settings reports 66 findings (possibly-null regex matches,
+uninitialised fields) that are not bugs; fixing them would add cosmetic
+patches that hide the meaningful ones. The rest of the package is compiled
+with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
+
+## Local modifications
+
+| ID | Change | Why | Twig reference | Test |
+|---|---|---|---|---|
+| TL-01 | Add `.js` extensions to relative imports | Shipped as native ES modules, where Node requires full specifiers | None (port fix) | `npm run typecheck`, `npm run test:upstream` |
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run vendor:check` | Fails if `src/lexer` differs from pristine plus patches. |
+| `npm run vendor:write` | Regenerates `src/lexer` from pristine plus patches. |
+| `npm run test:upstream` | Runs upstream's tape tests against the patched sources. |
+| `node scripts/vendor-twig-lexer.ts --workspace <dir>` | Creates a git workspace of pristine plus current patches for writing a new patch. |
+
+## Adding or changing a patch
+
+1. `node scripts/vendor-twig-lexer.ts --workspace /tmp/twig-lexer-ws`
+2. Edit the files in the workspace.
+3. Save `git -C /tmp/twig-lexer-ws diff` as `patches/TL-NN-short-name.patch`,
+   prefixed with a DEP-3 header (copy one from an existing patch).
+4. Add the file name to `patches/series` and a row to the table above.
+5. `npm run vendor:write && npm run vendor:check && npm run test:upstream && npm test`
+
+Never edit `src/lexer` directly: `npm run vendor:check` fails in CI when it
+drifts from pristine plus patches.
+
+## Re-syncing
+
+- **A new twig-lexer release:** replace `pristine/` with the new revision,
+  update the header above, then re-run the steps above. Drop patches that
+  upstream now covers and refresh any that no longer apply.
+- **A new Twig release:** compare Twig's lexer and operator list between the
+  supported version and the new one, for example
+  `git diff v3.28.0 v3.29.0 -- src/Lexer.php src/Extension/CoreExtension.php`
+  in a Twig checkout, then add one patch per new behaviour.
