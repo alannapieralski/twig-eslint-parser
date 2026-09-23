@@ -1,3 +1,4 @@
 # Applied in order by scripts/vendor-twig-lexer.ts. One patch per concern.
 TL-01-esm-import-specifiers.patch
 TL-02-inline-comments.patch
+TL-03-twig-3-operators.patch

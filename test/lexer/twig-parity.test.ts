@@ -149,10 +149,11 @@ function findParityMismatches(source: string, golden: Golden): string[] {
 const pendingPatchesByFixture: Record<string, string[]> = {
   'names.twig': ['TL-07'],
   'numbers.twig': ['TL-06'],
-  'operators.twig': ['TL-03', 'TL-04', 'TL-05'],
+  'operators.twig': ['TL-04', 'TL-05'],
   'strings.twig': ['TL-08'],
-  'tags.twig': ['TL-03'],
 };
+
+const showPendingMismatches = process.env['PARITY_SHOW_PENDING'] === '1';
 
 const fixtureNames = readdirSync(fixturesDirectory).filter((name) => name.endsWith('.twig')).sort();
 
@@ -165,7 +166,7 @@ function assertParity(fixtureName: string): void {
 describe('lexer parity with Twig (golden files from tools/twig-oracle)', () => {
   for (const fixtureName of fixtureNames) {
     const pendingPatches = pendingPatchesByFixture[fixtureName];
-    if (pendingPatches) {
+    if (pendingPatches && !showPendingMismatches) {
       it.fails(`${fixtureName} (awaiting ${pendingPatches.join(', ')})`, () => assertParity(fixtureName));
     } else {
       it(fixtureName, () => assertParity(fixtureName));

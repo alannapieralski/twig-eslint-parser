@@ -186,8 +186,13 @@ export class Lexer {
             '//',
             '%',
             '**',
-            '??'
+            '??',
+            '<=>'
         ];
+
+        if (this.level === 3) {
+            this.operators.push('xor', 'has some', 'has every', '?:', '===', '!==', '?.');
+        }
 
         this.tagPair = ['{%', '%}'];
         this.commentPair = ['{#', '#}'];

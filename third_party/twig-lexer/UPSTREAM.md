@@ -63,6 +63,7 @@ with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 |---|---|---|---|---|
 | TL-01 | Add `.js` extensions to relative imports | Shipped as native ES modules, where Node requires full specifiers | None (port fix) | `npm run typecheck`, `npm run test:upstream` |
 | TL-02 | Lex `# comment` inside expressions as `INLINE_COMMENT` (level 3) | Upstream throws "Unexpected character #" | Twig 3.15.0 | `comments.twig` parity |
+| TL-03 | Add operators `<=>` (all levels) and `has some`, `has every`, `xor`, `?:`, `===`, `!==`, `?.` (level 3) | Upstream splits `===`/`?.` and reads word operators as names | Twig 2.12.0, 3.5.0, 3.15.0, 3.17.0, 3.23.0 | `operators.twig`, `tags.twig` parity |
 
 ## Commands
 
