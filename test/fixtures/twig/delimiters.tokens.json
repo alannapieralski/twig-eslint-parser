@@ -1,0 +1,533 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "text",
+            "value": "<p>plain text {not twig} {-not-} %}</p>\n",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 40
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 2,
+            "offset": 43
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 47
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 49
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 2,
+            "offset": 51
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 54
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 56
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 3,
+            "offset": 61
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 65
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 4,
+            "offset": 67
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 5,
+            "offset": 68
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 5,
+            "offset": 71
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 5,
+            "offset": 74
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 5,
+            "offset": 78
+        },
+        {
+            "type": "text",
+            "value": "yes",
+            "line": 5,
+            "offset": 80
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 5,
+            "offset": 83
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 5,
+            "offset": 86
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 5,
+            "offset": 92
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 95
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 6,
+            "offset": 99
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 103
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 107
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 6,
+            "offset": 111
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 6,
+            "offset": 114
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 118
+        },
+        {
+            "type": "text",
+            "value": "x",
+            "line": 6,
+            "offset": 121
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 122
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 6,
+            "offset": 126
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 132
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 136
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 7,
+            "offset": 140
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 144
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 148
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 7,
+            "offset": 152
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 7,
+            "offset": 155
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 159
+        },
+        {
+            "type": "text",
+            "value": "x",
+            "line": 7,
+            "offset": 162
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 163
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 7,
+            "offset": 167
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 173
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 7,
+            "offset": 176
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 177
+        },
+        {
+            "type": "string",
+            "value": "}}",
+            "line": 8,
+            "offset": 180
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 185
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 8,
+            "offset": 187
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 188
+        },
+        {
+            "type": "string",
+            "value": "%}",
+            "line": 8,
+            "offset": 191
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 196
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 8,
+            "offset": 198
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 199
+        },
+        {
+            "type": "punctuation",
+            "value": "{",
+            "line": 8,
+            "offset": 202
+        },
+        {
+            "type": "name",
+            "value": "a",
+            "line": 8,
+            "offset": 203
+        },
+        {
+            "type": "punctuation",
+            "value": ":",
+            "line": 8,
+            "offset": 204
+        },
+        {
+            "type": "punctuation",
+            "value": "{",
+            "line": 8,
+            "offset": 206
+        },
+        {
+            "type": "name",
+            "value": "b",
+            "line": 8,
+            "offset": 207
+        },
+        {
+            "type": "punctuation",
+            "value": ":",
+            "line": 8,
+            "offset": 208
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 8,
+            "offset": 210
+        },
+        {
+            "type": "punctuation",
+            "value": "}",
+            "line": 8,
+            "offset": 211
+        },
+        {
+            "type": "punctuation",
+            "value": "}",
+            "line": 8,
+            "offset": 212
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 214
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 8,
+            "offset": 216
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 217
+        },
+        {
+            "type": "punctuation",
+            "value": "{",
+            "line": 8,
+            "offset": 220
+        },
+        {
+            "type": "string",
+            "value": "a",
+            "line": 8,
+            "offset": 221
+        },
+        {
+            "type": "punctuation",
+            "value": ":",
+            "line": 8,
+            "offset": 224
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 8,
+            "offset": 226
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 8,
+            "offset": 227
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 8,
+            "offset": 228
+        },
+        {
+            "type": "punctuation",
+            "value": "{",
+            "line": 8,
+            "offset": 230
+        },
+        {
+            "type": "name",
+            "value": "b",
+            "line": 8,
+            "offset": 231
+        },
+        {
+            "type": "punctuation",
+            "value": ":",
+            "line": 8,
+            "offset": 232
+        },
+        {
+            "type": "number",
+            "value": 2,
+            "line": 8,
+            "offset": 234
+        },
+        {
+            "type": "punctuation",
+            "value": "}",
+            "line": 8,
+            "offset": 235
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 8,
+            "offset": 236
+        },
+        {
+            "type": "punctuation",
+            "value": "}",
+            "line": 8,
+            "offset": 237
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 8,
+            "offset": 238
+        },
+        {
+            "type": "name",
+            "value": "length",
+            "line": 8,
+            "offset": 239
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 246
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 8,
+            "offset": 248
+        },
+        {
+            "type": "text",
+            "value": "{{ not.lexed }} {% neither %}",
+            "line": 9,
+            "offset": 263
+        },
+        {
+            "type": "text",
+            "value": "{{ raw }}",
+            "line": 10,
+            "offset": 326
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 10,
+            "offset": 354
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 368
+        },
+        {
+            "type": "name",
+            "value": "after_line",
+            "line": 10,
+            "offset": 371
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 382
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 10,
+            "offset": 384
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 11,
+            "offset": 385
+        }
+    ]
+}

@@ -1,0 +1,155 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 14,
+            "offset": 474
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 16,
+            "offset": 518
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 16,
+            "offset": 521
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 17,
+            "offset": 542
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 17,
+            "offset": 544
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 18,
+            "offset": 545
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 18,
+            "offset": 548
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 19,
+            "offset": 584
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 19,
+            "offset": 586
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 20,
+            "offset": 587
+        },
+        {
+            "type": "name",
+            "value": "set",
+            "line": 20,
+            "offset": 590
+        },
+        {
+            "type": "name",
+            "value": "x",
+            "line": 20,
+            "offset": 594
+        },
+        {
+            "type": "operator",
+            "value": "=",
+            "line": 20,
+            "offset": 596
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 20,
+            "offset": 598
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 21,
+            "offset": 628
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 22,
+            "offset": 631
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 22,
+            "offset": 634
+        },
+        {
+            "type": "string",
+            "value": "a",
+            "line": 23,
+            "offset": 638
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 23,
+            "offset": 641
+        },
+        {
+            "type": "string",
+            "value": "b",
+            "line": 24,
+            "offset": 653
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 24,
+            "offset": 656
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 25,
+            "offset": 667
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 25,
+            "offset": 669
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 25,
+            "offset": 671
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 26,
+            "offset": 672
+        }
+    ]
+}

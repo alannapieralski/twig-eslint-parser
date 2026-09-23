@@ -1,0 +1,17 @@
+{{ a or b }} {{ a xor b }} {{ a and b }} {{ not a }}
+{{ a b-or b }} {{ a b-xor b }} {{ a b-and b }}
+{{ a == b }} {{ a != b }} {{ a <=> b }} {{ a === b }} {{ a !== b }}
+{{ a < b }} {{ a > b }} {{ a <= b }} {{ a >= b }}
+{{ a in b }} {{ a not in b }} {{ a not  in b }} {{ a matches '/x/' }}
+{{ a starts with 'x' }} {{ a ends with 'y' }} {{ a starts  with 'x' }}
+{{ a has some x => x > 1 }} {{ a has every x => x > 1 }}
+{{ a .. b }} {{ a + b }} {{ a - b }} {{ a ~ b }} {{ a * b }} {{ a / b }} {{ a // b }} {{ a % b }} {{ a ** b }}
+{{ a ?? b }} {{ a ?: b }} {{ a ? b : c }} {{ a ? b }}
+{{ a is defined }} {{ a is not defined }} {{ a is same as(b) }} {{ a is divisible by(3) }}
+{{ a?.b?.c }} {{ a?.b() }} {{ [...a, ...b] }} {{ {...a, b: 1} }}
+{{ a==b }} {{ a~b }} {{ a??b }} {{ a===b }}
+{{ not(a) }} {{ a and(b) }} {{ a or[b] }} {{ a in{b: 1} }} {{ a matches('/x/') }}
+{{ foo.and }} {{ foo.or }} {{ foo.not }} {{ foo. and }} {{ x|matches }} {{ x| in }} {{ foo.in(1) }}
+{% do x = 1 %} {% do [a, b] = [1, 2] %} {% do {name, age} = user %} {% do {name: userName} = user %}
+{{ items|map(i => i.x)|join(', ') }} {{ items|filter((v, k) => v > k) }} {{ f(name: value) }} {{ f(name=value) }}
+{{ macros.(name)(args) }} {{ foo.bar(some: arg) }} {{ -a }} {{ +a }}

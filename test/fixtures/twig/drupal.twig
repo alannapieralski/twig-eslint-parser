@@ -1,0 +1,18 @@
+{%
+  set classes = [
+    'node',
+    'node--type-' ~ node.bundle|clean_class,
+    node.isPromoted() ? 'node--promoted',
+    view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
+    'gap-fl-sm-lg',
+  ]
+%}
+{{ attach_library('numiko/card') }}
+<article{{ attributes.addClass(classes).setAttribute('role', 'article') }}>
+  <div{{ content_attributes.addClass(['grid', 'md:grid-cols-2']).removeClass('hidden') }}>
+    {{ content|without('field_image', 'links') }}
+  </div>
+  {% set image_attributes = create_attribute({'class': ['size-full', 'object-cover']}) %}
+  {% include 'numiko:card' with { classes: ['w-full', 'h-full'], title: label|t } only %}
+  <span class="text-surface-primary-accent {{ is_active ? 'font-bold' }}">{{ 'Read more'|t }}</span>
+</article>

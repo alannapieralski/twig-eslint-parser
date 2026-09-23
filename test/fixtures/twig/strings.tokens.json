@@ -1,0 +1,467 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "string",
+            "value": "single",
+            "line": 1,
+            "offset": 3
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 12
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 14
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 15
+        },
+        {
+            "type": "string",
+            "value": "double",
+            "line": 1,
+            "offset": 18
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 27
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 29
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 30
+        },
+        {
+            "type": "string",
+            "value": "",
+            "line": 1,
+            "offset": 33
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 36
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 38
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 39
+        },
+        {
+            "type": "string",
+            "value": "",
+            "line": 1,
+            "offset": 42
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 45
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 1,
+            "offset": 47
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 48
+        },
+        {
+            "type": "string",
+            "value": "it's",
+            "line": 2,
+            "offset": 51
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 59
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 61
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 62
+        },
+        {
+            "type": "string",
+            "value": "say \"hi\"",
+            "line": 2,
+            "offset": 65
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 78
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 80
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 81
+        },
+        {
+            "type": "string",
+            "value": "back\\slash",
+            "line": 2,
+            "offset": 84
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 98
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 100
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 101
+        },
+        {
+            "type": "string",
+            "value": "tab\tnew\nline",
+            "line": 2,
+            "offset": 104
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 121
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 2,
+            "offset": 123
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 124
+        },
+        {
+            "type": "string",
+            "value": "escaped \nnewline",
+            "line": 3,
+            "offset": 127
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 147
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 4,
+            "offset": 149
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 150
+        },
+        {
+            "type": "string",
+            "value": "escaped \nnewline",
+            "line": 4,
+            "offset": 153
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 5,
+            "offset": 173
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 5,
+            "offset": 175
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 176
+        },
+        {
+            "type": "string",
+            "value": "a-",
+            "line": 6,
+            "offset": 180
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 182
+        },
+        {
+            "type": "name",
+            "value": "b",
+            "line": 6,
+            "offset": 184
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 185
+        },
+        {
+            "type": "string",
+            "value": "-c",
+            "line": 6,
+            "offset": 186
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 190
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 6,
+            "offset": 192
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 193
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 197
+        },
+        {
+            "type": "name",
+            "value": "a",
+            "line": 6,
+            "offset": 200
+        },
+        {
+            "type": "operator",
+            "value": "~",
+            "line": 6,
+            "offset": 202
+        },
+        {
+            "type": "string",
+            "value": "nested ",
+            "line": 6,
+            "offset": 205
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 212
+        },
+        {
+            "type": "name",
+            "value": "b",
+            "line": 6,
+            "offset": 214
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 215
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 218
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 221
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 6,
+            "offset": 223
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 224
+        },
+        {
+            "type": "string",
+            "value": "hash # without brace",
+            "line": 6,
+            "offset": 228
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 250
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 6,
+            "offset": 252
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 253
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 257
+        },
+        {
+            "type": "name",
+            "value": "a",
+            "line": 6,
+            "offset": 259
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 260
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 261
+        },
+        {
+            "type": "name",
+            "value": "b",
+            "line": 6,
+            "offset": 263
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 6,
+            "offset": 264
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 267
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 6,
+            "offset": 269
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 270
+        },
+        {
+            "type": "string",
+            "value": "no #{interpolation} in single quotes",
+            "line": 7,
+            "offset": 273
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 312
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 7,
+            "offset": 314
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 8,
+            "offset": 315
+        }
+    ]
+}

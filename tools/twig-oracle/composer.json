@@ -1,0 +1,13 @@
+{
+    "name": "numiko/twig-eslint-parser-oracle",
+    "description": "Development-only tool: tokenises fixture templates with real Twig to produce golden files for the parity tests.",
+    "type": "project",
+    "license": "Apache-2.0",
+    "require": {
+        "php": ">=8.2",
+        "twig/twig": "3.28.0"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

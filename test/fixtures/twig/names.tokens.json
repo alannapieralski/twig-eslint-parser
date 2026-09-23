@@ -1,0 +1,227 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "name",
+            "value": "foo",
+            "line": 1,
+            "offset": 3
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 7
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 9
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 10
+        },
+        {
+            "type": "name",
+            "value": "_foo",
+            "line": 1,
+            "offset": 13
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 18
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 20
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 21
+        },
+        {
+            "type": "name",
+            "value": "foo_bar",
+            "line": 1,
+            "offset": 24
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 32
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 34
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 35
+        },
+        {
+            "type": "name",
+            "value": "foo123",
+            "line": 1,
+            "offset": 38
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 45
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 47
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 48
+        },
+        {
+            "type": "name",
+            "value": "café",
+            "line": 1,
+            "offset": 51
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 57
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 59
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 60
+        },
+        {
+            "type": "name",
+            "value": "naïve",
+            "line": 1,
+            "offset": 63
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 1,
+            "offset": 69
+        },
+        {
+            "type": "name",
+            "value": "über",
+            "line": 1,
+            "offset": 70
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 76
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 78
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 79
+        },
+        {
+            "type": "name",
+            "value": "名前",
+            "line": 1,
+            "offset": 82
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 89
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 91
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 92
+        },
+        {
+            "type": "name",
+            "value": "données",
+            "line": 1,
+            "offset": 95
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 1,
+            "offset": 103
+        },
+        {
+            "type": "name",
+            "value": "length",
+            "line": 1,
+            "offset": 104
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 111
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 1,
+            "offset": 113
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 2,
+            "offset": 114
+        }
+    ]
+}

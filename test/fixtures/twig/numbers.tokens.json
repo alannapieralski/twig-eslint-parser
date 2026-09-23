@@ -1,0 +1,425 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "number",
+            "value": 0,
+            "line": 1,
+            "offset": 3
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 5
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 7
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 8
+        },
+        {
+            "type": "number",
+            "value": 42,
+            "line": 1,
+            "offset": 11
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 14
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 16
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 17
+        },
+        {
+            "type": "number",
+            "value": 1.5,
+            "line": 1,
+            "offset": 20
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 24
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 26
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 27
+        },
+        {
+            "type": "number",
+            "value": 1000,
+            "line": 1,
+            "offset": 30
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 36
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 38
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 39
+        },
+        {
+            "type": "number",
+            "value": 1000.5001,
+            "line": 1,
+            "offset": 42
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 54
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 56
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 57
+        },
+        {
+            "type": "number",
+            "value": 1000,
+            "line": 1,
+            "offset": 60
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 64
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 66
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 67
+        },
+        {
+            "type": "number",
+            "value": 1000,
+            "line": 1,
+            "offset": 70
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 74
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 76
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 77
+        },
+        {
+            "type": "number",
+            "value": 0.0015,
+            "line": 1,
+            "offset": 80
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 87
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 89
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 90
+        },
+        {
+            "type": "number",
+            "value": 25000000000,
+            "line": 1,
+            "offset": 93
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 101
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 103
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 104
+        },
+        {
+            "type": "number",
+            "value": 100000000000,
+            "line": 1,
+            "offset": 107
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 115
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 1,
+            "offset": 117
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 118
+        },
+        {
+            "type": "operator",
+            "value": "-",
+            "line": 2,
+            "offset": 121
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 2,
+            "offset": 122
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 124
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 126
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 127
+        },
+        {
+            "type": "operator",
+            "value": "+",
+            "line": 2,
+            "offset": 130
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 2,
+            "offset": 131
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 133
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 135
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 136
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 2,
+            "offset": 139
+        },
+        {
+            "type": "operator",
+            "value": "..",
+            "line": 2,
+            "offset": 140
+        },
+        {
+            "type": "number",
+            "value": 5,
+            "line": 2,
+            "offset": 142
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 144
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 146
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 147
+        },
+        {
+            "type": "name",
+            "value": "items",
+            "line": 2,
+            "offset": 150
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 2,
+            "offset": 155
+        },
+        {
+            "type": "number",
+            "value": 0,
+            "line": 2,
+            "offset": 156
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 158
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 160
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 161
+        },
+        {
+            "type": "name",
+            "value": "items",
+            "line": 2,
+            "offset": 164
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 2,
+            "offset": 169
+        },
+        {
+            "type": "number",
+            "value": 0,
+            "line": 2,
+            "offset": 170
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 2,
+            "offset": 171
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 173
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 2,
+            "offset": 175
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 3,
+            "offset": 176
+        }
+    ]
+}

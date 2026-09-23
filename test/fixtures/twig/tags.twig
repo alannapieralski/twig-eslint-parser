@@ -1,0 +1,23 @@
+{% apply upper %}text{% endapply %}
+{% autoescape 'html' %}{{ x }}{% endautoescape %}
+{% block title %}t{% endblock %} {% block short 'value' %}
+{% deprecated 'use x instead' package 'numiko/x' version '1.0' %}
+{% do 1 + 2 %}
+{% embed 'card.twig' with {classes: ['a']} only %}{% block body %}b{% endblock %}{% endembed %}
+{% extends 'base.twig' %}
+{% flush %}
+{% for key, value in items %}{{ key }}{% else %}none{% endfor %}
+{% from 'macros.twig' import input as field, textarea %}
+{% guard function foo %}yes{% else %}no{% endguard %}
+{% if a %}1{% elseif b %}2{% else %}3{% endif %}
+{% import 'macros.twig' as forms %}
+{% include 'x.twig' with {a: 1} only ignore missing %}
+{% macro input(name, value = '', classes = ['form-input']) %}{% endmacro %}
+{% sandbox %}{% include 'user.twig' %}{% endsandbox %}
+{% set a = 1 %} {% set a, b = 1, 2 %} {% set c %}captured{% endset %}
+{% types {a: 'string', b?: 'int'} %}
+{% use 'blocks.twig' with a as b %}
+{% with {a: 1} only %}{{ a }}{% endwith %}
+{% trans %}Hello {{ name }}{% plural count %}Hello all{% endtrans %}
+{% cache 'key' ttl(300) %}cached{% endcache %}
+{% my_custom_tag some 'argument' %}

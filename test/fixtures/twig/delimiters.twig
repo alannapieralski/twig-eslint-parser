@@ -1,0 +1,11 @@
+<p>plain text {not twig} {-not-} %}</p>
+{{ foo }}{{foo}}{{
+  foo
+}}
+{% if foo %}yes{% endif %}
+{{- foo -}} {%- if foo -%}x{%- endif -%}
+{{~ foo ~}} {%~ if foo ~%}x{%~ endif ~%}
+{{ '}}' }} {{ "%}" }} {{ {a: {b: 1}} }} {{ {'a': [1, {b: 2}]}|length }}
+{% verbatim %}{{ not.lexed }} {% neither %}{% endverbatim %}
+{%- verbatim -%}{{ raw }}{%~ endverbatim ~%}
+{% line 10 %}{{ after_line }}

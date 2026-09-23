@@ -1,0 +1,25 @@
+{#
+/**
+ * @file
+ * Theme override to display a node.
+ *
+ * - content: All node items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - attributes: HTML attributes for the containing element.
+ *   {% if something %} is also fine inside a comment.
+ */
+#}
+{# single line #}{#- trimmed -#}{#~ line trimmed ~#}
+{## looks like a documentation comment ##}
+{{ foo # inline comment
+}}
+{{ foo # inline comment with }} inside
+}}
+{% set x = 1 # inline comment in a block
+%}
+{{ [
+  'a', # first
+  'b', # second
+] }}
