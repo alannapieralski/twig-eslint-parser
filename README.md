@@ -11,9 +11,10 @@ Both packages share one version and are released together.
 
 ## Development
 
-Needs Node.js 24 or later and npm 11.10 or later.
+Needs Node.js 24.15 or later (`.nvmrc` pins the version used here) and npm 11.10 or later.
 
 ```sh
+nvm use
 npm install
 ```
 
@@ -36,6 +37,41 @@ Installs only accept package versions published at least 7 days ago (`min-releas
 `.npmrc`). That setting needs npm 11.10 or later, so `devEngines` makes older npm versions fail
 instead of silently ignoring it. Every dependency is pinned to an exact version and upgraded by
 hand.
+
+## Releasing
+
+Releases use [release-it](https://github.com/release-it/release-it) from the repository root. One
+run releases both packages at the same version.
+
+Before the first release:
+
+1. Log in to npm with the account that will own both packages: `npm login`.
+2. Create a GitHub token that can create releases on this repository and export it as
+   `GITHUB_TOKEN`.
+
+Then, on an up-to-date `main` with a clean working tree:
+
+```sh
+npm run release
+```
+
+release-it will:
+
+1. Check the npm login, then run the lexer drift check, typechecks and all tests.
+2. Work out the next version from the commits since the last `v*` tag (`fix` is a patch, `feat` a
+   minor, a breaking change a major) and ask you to confirm it.
+3. Write `CHANGELOG.md`, bump the root and both packages to that version, point the plugin at the
+   same parser version and update the lockfile.
+4. Publish `twig-eslint-parser`, then `eslint-plugin-twig-tailwind`, to npm, asking for a one-time
+   password if the account needs one.
+5. Commit `chore(release): x.y.z`, tag `vx.y.z`, push, and create the GitHub Release with the
+   changelog as its notes.
+
+The first release proposes 0.1.0, with every commit so far in its changelog. Until 1.0.0, a
+breaking change would propose 1.0.0; pick a different increment at the prompt if that is not
+wanted yet, or pass the version explicitly (`npm run release -- 0.3.0`).
+
+Use `npm run release -- --dry-run` to see every step without changing anything.
 
 ## Licence
 

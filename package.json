@@ -1,7 +1,6 @@
 {
   "name": "twig-eslint-parser-monorepo",
   "version": "0.0.0",
-  "private": true,
   "license": "Apache-2.0",
   "author": "Numiko",
   "type": "module",
@@ -12,7 +11,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": ">=24",
+      "version": ">=24.15.0",
       "onFail": "error"
     },
     "packageManager": {
@@ -24,12 +23,60 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "typecheck": "npm run build -w twig-eslint-parser && npm run typecheck --workspaces",
-    "test": "npm run build -w twig-eslint-parser && npm test --workspaces"
+    "test": "npm run build -w twig-eslint-parser && npm test --workspaces",
+    "prepublishOnly": "node -e \"throw new Error('The monorepo root is not a package. Release with npm run release, which publishes the workspaces.')\"",
+    "release": "release-it"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "12.0.2",
     "@types/node": "24.13.5",
     "eslint": "10.10.0",
+    "release-it": "21.0.3",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
+  },
+  "release-it": {
+    "$schema": "https://unpkg.com/release-it/schema/release-it.json",
+    "git": {
+      "requireBranch": "main",
+      "commitMessage": "chore(release): ${version}",
+      "tagName": "v${version}",
+      "tagAnnotation": "Release ${version}"
+    },
+    "npm": {
+      "publish": true,
+      "skipChecks": true,
+      "publishArgs": [
+        "--workspaces",
+        "--access",
+        "public"
+      ]
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}"
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "conventionalcommits"
+        },
+        "infile": "CHANGELOG.md"
+      }
+    },
+    "hooks": {
+      "before:init": [
+        "npm whoami",
+        "npm run vendor:check -w twig-eslint-parser",
+        "npm run typecheck",
+        "npm test",
+        "npm run test:upstream -w twig-eslint-parser"
+      ],
+      "after:bump": [
+        "npm version ${version} --workspaces --no-git-tag-version --no-workspaces-update",
+        "npm pkg set dependencies.twig-eslint-parser=${version} -w eslint-plugin-twig-tailwind",
+        "npm install --package-lock-only --ignore-scripts"
+      ]
+    }
   }
 }
