@@ -9,7 +9,7 @@ import { groupTwigBlocks, type TwigBlock, type TwigBlockKind } from './twig/bloc
 import { toSameLengthJavaScript } from './twig/javascript.js';
 import { tokenizeTwig } from './twig/tokens.js';
 
-export type ParserOptions = MarkupParserOptions & { ignoreInterpolatedAttributes?: string[] } & Record<string, unknown>;
+export type ParserOptions = MarkupParserOptions & { ignoreInterpolatedAttributes?: readonly string[] } & Record<string, unknown>;
 
 export type UnconvertedTwigBlock = {
   readonly kind: TwigBlockKind;

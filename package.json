@@ -28,6 +28,10 @@
     "./tailwind": {
       "types": "./dist/tailwind.d.ts",
       "default": "./dist/tailwind.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
     }
   },
   "files": [

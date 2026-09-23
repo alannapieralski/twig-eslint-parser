@@ -1,34 +1,39 @@
 import { fileURLToPath } from 'node:url';
-import { ESLint } from 'eslint';
+import { ESLint, type Linter } from 'eslint';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import { describe, expect, it } from 'vitest';
-import twigParser from '../../src/index.js';
+import twigParser, { type ParserOptions } from '../../src/index.js';
+import twigPlugin from '../../src/plugin.js';
 import { drupalSelectors, recommendedParserOptions } from '../../src/tailwind.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
-function linterOptions(): ESLint.Options {
+type LintSetup = { parserOptions?: ParserOptions; interpolationRule?: Linter.RuleEntry; fix?: boolean };
+
+function linterOptions({ parserOptions = { ...recommendedParserOptions }, interpolationRule = 'error', fix = false }: LintSetup): ESLint.Options {
   return {
     cwd: fixturesDirectory,
+    fix,
     overrideConfigFile: true,
     overrideConfig: [{
       files: ['**/*.twig'],
-      plugins: { 'better-tailwindcss': betterTailwindcss },
-      languageOptions: { parser: twigParser, parserOptions: { ...recommendedParserOptions } },
+      plugins: { 'better-tailwindcss': betterTailwindcss, twig: twigPlugin },
+      languageOptions: { parser: twigParser, parserOptions },
       settings: { 'better-tailwindcss': { entryPoint: 'tailwind/theme.css', selectors: [...getDefaultSelectors(), ...drupalSelectors] } },
       rules: {
         'better-tailwindcss/no-unknown-classes': 'error',
         'better-tailwindcss/no-conflicting-classes': 'error',
         'better-tailwindcss/no-duplicate-classes': 'error',
         'better-tailwindcss/enforce-consistent-class-order': 'warn',
+        'twig/no-interpolated-attributes': interpolationRule,
       },
     }],
   };
 }
 
-async function lint(code: string, extraOptions: ESLint.Options = {}) {
-  const [result] = await new ESLint({ ...linterOptions(), ...extraOptions }).lintText(code, { filePath: `${fixturesDirectory}/template.html.twig` });
+async function lint(code: string, setup: LintSetup = {}) {
+  const [result] = await new ESLint(linterOptions(setup)).lintText(code, { filePath: `${fixturesDirectory}/template.html.twig` });
   if (!result) throw new Error('ESLint returned no result.');
   return result;
 }
@@ -69,11 +74,6 @@ describe('better-tailwindcss rules on Twig through twig-eslint-parser and its Dr
     ]);
   });
 
-  it('leaves class attributes containing Twig out, instead of reporting "{{" or BEM fragments as unknown classes', async () => {
-    const result = await lint('<p class="region--{{ region }}__inner flex {{ extra }}">x</p>');
-    expect(result.messages).toEqual([]);
-  });
-
   it('autofixes class order inside a Twig string without touching anything else', async () => {
     const code = "<span{{ attributes.addClass('text-surface-primary-accent shrink-0 mt-1') }}>y</span>";
     const result = await lint(code, { fix: true });
@@ -88,5 +88,40 @@ describe('better-tailwindcss rules on Twig through twig-eslint-parser and its Dr
   it('reports invalid Twig as a positioned parsing error', async () => {
     const result = await lint('<p>{{ foo </p>');
     expect(result.messages.map((message) => [message.fatal, message.message])).toEqual([[true, 'Parsing error: Unclosed variable opened at {1:4}.']]);
+  });
+});
+
+describe('twig/no-interpolated-attributes', () => {
+  it('reports Twig inside class="" once, while better-tailwindcss stays quiet about the {{ }} fragments', async () => {
+    const code = '<p class="region--{{ region }}__inner flex {{ extra }}">x</p>';
+    const result = await lint(code);
+    expect(describeMessages(result.messages)).toEqual([
+      `1:${columnOf(code, 'class=')} twig/no-interpolated-attributes Avoid Twig inside class="": linters cannot see what it produces. Build the value with {% set classes = [...] %} and attributes.addClass(), or pass it to an include as { classes: [...] }.`,
+    ]);
+  });
+
+  it('reports Twig statements inside class="" too', async () => {
+    const result = await lint('<p class="flex {% if active %}font-bold{% endif %}">x</p>');
+    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig/no-interpolated-attributes']);
+  });
+
+  it('also reports when the parser keeps interpolated attributes in the HTML AST', async () => {
+    const result = await lint('<p class="flex {{ extra }}">x</p>', { parserOptions: {} });
+    expect(result.messages.map((message) => message.ruleId)).toContain('twig/no-interpolated-attributes');
+  });
+
+  it('leaves other attributes alone by default', async () => {
+    const result = await lint('<a href="{{ url }}" class="flex">x</a>');
+    expect(result.messages).toEqual([]);
+  });
+
+  it('checks any attributes listed in its options', async () => {
+    const result = await lint('<a href="{{ url }}" class="flex {{ extra }}">x</a>', { interpolationRule: ['error', { attributes: ['href'] }] });
+    expect(result.messages.map((message) => message.message.split(':')[0])).toEqual(['Avoid Twig inside href=""']);
+  });
+
+  it('does not report the Twig-built class attributes the option hides when the rule is off', async () => {
+    const result = await lint('<p class="flex {{ extra }}">x</p>', { interpolationRule: 'off' });
+    expect(result.messages).toEqual([]);
   });
 });

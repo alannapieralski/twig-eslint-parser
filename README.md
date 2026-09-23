@@ -4,7 +4,8 @@ An [ESLint](https://eslint.org) parser for [Twig](https://twig.symfony.com) temp
 `.twig` file into one AST that contains both the HTML markup and every Twig expression, with
 every node pointing at its exact position in the template.
 
-It is a parser, not a linter: it gives existing ESLint rules something to read. Its first use is
+It is a parser first: it gives existing ESLint rules something to read. It also ships one small
+rule of its own ([below](#disallowing-twig-inside-class-attributes)). Its first use is
 linting Tailwind CSS classes in Drupal themes with
 [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
 including classes that live inside Twig expressions:
@@ -49,12 +50,13 @@ Requires Node.js 24 or later and ESLint 9 or 10. The package is ESM only.
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import twigParser from 'twig-eslint-parser';
+import twigPlugin from 'twig-eslint-parser/plugin';
 import { drupalSelectors, recommendedParserOptions } from 'twig-eslint-parser/tailwind';
 
 export default [
   {
     files: ['**/*.twig'],
-    plugins: { 'better-tailwindcss': betterTailwindcss },
+    plugins: { 'better-tailwindcss': betterTailwindcss, twig: twigPlugin },
     languageOptions: {
       parser: twigParser,
       parserOptions: { ...recommendedParserOptions },
@@ -67,6 +69,7 @@ export default [
     },
     rules: {
       ...betterTailwindcss.configs.recommended.rules,
+      'twig/no-interpolated-attributes': 'error',
     },
   },
 ];
@@ -89,6 +92,34 @@ that file, or point `entryPoint` at a small lint-only file that imports the them
 `drupalSelectors` includes `twigSelectors`. Both are plain better-tailwindcss selector objects, so
 you can extend or replace them.
 
+## Disallowing Twig inside class attributes
+
+`class="flex {{ modifier }}"` hides classes from every linter: nothing can know what the Twig
+produces. The `twig/no-interpolated-attributes` rule reports Twig (`{{ }}` or `{% %}`) inside
+`class=""` and points to the alternatives, `{% set classes = [...] %}` with
+`attributes.addClass()`, or `{ classes: [...] }` passed to an include:
+
+```twig
+{# Reported #}
+<div class="card {{ modifier }}">
+
+{# Fine: every class is a literal the Tailwind rules can check #}
+{% set classes = ['card', is_featured ? 'card--featured'] %}
+<div{{ attributes.addClass(classes) }}>
+```
+
+It also reports attributes that `ignoreInterpolatedAttributes` leaves out of the HTML AST (it
+reads them from the parser services), so the recommended setup gets both: better-tailwindcss
+stays quiet about `{{` and BEM fragments, and each such attribute is reported once by this
+rule. Other attributes can be checked too:
+
+```js
+'twig/no-interpolated-attributes': ['error', { attributes: ['class', 'style'] }],
+```
+
+Turn the rule off for templates you do not control (for example copies of Drupal core
+templates) if rewriting them is not an option.
+
 ## Parser options
 
 | Option | Default | Description |
@@ -110,7 +141,7 @@ silently.
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
-| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`. |
+| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`; `twig/no-interpolated-attributes` reports them. |
 
 Invalid Twig, such as an unclosed `{{`, is reported by ESLint as a parsing error with its position.
 
