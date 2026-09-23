@@ -148,7 +148,6 @@ function findParityMismatches(source: string, golden: Golden): string[] {
 
 const pendingPatchesByFixture: Record<string, string[]> = {
   'names.twig': ['TL-07'],
-  'numbers.twig': ['TL-06'],
   'strings.twig': ['TL-08'],
 };
 

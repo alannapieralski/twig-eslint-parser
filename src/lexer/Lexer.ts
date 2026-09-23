@@ -46,6 +46,8 @@ export const namePattern: string = '[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*
  */
 export const numberPattern: string = '[0-9]+(?:\\.[0-9]+)?';
 
+export const twig3NumberPattern: string = '[0-9]+(?:_[0-9]+)*(?:\\.[0-9]+(?:_[0-9]+)*)?(?:[eE][+-]?[0-9]+(?:_[0-9]+)*)?';
+
 /**
  * The regular expression pattern used to identify a punctuation.
  */
@@ -302,7 +304,7 @@ export class Lexer {
         this.doubleQuotedStringContentRegExp = new RegExp('^' + doubleQuotedStringContentPattern);
         this.doubleQuotedStringDelimiterRegExp = new RegExp('^' + doubleQuotedStringDelimiterPattern);
         this.nameRegExp = new RegExp('^' + namePattern);
-        this.numberRegExp = new RegExp('^' + numberPattern);
+        this.numberRegExp = new RegExp('^' + (this.level === 3 ? twig3NumberPattern : numberPattern));
         this.openingBracketRegExp = new RegExp(openingBracketPattern);
         this.punctuationRegExp = new RegExp(punctuationPattern);
         this.stringRegExp = new RegExp('^' + stringPattern);
