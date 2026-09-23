@@ -1,0 +1,8 @@
+twig-eslint-parser
+Copyright 2026 Numiko
+
+This product includes software derived from twig-lexer 1.0.0
+(https://gitlab.com/nightlycommit/twig-lexer, revision dda1882),
+Copyright Eric MORAND, licensed under the Apache License, Version 2.0.
+The licence text is in third_party/twig-lexer/LICENSE and every change
+made to it is recorded in third_party/twig-lexer/UPSTREAM.md.

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "strict": false,
+    "noImplicitAny": true,
+    "rootDir": "src/lexer",
+    "outDir": "dist/lexer",
+    "tsBuildInfoFile": ".tsbuild/lexer.tsbuildinfo"
+  },
+  "include": ["src/lexer"]
+}
