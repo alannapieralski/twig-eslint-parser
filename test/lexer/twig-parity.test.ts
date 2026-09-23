@@ -74,14 +74,14 @@ function findStartsOfTagsConsumedByTwigLexer(ours: PositionedToken[]): Set<numbe
   return consumedStarts;
 }
 
-function findStartsOfInterpolatedStringQuotes(ours: PositionedToken[]): Set<number> {
+function findStartsOfQuotesTwigLexesAsStringParts(ours: PositionedToken[], source: string): Set<number> {
   const quoteStarts = new Set<number>();
   ours.forEach((token, index) => {
-    if (token.type !== 'OPENING_QUOTE') return;
+    if (token.type !== 'OPENING_QUOTE' || token.value !== '"') return;
 
-    const closingIndex = ours.findIndex((candidate, candidateIndex) => candidateIndex > index && candidate.type === 'CLOSING_QUOTE');
-    const isInterpolated = ours.slice(index, closingIndex).some((candidate) => candidate.type === 'INTERPOLATION_START');
-    if (isInterpolated) quoteStarts.add(token.start);
+    const closingQuote = ours.find((candidate, candidateIndex) => candidateIndex > index && candidate.type === 'CLOSING_QUOTE');
+    const content = source.slice(token.end, closingQuote?.start ?? source.length);
+    if (content.includes('#')) quoteStarts.add(token.start);
   });
   return quoteStarts;
 }
@@ -151,7 +151,7 @@ function findParityMismatches(source: string, golden: Golden): string[] {
 
   const startsWithoutTwigToken = new Set([
     ...findStartsOfTagsConsumedByTwigLexer(ours),
-    ...findStartsOfInterpolatedStringQuotes(ours),
+    ...findStartsOfQuotesTwigLexesAsStringParts(ours, source),
   ]);
   for (const token of ours) {
     if (!typesThatMustAlignWithTwig.has(token.type) || twigStarts.has(token.start) || startsWithoutTwigToken.has(token.start)) continue;
