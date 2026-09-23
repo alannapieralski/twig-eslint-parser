@@ -2,12 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findParityMismatches, type Golden } from './parity.js';
+import { parseForESLint } from '../src/index.js';
+import { findParityMismatches, type Golden } from './lexer/parity.js';
 
 type OracleResult = Partial<Golden> & { path: string; twig: string; error?: string; line?: number };
 
 const corpusDirectories = (process.env['TWIG_CORPUS'] ?? '').split(':').filter((directory) => directory !== '');
-const oracleScript = resolve(import.meta.dirname, '../../tools/twig-oracle/tokenize.php');
+const oracleScript = resolve(import.meta.dirname, '../tools/twig-oracle/tokenize.php');
 
 function collectTemplatePaths(directories: string[]): string[] {
   return directories
@@ -32,8 +33,8 @@ function describeTemplateMismatches(result: OracleResult & Golden): string[] {
   }
 }
 
-describe.skipIf(corpusDirectories.length === 0)('lexer parity with Twig on a local corpus (TWIG_CORPUS=dir:dir)', () => {
-  it('matches Twig on every template Twig itself can lex', () => {
+describe.skipIf(corpusDirectories.length === 0)('local template corpus (TWIG_CORPUS=dir:dir)', () => {
+  it('lexes every template exactly as Twig does', () => {
     const results = tokenizeWithTwig(collectTemplatePaths(corpusDirectories));
     const rejectedByTwig = results.filter((result) => result.error !== undefined);
     const mismatchReports = results
@@ -48,5 +49,17 @@ describe.skipIf(corpusDirectories.length === 0)('lexer parity with Twig on a loc
       ...rejectedByTwig.map((result) => `\n  Twig rejected ${result.path}: ${result.error} (line ${result.line})`),
     );
     expect(mismatchReports.join('\n')).toBe('');
+  }, 600_000);
+
+  it('parses every template and converts every Twig block', () => {
+    const reports = collectTemplatePaths(corpusDirectories).flatMap((path) => {
+      const code = readFileSync(path, 'utf8');
+      try {
+        return parseForESLint(code, {}).services.twig.unconvertedBlocks.map((block) => `${path}: ${code.slice(...block.range)} (${block.reason})`);
+      } catch (error) {
+        return [`${path}: threw ${error instanceof Error ? error.message : String(error)}`];
+      }
+    });
+    expect(reports.join('\n')).toBe('');
   }, 600_000);
 });
