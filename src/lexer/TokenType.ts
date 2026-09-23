@@ -3,6 +3,7 @@ export type TokenType =
     "COMMENT_END" |
     "COMMENT_START" |
     "EOF" |
+    "INLINE_COMMENT" |
     "INTERPOLATION_START" |
     "INTERPOLATION_END" |
     "LINE_TRIMMING_MODIFIER" |

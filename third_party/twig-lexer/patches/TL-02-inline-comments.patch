@@ -1,0 +1,64 @@
+Description: Lex Twig 3.15 inline comments inside expressions
+ Twig 3.15 allows "# comment" inside {{ }} and {% %} up to the end of the
+ line, including any }} or %} on that line. twig-lexer 1.0.0 throws
+ "Unexpected character #". The comment is kept as an INLINE_COMMENT token so
+ the lexer stays lossless; Twig itself discards it. Only enabled at level 3.
+ Pattern mirrors Twig's Lexer::REGEX_RAW_INLINE_COMMENT, /#[^\r\n]*/A.
+Author: Numiko
+Origin: other, https://github.com/twigphp/Twig/blob/v3.28.0/src/Lexer.php
+Forwarded: not-needed
+Twig-Reference: 3.15.0 ("Add support for inline comments")
+Test: test/fixtures/twig/comments.twig (parity with Twig 3.28.0); npm run test:upstream
+Last-Update: 2026-09-23
+---
+diff --git a/src/main/lib/Lexer.ts b/src/main/lib/Lexer.ts
+index 5934ea7..a00919c 100644
+--- a/src/main/lib/Lexer.ts
++++ b/src/main/lib/Lexer.ts
+@@ -61,6 +61,8 @@ export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\.[^#"\\\\]*)*)(")|^(\
+  */
+ export const whitespacePattern: string = '[ \\r\\n\\t\\f\\v]+';
+ 
++export const inlineCommentPattern: string = '#[^\\r\\n]*';
++
+ let openingBrackets = [];
+ let closingBrackets = [];
+ 
+@@ -109,6 +111,7 @@ export class Lexer {
+     private stringRegExp: RegExp;
+     private testOperatorRegExp: RegExp;
+     private arrowOperatorRegExp: RegExp;
++    private inlineCommentRegExp: RegExp;
+     private tokens: Token[];
+     private trimmingModifier: string = '-';
+     private variableEndRegExp: RegExp;
+@@ -299,6 +302,7 @@ export class Lexer {
+         this.punctuationRegExp = new RegExp(punctuationPattern);
+         this.stringRegExp = new RegExp('^' + stringPattern);
+         this.whitespaceRegExp = new RegExp('^' + whitespacePattern);
++        this.inlineCommentRegExp = new RegExp('^' + inlineCommentPattern);
+ 
+         while (this.cursor < this.end) {
+             // dispatch to the lexing functions depending on the current state
+@@ -495,6 +499,9 @@ export class Lexer {
+             this.pushToken("OPENING_QUOTE", value);
+             this.pushState(LexerState.DOUBLE_QUOTED_STRING);
+         }
++        else if (this.level === 3 && (match = this.inlineCommentRegExp.exec(candidate)) !== null) {
++            this.pushToken("INLINE_COMMENT", match[0]);
++        }
+         // unlexable
+         else if (this.cursor < this.end) {
+             throw new SyntaxError(`Unexpected character "${singleCharacterCandidate}".`, this.line, this.column);
+diff --git a/src/main/lib/TokenType.ts b/src/main/lib/TokenType.ts
+index 1c60b1b..b090cf4 100644
+--- a/src/main/lib/TokenType.ts
++++ b/src/main/lib/TokenType.ts
+@@ -3,6 +3,7 @@ export type TokenType =
+     "COMMENT_END" |
+     "COMMENT_START" |
+     "EOF" |
++    "INLINE_COMMENT" |
+     "INTERPOLATION_START" |
+     "INTERPOLATION_END" |
+     "LINE_TRIMMING_MODIFIER" |

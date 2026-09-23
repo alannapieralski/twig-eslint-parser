@@ -61,6 +61,8 @@ export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\.[^#"\\\\]*)*)(")|^(\
  */
 export const whitespacePattern: string = '[ \\r\\n\\t\\f\\v]+';
 
+export const inlineCommentPattern: string = '#[^\\r\\n]*';
+
 let openingBrackets = [];
 let closingBrackets = [];
 
@@ -109,6 +111,7 @@ export class Lexer {
     private stringRegExp: RegExp;
     private testOperatorRegExp: RegExp;
     private arrowOperatorRegExp: RegExp;
+    private inlineCommentRegExp: RegExp;
     private tokens: Token[];
     private trimmingModifier: string = '-';
     private variableEndRegExp: RegExp;
@@ -299,6 +302,7 @@ export class Lexer {
         this.punctuationRegExp = new RegExp(punctuationPattern);
         this.stringRegExp = new RegExp('^' + stringPattern);
         this.whitespaceRegExp = new RegExp('^' + whitespacePattern);
+        this.inlineCommentRegExp = new RegExp('^' + inlineCommentPattern);
 
         while (this.cursor < this.end) {
             // dispatch to the lexing functions depending on the current state
@@ -494,6 +498,9 @@ export class Lexer {
             this.pushScope(value, value);
             this.pushToken("OPENING_QUOTE", value);
             this.pushState(LexerState.DOUBLE_QUOTED_STRING);
+        }
+        else if (this.level === 3 && (match = this.inlineCommentRegExp.exec(candidate)) !== null) {
+            this.pushToken("INLINE_COMMENT", match[0]);
         }
         // unlexable
         else if (this.cursor < this.end) {

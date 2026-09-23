@@ -62,6 +62,7 @@ with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 | ID | Change | Why | Twig reference | Test |
 |---|---|---|---|---|
 | TL-01 | Add `.js` extensions to relative imports | Shipped as native ES modules, where Node requires full specifiers | None (port fix) | `npm run typecheck`, `npm run test:upstream` |
+| TL-02 | Lex `# comment` inside expressions as `INLINE_COMMENT` (level 3) | Upstream throws "Unexpected character #" | Twig 3.15.0 | `comments.twig` parity |
 
 ## Commands
 
