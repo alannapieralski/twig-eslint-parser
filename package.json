@@ -8,6 +8,18 @@
   "engines": {
     "node": ">=24"
   },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.10.0",
+      "onFail": "error"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -34,21 +46,23 @@
     "test": "vitest run",
     "test:upstream": "node scripts/vendor-twig-lexer.ts --test",
     "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
-    "vendor:check":"node scripts/vendor-twig-lexer.ts --check",
+    "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
     "vendor:write": "node scripts/vendor-twig-lexer.ts --write"
   },
   "dependencies": {
-    "@html-eslint/parser": "^0.66.1",
-    "eslint-visitor-keys": "^4.2.1 || ^5.0.1",
-    "espree": "^10.4.0 || ^11.2.0"
+    "@html-eslint/parser": "0.66.0",
+    "eslint-visitor-keys": "5.0.1",
+    "espree": "11.2.0"
   },
   "peerDependencies": {
     "eslint": "^9.0.0 || ^10.0.0"
   },
   "devDependencies": {
-    "@types/node": "24.13.6",
+    "@types/node": "24.13.5",
     "@types/tape": "5.8.1",
-    "eslint": "10.11.0",
+    "eslint": "10.10.0",
+    "eslint-plugin-better-tailwindcss": "4.7.0",
+    "tailwindcss": "4.3.3",
     "tape": "5.10.2",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
