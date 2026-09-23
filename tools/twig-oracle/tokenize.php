@@ -10,12 +10,15 @@ use Twig\Loader\ArrayLoader;
 use Twig\Source;
 use Twig\Token;
 
-if ($argc !== 2 || !is_dir($argv[1])) {
-    fwrite(STDERR, "Usage: php tools/twig-oracle/tokenize.php <fixtures directory>\n");
+const USAGE = "Usage:\n"
+    . "  php tools/twig-oracle/tokenize.php <fixtures directory>  write <name>.tokens.json beside each <name>.twig\n"
+    . "  php tools/twig-oracle/tokenize.php --stdin               read template paths from stdin, print one JSON line each\n";
+
+if ($argc !== 2 || ($argv[1] !== '--stdin' && !is_dir($argv[1]))) {
+    fwrite(STDERR, USAGE);
     exit(1);
 }
 
-$fixturesDirectory = rtrim($argv[1], '/');
 $environment = new Environment(new ArrayLoader([]));
 $twigVersion = Environment::VERSION;
 
@@ -48,7 +51,19 @@ function tokenizeTemplate(Environment $environment, string $name, string $code):
     }
 }
 
-$fixtureFiles = glob($fixturesDirectory . '/*.twig');
+if ($argv[1] === '--stdin') {
+    while (($path = fgets(STDIN)) !== false) {
+        $path = trim($path);
+        if ($path === '') {
+            continue;
+        }
+        $result = ['path' => $path, 'twig' => $twigVersion] + tokenizeTemplate($environment, basename($path), file_get_contents($path));
+        fwrite(STDOUT, json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) . "\n");
+    }
+    exit(0);
+}
+
+$fixtureFiles = glob(rtrim($argv[1], '/') . '/*.twig');
 sort($fixtureFiles);
 
 foreach ($fixtureFiles as $fixtureFile) {
