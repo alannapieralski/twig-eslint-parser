@@ -39,7 +39,7 @@ export const lineSeparators: string[] = ['\\r\\n', '\\r', '\\n'];
 /**
  * The regular expression pattern used to identify a name.
  */
-export const namePattern: string = '[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*';
+export const namePattern: string = '[a-zA-Z_\\x7f-\\uffff][a-zA-Z0-9_\\x7f-\\uffff]*';
 
 /**
  * The regular expression pattern used to identify a number.

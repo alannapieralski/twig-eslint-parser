@@ -67,6 +67,7 @@ with `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 | TL-04 | Word operators may be followed by `(`, `)`, `[` or `{` (level 3) | Upstream only allows whitespace or `(`, so `a or[b]` lexed `or` as a name | Twig 3.1.0 | `operators.twig` parity |
 | TL-05 | Words after `.` or `\|` (optionally one whitespace) are names, including `is` / `is not` (level 3) | Upstream lexed `foo.and`, `x\|matches`, `foo.is` as operators | Twig 3.1.0, whitespace form 3.24.0 | `operators.twig` parity |
 | TL-06 | Numbers with `_` separators and optionally signed exponents (level 3) | Upstream split `1_000` and `1e3` into a number and a name | Twig 3.17.0 | `numbers.twig` parity |
+| TL-07 | Names may contain any character from U+007F upwards | PHP matches `\x7f-\xff` per byte, so any UTF-8 name is valid; upstream threw on `名前` | None (port fix) | `names.twig` parity |
 
 ## Commands
 
