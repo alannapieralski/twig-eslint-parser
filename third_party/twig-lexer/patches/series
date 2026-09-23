@@ -6,3 +6,4 @@ TL-04-word-operator-lookahead.patch
 TL-05-names-after-dot-or-pipe.patch
 TL-06-twig-3-17-numbers.patch
 TL-07-non-latin-names.patch
+TL-08-escaped-newlines-in-strings.patch

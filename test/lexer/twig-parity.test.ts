@@ -162,7 +162,6 @@ function findParityMismatches(source: string, golden: Golden): string[] {
 }
 
 const pendingPatchesByFixture: Record<string, string[]> = {
-  'strings.twig': ['TL-08'],
 };
 
 const showPendingMismatches = process.env['PARITY_SHOW_PENDING'] === '1';

@@ -24,7 +24,7 @@ export const bracketPairs: [string, string][] = [['(', ')'], ['{', '}'], ['[', '
 /**
  * The regular expression pattern used to identify a double quoted string content.
  */
-export const doubleQuotedStringContentPattern: string = '[^#"\\\\]*(?:(?:\\\\.|#(?!{))[^#"\\\\]*)*';
+export const doubleQuotedStringContentPattern: string = '[^#"\\\\]*(?:(?:\\\\[\\s\\S]|#(?!{))[^#"\\\\]*)*';
 
 /**
  * The regular expression pattern used to identify a double quoted string delimiter.
@@ -56,7 +56,7 @@ export const punctuationPattern: string = '[?:.,|]';
 /**
  * The regular expression pattern used to identify a string.
  */
-export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\.[^#"\\\\]*)*)(")|^(\')([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)(\')';
+export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\[\\s\\S][^#"\\\\]*)*)(")|^(\')([^\'\\\\]*(?:\\\\[\\s\\S][^\'\\\\]*)*)(\')';
 
 /**
  * The regular expression pattern used to identify a whitespace.

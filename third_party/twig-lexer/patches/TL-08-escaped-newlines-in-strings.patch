@@ -1,0 +1,36 @@
+Description: Allow a backslash-escaped newline inside strings
+ Twig's REGEX_STRING and REGEX_DQ_STRING_PART use PHP's /s flag, so the
+ escape "\\." also matches a backslash followed by a line break, as in
+ 'first \<newline>second'. In JavaScript "." never matches a line break, so
+ twig-lexer 1.0.0 throws "Unexpected character" on such strings. The escape
+ is written "\\[\s\S]" instead, in both the single/double quoted string
+ pattern and the double quoted content pattern. Applies to both levels.
+Author: Numiko
+Origin: vendor
+Forwarded: not-needed
+Twig-Reference: none (port fix; /s flag present since Twig 2.x)
+Test: test/fixtures/twig/strings.twig (parity with Twig 3.28.0); npm run test:upstream
+Last-Update: 2026-09-23
+---
+diff --git a/src/main/lib/Lexer.ts b/src/main/lib/Lexer.ts
+index 4c088d2..13dee95 100644
+--- a/src/main/lib/Lexer.ts
++++ b/src/main/lib/Lexer.ts
+@@ -24,7 +24,7 @@ export const bracketPairs: [string, string][] = [['(', ')'], ['{', '}'], ['[', '
+ /**
+  * The regular expression pattern used to identify a double quoted string content.
+  */
+-export const doubleQuotedStringContentPattern: string = '[^#"\\\\]*(?:(?:\\\\.|#(?!{))[^#"\\\\]*)*';
++export const doubleQuotedStringContentPattern: string = '[^#"\\\\]*(?:(?:\\\\[\\s\\S]|#(?!{))[^#"\\\\]*)*';
+ 
+ /**
+  * The regular expression pattern used to identify a double quoted string delimiter.
+@@ -56,7 +56,7 @@ export const punctuationPattern: string = '[?:.,|]';
+ /**
+  * The regular expression pattern used to identify a string.
+  */
+-export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\.[^#"\\\\]*)*)(")|^(\')([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)(\')';
++export const stringPattern: string = '(")([^#"\\\\]*(?:\\\\[\\s\\S][^#"\\\\]*)*)(")|^(\')([^\'\\\\]*(?:\\\\[\\s\\S][^\'\\\\]*)*)(\')';
+ 
+ /**
+  * The regular expression pattern used to identify a whitespace.
