@@ -39,32 +39,19 @@ function groupAttributes(attributes: TagNode['attributes'], text: string): Range
   return groups;
 }
 
-const printedAttributesPattern = /^\{\{[-~]?\s*(?:[\w.]*attributes\b|create_attribute\s*\()/;
-
-function tagNameEnd(openStart: Token): number {
-  const tagName = /^<[A-Za-z][\w:-]*/.exec(openStart.value)?.[0] ?? '';
-  return openStart.range[0] + tagName.length;
-}
-
-function findPrintedAttributes(openStart: Token): Range | undefined {
-  const afterTagName = openStart.value.slice(tagNameEnd(openStart) - openStart.range[0]);
-  if (!printedAttributesPattern.test(afterTagName.trimStart())) return undefined;
-  return [openStart.range[1] - afterTagName.trimStart().length, openStart.range[1]];
-}
-
 function lineIndentation(text: string, offset: number): string {
   const lineStart = text.lastIndexOf('\n', offset - 1) + 1;
   return /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
 }
 
-function describeGaps(node: TagNode, firstGapStart: number, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
+function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
   const indentUnit = tagIndentation.includes('\t') ? '\t' : ' '.repeat(options.indent);
   const attributeBreak = `\n${tagIndentation}${indentUnit}`;
   const selfClosingSpace = node.openEnd.value === '/>' ? ' ' : '';
   const closingBreak = options.closeStyle === 'newline' ? `\n${tagIndentation}` : selfClosingSpace;
 
-  const boundaries = [firstGapStart, ...groups.flatMap(([start, end]) => [start, end]), node.openEnd.range[0]];
+  const boundaries = [node.openStart.range[1], ...groups.flatMap(([start, end]) => [start, end]), node.openEnd.range[0]];
   const gaps: Gap[] = [];
   for (let index = 0; index < boundaries.length; index += 2) {
     const isClosing = index === boundaries.length - 2;
@@ -102,12 +89,10 @@ export const attrsNewline: Rule.RuleModule = {
     const text = context.sourceCode.text;
 
     const check = (node: TagNode) => {
-      const printedAttributes = findPrintedAttributes(node.openStart);
-      const groups = [...(printedAttributes ? [printedAttributes] : []), ...groupAttributes(node.attributes, text)];
+      const groups = groupAttributes(node.attributes, text);
       if (groups.length <= options.ifAttrsMoreThan) return;
 
-      const firstGapStart = printedAttributes ? tagNameEnd(node.openStart) : node.openStart.range[1];
-      const gaps = describeGaps(node, firstGapStart, groups, text, options);
+      const gaps = describeGaps(node, groups, text, options);
       const wrongGaps = gaps.filter((gap) => text.slice(...gap.range) !== gap.expected);
       const firstWrong = wrongGaps[0];
       if (!firstWrong) return;
