@@ -14,6 +14,8 @@ const plugin = {
   configs: {} as { recommended: Linter.Config },
 } satisfies ESLint.Plugin;
 
+const attributeSelectors = getDefaultSelectors().filter((selector) => selector.kind === 'attribute');
+
 const recommended: Linter.Config = {
   name: 'twig-tailwind/recommended',
   files: ['**/*.twig'],
@@ -27,6 +29,7 @@ const recommended: Linter.Config = {
   },
   rules: {
     ...betterTailwindcss.configs.recommended.rules,
+    'better-tailwindcss/enforce-consistent-line-wrapping': ['warn', { selectors: attributeSelectors }],
     'twig-tailwind/no-interpolated-attributes': 'error',
   },
 };

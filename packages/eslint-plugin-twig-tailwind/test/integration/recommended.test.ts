@@ -79,6 +79,20 @@ describe('configs.recommended on Twig and Drupal templates', () => {
     const result = await lint(code, { fix: true });
     expect(result.output).toBe("<span{{ attributes.addClass('mt-1 shrink-0 text-surface-primary-accent') }}>y</span>");
   });
+
+  it.each([
+    ['a {% set %} array', "{% set classes = ['mt-1 flex w-full shrink-0', 'items-center justify-center gap-4 overflow-hidden p-6 text-left'] %}"],
+    ['an addClass() argument', "<div{{ attributes.addClass('mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden p-6 text-left') }}></div>"],
+  ])('leaves a long class string in %s on one line, since line wrapping only applies to class=""', async (_, code) => {
+    const result = await lint(code, { fix: true });
+    expect(result.output ?? code).toBe(code);
+  });
+
+  it('still wraps a long class="" attribute across lines', async () => {
+    const code = '<p class="mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden p-6 text-left">x</p>';
+    const result = await lint(code, { fix: true });
+    expect(result.output).toBe('<p class="\n  mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden\n  p-6 text-left\n">x</p>');
+  });
 });
 
 describe('twig-tailwind/no-interpolated-attributes', () => {

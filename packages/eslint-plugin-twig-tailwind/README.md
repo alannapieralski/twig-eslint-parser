@@ -44,7 +44,10 @@ export default [
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
 - better-tailwindcss's selectors plus `drupalSelectors`;
-- better-tailwindcss's recommended rules;
+- better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
+  attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
+  lines within its quotes, which reads badly, so a long list of classes there is better split
+  into more array items by hand;
 - [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) as an error.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
