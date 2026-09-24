@@ -1,0 +1,923 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "name",
+            "value": "set",
+            "line": 1,
+            "offset": 3
+        },
+        {
+            "type": "name",
+            "value": "classes",
+            "line": 1,
+            "offset": 7
+        },
+        {
+            "type": "operator",
+            "value": "=",
+            "line": 1,
+            "offset": 15
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 1,
+            "offset": 17
+        },
+        {
+            "type": "string",
+            "value": "card",
+            "line": 1,
+            "offset": 18
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 1,
+            "offset": 24
+        },
+        {
+            "type": "name",
+            "value": "is_featured",
+            "line": 1,
+            "offset": 26
+        },
+        {
+            "type": "operator",
+            "value": "?",
+            "line": 1,
+            "offset": 38
+        },
+        {
+            "type": "string",
+            "value": "card--featured",
+            "line": 1,
+            "offset": 40
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 1,
+            "offset": 56
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 1,
+            "offset": 58
+        },
+        {
+            "type": "text",
+            "value": "<div",
+            "line": 2,
+            "offset": 61
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 65
+        },
+        {
+            "type": "name",
+            "value": "attributes",
+            "line": 2,
+            "offset": 68
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 2,
+            "offset": 78
+        },
+        {
+            "type": "name",
+            "value": "addClass",
+            "line": 2,
+            "offset": 79
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 2,
+            "offset": 87
+        },
+        {
+            "type": "name",
+            "value": "classes",
+            "line": 2,
+            "offset": 88
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 2,
+            "offset": 95
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 97
+        },
+        {
+            "type": "text",
+            "value": ">\n  <nav",
+            "line": 2,
+            "offset": 99
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 107
+        },
+        {
+            "type": "name",
+            "value": "attributes",
+            "line": 3,
+            "offset": 110
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 3,
+            "offset": 120
+        },
+        {
+            "type": "name",
+            "value": "without",
+            "line": 3,
+            "offset": 121
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 3,
+            "offset": 128
+        },
+        {
+            "type": "string",
+            "value": "role",
+            "line": 3,
+            "offset": 129
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 3,
+            "offset": 135
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 137
+        },
+        {
+            "type": "text",
+            "value": " role=\"navigation\" aria-label=\"",
+            "line": 3,
+            "offset": 139
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 170
+        },
+        {
+            "type": "string",
+            "value": "Main",
+            "line": 3,
+            "offset": 173
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 3,
+            "offset": 179
+        },
+        {
+            "type": "name",
+            "value": "trans",
+            "line": 3,
+            "offset": 180
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 186
+        },
+        {
+            "type": "text",
+            "value": "\"></nav>\n  <legend",
+            "line": 3,
+            "offset": 188
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 206
+        },
+        {
+            "type": "name",
+            "value": "legend",
+            "line": 4,
+            "offset": 209
+        },
+        {
+            "type": "operator",
+            "value": ".",
+            "line": 4,
+            "offset": 215
+        },
+        {
+            "type": "name",
+            "value": "attributes",
+            "line": 4,
+            "offset": 216
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 227
+        },
+        {
+            "type": "text",
+            "value": ">Legend</legend>\n  <div",
+            "line": 4,
+            "offset": 229
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 5,
+            "offset": 252
+        },
+        {
+            "type": "name",
+            "value": "create_attribute",
+            "line": 5,
+            "offset": 255
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 5,
+            "offset": 271
+        },
+        {
+            "type": "punctuation",
+            "value": "{",
+            "line": 5,
+            "offset": 272
+        },
+        {
+            "type": "string",
+            "value": "class",
+            "line": 5,
+            "offset": 273
+        },
+        {
+            "type": "punctuation",
+            "value": ":",
+            "line": 5,
+            "offset": 280
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 5,
+            "offset": 282
+        },
+        {
+            "type": "string",
+            "value": "a",
+            "line": 5,
+            "offset": 283
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 5,
+            "offset": 286
+        },
+        {
+            "type": "string",
+            "value": "b",
+            "line": 5,
+            "offset": 288
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 5,
+            "offset": 291
+        },
+        {
+            "type": "punctuation",
+            "value": "}",
+            "line": 5,
+            "offset": 292
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 5,
+            "offset": 293
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 5,
+            "offset": 295
+        },
+        {
+            "type": "text",
+            "value": "></div>\n  <div",
+            "line": 5,
+            "offset": 297
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 311
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 6,
+            "offset": 314
+        },
+        {
+            "type": "name",
+            "value": "id",
+            "line": 6,
+            "offset": 317
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 320
+        },
+        {
+            "type": "text",
+            "value": " id=\"",
+            "line": 6,
+            "offset": 322
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 327
+        },
+        {
+            "type": "name",
+            "value": "id",
+            "line": 6,
+            "offset": 330
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 333
+        },
+        {
+            "type": "text",
+            "value": "\"",
+            "line": 6,
+            "offset": 335
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 336
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 6,
+            "offset": 339
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 6,
+            "offset": 345
+        },
+        {
+            "type": "text",
+            "value": " class=\"c\">Conditional</div>\n  <input type=\"checkbox\"",
+            "line": 6,
+            "offset": 347
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 400
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 7,
+            "offset": 403
+        },
+        {
+            "type": "name",
+            "value": "checked",
+            "line": 7,
+            "offset": 406
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 414
+        },
+        {
+            "type": "text",
+            "value": " checked",
+            "line": 7,
+            "offset": 416
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 424
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 7,
+            "offset": 427
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 7,
+            "offset": 433
+        },
+        {
+            "type": "text",
+            "value": " name=\"agree\">\n  <h",
+            "line": 7,
+            "offset": 435
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 454
+        },
+        {
+            "type": "name",
+            "value": "level",
+            "line": 8,
+            "offset": 457
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 463
+        },
+        {
+            "type": "text",
+            "value": " class=\"title\">Heading</h",
+            "line": 8,
+            "offset": 465
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 490
+        },
+        {
+            "type": "name",
+            "value": "level",
+            "line": 8,
+            "offset": 493
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 499
+        },
+        {
+            "type": "text",
+            "value": ">\n  <",
+            "line": 8,
+            "offset": 501
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 506
+        },
+        {
+            "type": "name",
+            "value": "html_element",
+            "line": 9,
+            "offset": 509
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 522
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 524
+        },
+        {
+            "type": "name",
+            "value": "element_attributes",
+            "line": 9,
+            "offset": 527
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 546
+        },
+        {
+            "type": "text",
+            "value": ">Element</",
+            "line": 9,
+            "offset": 548
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 558
+        },
+        {
+            "type": "name",
+            "value": "html_element",
+            "line": 9,
+            "offset": 561
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 574
+        },
+        {
+            "type": "text",
+            "value": ">\n  <",
+            "line": 9,
+            "offset": 576
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 581
+        },
+        {
+            "type": "name",
+            "value": "tag",
+            "line": 10,
+            "offset": 584
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 10,
+            "offset": 587
+        },
+        {
+            "type": "name",
+            "value": "default",
+            "line": 10,
+            "offset": 588
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 10,
+            "offset": 595
+        },
+        {
+            "type": "string",
+            "value": "span",
+            "line": 10,
+            "offset": 596
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 10,
+            "offset": 602
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 604
+        },
+        {
+            "type": "text",
+            "value": " class=\"d\">Default</",
+            "line": 10,
+            "offset": 606
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 626
+        },
+        {
+            "type": "name",
+            "value": "tag",
+            "line": 10,
+            "offset": 629
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 10,
+            "offset": 632
+        },
+        {
+            "type": "name",
+            "value": "default",
+            "line": 10,
+            "offset": 633
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 10,
+            "offset": 640
+        },
+        {
+            "type": "string",
+            "value": "span",
+            "line": 10,
+            "offset": 641
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 10,
+            "offset": 647
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 649
+        },
+        {
+            "type": "text",
+            "value": ">\n  <p title=\"",
+            "line": 10,
+            "offset": 651
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 665
+        },
+        {
+            "type": "string",
+            "value": "}}",
+            "line": 11,
+            "offset": 668
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 673
+        },
+        {
+            "type": "text",
+            "value": "\" data-open=\"",
+            "line": 11,
+            "offset": 675
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 688
+        },
+        {
+            "type": "string",
+            "value": "{{",
+            "line": 11,
+            "offset": 691
+        },
+        {
+            "type": "operator",
+            "value": "~",
+            "line": 11,
+            "offset": 696
+        },
+        {
+            "type": "string",
+            "value": "%}",
+            "line": 11,
+            "offset": 698
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 703
+        },
+        {
+            "type": "text",
+            "value": "\">Delimiters in strings</p>\n  <span class=\"e ",
+            "line": 11,
+            "offset": 705
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 750
+        },
+        {
+            "type": "name",
+            "value": "modifier",
+            "line": 12,
+            "offset": 753
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 762
+        },
+        {
+            "type": "text",
+            "value": "\">Interpolated class</span>\n  <img src=\"",
+            "line": 12,
+            "offset": 764
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 13,
+            "offset": 804
+        },
+        {
+            "type": "name",
+            "value": "src",
+            "line": 13,
+            "offset": 807
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 13,
+            "offset": 811
+        },
+        {
+            "type": "text",
+            "value": "\" alt=\"",
+            "line": 13,
+            "offset": 813
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 13,
+            "offset": 820
+        },
+        {
+            "type": "name",
+            "value": "alt",
+            "line": 13,
+            "offset": 823
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 13,
+            "offset": 826
+        },
+        {
+            "type": "name",
+            "value": "default",
+            "line": 13,
+            "offset": 827
+        },
+        {
+            "type": "operator",
+            "value": "(",
+            "line": 13,
+            "offset": 834
+        },
+        {
+            "type": "string",
+            "value": "",
+            "line": 13,
+            "offset": 835
+        },
+        {
+            "type": "punctuation",
+            "value": ")",
+            "line": 13,
+            "offset": 837
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 13,
+            "offset": 839
+        },
+        {
+            "type": "text",
+            "value": "\"/>\n</div>\n",
+            "line": 13,
+            "offset": 841
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 15,
+            "offset": 852
+        },
+        {
+            "type": "name",
+            "value": "set",
+            "line": 15,
+            "offset": 855
+        },
+        {
+            "type": "name",
+            "value": "markup",
+            "line": 15,
+            "offset": 859
+        },
+        {
+            "type": "operator",
+            "value": "=",
+            "line": 15,
+            "offset": 866
+        },
+        {
+            "type": "string",
+            "value": "<div{{ attributes }}>",
+            "line": 15,
+            "offset": 868
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 15,
+            "offset": 892
+        },
+        {
+            "type": "text",
+            "value": "<article{{ attributes }}>{# not a comment</article>",
+            "line": 16,
+            "offset": 909
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 16,
+            "offset": 977
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 17,
+            "offset": 978
+        }
+    ]
+}

@@ -1,0 +1,426 @@
+{
+    "twig": "3.28.0",
+    "tags": [
+        {
+            "name": "apply",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "autoescape",
+            "extension": "EscaperExtension"
+        },
+        {
+            "name": "block",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "deprecated",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "do",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "embed",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "extends",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "flush",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "for",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "from",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "guard",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "if",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "import",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "include",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "macro",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "sandbox",
+            "extension": "SandboxExtension"
+        },
+        {
+            "name": "set",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "types",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "use",
+            "extension": "CoreExtension"
+        },
+        {
+            "name": "with",
+            "extension": "CoreExtension"
+        }
+    ],
+    "lexerTags": [
+        "line",
+        "verbatim"
+    ],
+    "tests": [
+        "constant",
+        "defined",
+        "divisible by",
+        "empty",
+        "even",
+        "iterable",
+        "mapping",
+        "none",
+        "null",
+        "odd",
+        "same as",
+        "sequence",
+        "true"
+    ],
+    "expressions": [
+        {
+            "type": "infix",
+            "parser": "ArrowExpressionParser",
+            "name": "=>",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "AssignmentExpressionParser",
+            "name": "=",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "!=",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "!==",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "%",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "*",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "**",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "+",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "-",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "..",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "/",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "//",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "<",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "<=",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "<=>",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "==",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "===",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": ">",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": ">=",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "?:",
+            "aliases": [
+                "? :"
+            ]
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "??",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "and",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "b-and",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "b-or",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "b-xor",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "ends with",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "has every",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "has some",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "in",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "matches",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "not in",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "or",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "starts with",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "xor",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "BinaryOperatorExpressionParser",
+            "name": "~",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "ConditionalTernaryExpressionParser",
+            "name": "?",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "DotExpressionParser",
+            "name": ".",
+            "aliases": [
+                "?."
+            ]
+        },
+        {
+            "type": "infix",
+            "parser": "FilterExpressionParser",
+            "name": "|",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "FunctionExpressionParser",
+            "name": "(",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "IsExpressionParser",
+            "name": "is",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "IsNotExpressionParser",
+            "name": "is not",
+            "aliases": []
+        },
+        {
+            "type": "infix",
+            "parser": "SquareBracketExpressionParser",
+            "name": "[",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "GroupingExpressionParser",
+            "name": "(",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "LiteralExpressionParser",
+            "name": "literal",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "UnaryOperatorExpressionParser",
+            "name": "+",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "UnaryOperatorExpressionParser",
+            "name": "-",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "UnaryOperatorExpressionParser",
+            "name": "...",
+            "aliases": []
+        },
+        {
+            "type": "prefix",
+            "parser": "UnaryOperatorExpressionParser",
+            "name": "not",
+            "aliases": []
+        }
+    ],
+    "tokenTypes": [
+        "begin of print statement",
+        "begin of statement block",
+        "begin of string interpolation",
+        "end of print statement",
+        "end of statement block",
+        "end of string interpolation",
+        "end of template",
+        "name",
+        "number",
+        "operator",
+        "punctuation",
+        "string",
+        "text"
+    ],
+    "punctuation": [
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+        "?",
+        ":",
+        ".",
+        ",",
+        "|"
+    ]
+}

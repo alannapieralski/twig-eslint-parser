@@ -42,6 +42,7 @@
     "test": "vitest run",
     "test:upstream": "node scripts/vendor-twig-lexer.ts --test",
     "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
+    "syntax:twig": "php tools/twig-oracle/syntax.php test/fixtures/twig/twig-syntax.json",
     "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
     "vendor:write": "node scripts/vendor-twig-lexer.ts --write"
   },
