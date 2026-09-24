@@ -55,9 +55,20 @@ export default [
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
 them. Override any rule in your own config object as usual.
 
-`entryPoint` must be a CSS file that Tailwind can resolve on its own. Imports that only resolve
-through a bundler alias (for example Vite's `@css/...`) are not followed; use relative paths in
-that file, or point `entryPoint` at a small lint-only file that imports the theme relatively.
+### Path aliases
+
+Tailwind resolves `@import` with relative paths and package names only. If your CSS imports
+through bundler aliases such as Vite's `@css/...`, point better-tailwindcss's `tsconfig` setting at
+a tsconfig whose `paths` define the same aliases, and keep `entryPoint` on your real stylesheet:
+
+```js
+settings: {
+  'better-tailwindcss': { entryPoint: 'src/css/style.css', tsconfig: 'tsconfig.json' },
+},
+```
+
+An import Tailwind cannot resolve is loaded as empty without an error, so the classes it defines
+are reported as unknown. That is usually the first sign an alias is missing.
 
 ## What gets linted
 
