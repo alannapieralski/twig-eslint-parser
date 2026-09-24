@@ -52,6 +52,8 @@ describe('configs.recommended on Twig and Drupal templates', () => {
     ['removeClass()', "<div{{ attributes.removeClass('nope') }}>x</div>"],
     ['a chained addClass()', "<div{{ attributes.addClass(classes).addClass(['mt-fl-sm', 'nope']) }}>x</div>"],
     ['removeClass() chained after addClass()', "{% set image = attributes.addClass('mt-fl-sm').removeClass('nope') %}"],
+    ['a short ternary in {% set classes %}', "{% set classes = ['gap-fl-sm', active ? 'nope'] %}"],
+    ['a short ternary in addClass()', "<div{{ attributes.addClass([count == 1 ? 'nope']) }}>x</div>"],
     ['create_attribute() with an array', "{% set image = create_attribute({'class': ['size-full', 'nope']}) %}"],
     ['create_attribute() with a string', "{% set image = create_attribute({'class': 'nope size-full'}) %}"],
     ['{% include with { classes } %} arrays', "{% include 'numiko:card' with { classes: ['w-full', 'nope'] } only %}"],

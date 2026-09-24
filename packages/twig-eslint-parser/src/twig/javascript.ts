@@ -204,8 +204,17 @@ function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex:
   const templateLiteralQuoteIndices = new Set<number>();
   const recentSignificant: TwigToken[] = [];
   const currentFrame = () => frames[frames.length - 1] as Frame;
+  const isUntouchedBlank = (index: number, edge: 'first' | 'last') => {
+    const token = tokens[index];
+    const character = edge === 'first' ? token?.value[0] : token?.value.at(-1);
+    return token?.type === 'WHITESPACE' && pieces[index] === token.value && (character === ' ' || character === '\t');
+  };
   const resolveShortTernaries = (frame: Frame) => {
-    for (const index of frame.openQuestionMarkIndices.splice(0)) pieces[index] = '&';
+    for (const index of frame.openQuestionMarkIndices.splice(0)) {
+      pieces[index] = '&';
+      if (isUntouchedBlank(index + 1, 'first')) pieces[index + 1] = `&${(pieces[index + 1] as string).slice(1)}`;
+      else if (isUntouchedBlank(index - 1, 'last')) pieces[index - 1] = `${(pieces[index - 1] as string).slice(0, -1)}&`;
+    }
   };
 
   for (let index = fromIndex; index < toIndex; index += 1) {

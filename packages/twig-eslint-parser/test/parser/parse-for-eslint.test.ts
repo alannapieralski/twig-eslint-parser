@@ -161,7 +161,7 @@ describe('operators', () => {
     ['{{ a ?: b }}', 'LogicalExpression'],
     ['{{ a ? : b }}', 'LogicalExpression'],
     ['{{ a ? b : c }}', 'ConditionalExpression'],
-    ['{{ a ? b }}', 'BinaryExpression'],
+    ['{{ a ? b }}', 'LogicalExpression'],
     ['{{ a is defined }}', 'BinaryExpression'],
     ['{{ a is not same as(b) }}', 'BinaryExpression'],
     ['{{ a?.b }}', 'ChainExpression'],
@@ -186,7 +186,17 @@ describe('operators', () => {
 
   it('keeps short ternaries inside arrays separate per element', () => {
     const expression = expressionOf("{{ [required ? 'a', 'b'] }}");
-    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'BinaryExpression' }, { type: 'TemplateLiteral' }] });
+    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'LogicalExpression', operator: '&&' }, { type: 'TemplateLiteral' }] });
+  });
+
+  it.each([
+    ["{{ a ? 'b' }}", '&&'],
+    ["{{ a ?'b' }}", '&&'],
+    ["{{ a?'b' }}", '&'],
+    ["{{ a ?\n  'b' }}", '&&'],
+  ])('turns the short ternary in %s into %s, keeping the value on the right', (code, operator) => {
+    expect(expressionOf(code)).toMatchObject({ operator, right: { type: 'TemplateLiteral' } });
+    expect(checkParserOutput(code)).toEqual([]);
   });
 
   it('parses arrow functions, spreads and dynamic macro calls', () => {
