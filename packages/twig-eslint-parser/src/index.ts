@@ -6,6 +6,7 @@ const { name, version } = createRequire(import.meta.url)('../package.json') as {
 export const meta = { name, version };
 
 export { parseForESLint };
+export { findInterpolatedStrings } from './twig/interpolated-strings.js';
 export type { ParserOptions, TwigParseResult, TwigParserServices, UnconvertedTwigBlock } from './parse-for-eslint.js';
 export type { OmittedAttribute } from './attributes.js';
 export { TwigSyntaxError } from './twig/tokens.js';

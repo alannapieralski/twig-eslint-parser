@@ -92,6 +92,9 @@ interpolate with `#{ }`, which becomes an expression. Two cases stay a plain `Li
 such as `'class'` in `{'class': ...}`, which cannot be template literals, and strings containing a
 backtick or `${`, which a template literal would read differently.
 
+`findInterpolatedStrings(code)` returns the range of every Twig string containing `#{ }`, using only
+the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
+
 ## Known limitations
 
 - **JavaScript reserved words** used as bare Twig variables (`{{ class }}`) are renamed to a

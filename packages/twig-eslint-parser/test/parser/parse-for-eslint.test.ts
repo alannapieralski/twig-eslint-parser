@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseForESLint, type ParserOptions } from '../../src/index.js';
+import { findInterpolatedStrings, parseForESLint, type ParserOptions } from '../../src/index.js';
 
 type Node = { type: string; range: [number, number]; loc: { start: { line: number; column: number } }; [key: string]: unknown };
 
@@ -120,6 +120,11 @@ describe('strings and numbers', () => {
   it('keeps strings containing a backtick or ${ as plain literals', () => {
     expect(expressionOf("{{ 'a`b' }}")).toMatchObject({ type: 'Literal', value: 'a`b' });
     expect(expressionOf("{{ 'a${b}' }}")).toMatchObject({ type: 'Literal', value: 'a${b}' });
+  });
+
+  it('finds the range of every interpolated string, including ones nested inside another interpolation', () => {
+    const code = `<p class="a #{b}">{% set c = ['x', "y #{z}", "p #{q ~ "r #{s}"}"] %}{{ 'plain #{no}' }}</p>`;
+    expect(findInterpolatedStrings(code).map((range) => code.slice(...range))).toEqual(['"y #{z}"', '"r #{s}"', '"p #{q ~ "r #{s}"}"']);
   });
 
   it('accepts escaped quotes and escaped line breaks', () => {
