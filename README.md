@@ -5,7 +5,7 @@ ESLint for Twig templates, with Tailwind CSS linting for Drupal themes.
 | Package | What it is |
 |---|---|
 | [`twig-eslint-parser`](packages/twig-eslint-parser) | The parser: HTML markup plus Twig expressions as one ESLint AST with exact source ranges. No rules. |
-| [`eslint-plugin-twig-tailwind`](packages/eslint-plugin-twig-tailwind) | The glue for [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss): Twig and Drupal class selectors, a recommended config and the `no-interpolated-attributes` rule. |
+| [`eslint-plugin-twig-tailwind`](packages/eslint-plugin-twig-tailwind) | The glue for [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss): Twig and Drupal class selectors, a processor for interpolated strings, a recommended config and the `no-interpolated-attributes` and `no-interpolated-classes` rules. |
 
 Both packages share one version and are released together.
 

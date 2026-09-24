@@ -5,7 +5,7 @@ Lint Tailwind CSS classes in Twig and Drupal templates. This plugin is the glue 
 which reads Twig, and
 [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
 which checks the classes. It adds the selectors that find classes inside Twig and Drupal
-expressions, and one rule that keeps Twig out of `class=""`.
+expressions, and two rules that keep Twig out of class values.
 
 ```twig
 {% set classes = ['gap-fl-sm', 'grid-cols-1'] %}
@@ -43,12 +43,14 @@ export default [
 `configs.recommended` applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
+- the `twig-tailwind/twig` processor (see [Interpolated strings](#interpolated-strings));
 - better-tailwindcss's selectors plus `drupalSelectors`;
 - better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
   into more array items by hand;
-- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) as an error.
+- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) and
+  [`twig-tailwind/no-interpolated-classes`](docs/rules/no-interpolated-classes.md) as errors.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
 them. Override any rule in your own config object as usual.
@@ -93,6 +95,20 @@ export default [
 | Rule | Description | Recommended |
 |---|---|---|
 | [`no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) | Disallow Twig inside attribute values such as `class=""` | error |
+| [`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) | Disallow `#{ }` inside class strings | error |
+
+## Interpolated strings
+
+better-tailwindcss finds interpolation by looking for JavaScript's `${` in the source text. Twig
+writes `#{`, so inside a string such as `"flex #{modifier} p-4"` it would report `#{` as an
+unknown class, and its class-order fix would move the interpolation around.
+
+The `twig-tailwind/twig` processor prevents this: it drops every better-tailwindcss message, and
+with it every fix, that starts inside a Twig string containing `#{ }`. Other strings in the file
+are linted and fixed as usual, and messages from other plugins are kept.
+[`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) then reports each such class
+string once, so it is not silently skipped. An ESLint config applies one processor per file, so
+if you set your own processor for `.twig` files, these strings are no longer silenced.
 
 ## Known limitations
 
