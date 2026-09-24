@@ -283,6 +283,88 @@ describe('markup and options', () => {
   });
 });
 
+describe('Drupal attributes printed straight after a tag name', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const attributeSources = (code: string, tag: Node) => (tag['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute));
+
+  it('parses <div{{ attributes }}> as a div with an attribute, closed where the template closes it', () => {
+    const code = '<div{{ attributes }}><p>x</p></div><span>after</span>';
+    const div = namedTag(code, 'div');
+    expect(sourceOf(code, div['openStart'] as Node)).toBe('<div');
+    expect(attributeSources(code, div)).toEqual(['{{ attributes }}']);
+    expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+    expect((div['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name'])).toEqual(['p']);
+  });
+
+  it.each(['legend.attributes', "attributes|without('role')", 'attributes.addClass(classes)', "create_attribute({'class': 'a'})"])(
+    'recognises {{ %s }} as an attribute',
+    (expression) => {
+      const code = `<div{{ ${expression} }} id="a">x</div>`;
+      expect(attributeSources(code, namedTag(code, 'div'))).toEqual([`{{ ${expression} }}`, 'id="a"']);
+    },
+  );
+
+  it('keeps every later range and line/column exact after several of them', () => {
+    const code = '<ul{{ attributes }}>\n  <li{{ item.attributes }} class="a">x</li>\n</ul>';
+    const li = namedTag(code, 'li');
+    const [, classAttribute] = li['attributes'] as Node[];
+    expect(attributeSources(code, li)).toEqual(['{{ item.attributes }}', 'class="a"']);
+    expect(classAttribute?.loc.start).toEqual({ line: 2, column: code.split('\n')[1]?.indexOf('class') });
+    expect(sourceOf(code, li['close'] as Node)).toBe('</li>');
+  });
+
+  it('keeps the Twig branch ranges pointing at the original template', () => {
+    const code = '{% if a %}<div{{ attributes }}>x</div>{% else %}<p>y</p>{% endif %}';
+    const ast = parse(code).result.ast as unknown as { branchSegments: { start: number; end: number }[]; branchControlRanges: [number, number][] };
+    expect(ast.branchSegments.map(({ start, end }) => code.slice(start, end))).toEqual(['<div{{ attributes }}>x</div>', '<p>y</p>']);
+    expect(ast.branchControlRanges.map((range) => code.slice(...range))).toEqual(['{% if a %}', '{% else %}', '{% endif %}']);
+  });
+
+  it('leaves Twig that is part of a tag name alone', () => {
+    const code = '<h{{ level }} id="a">x</h{{ level }}>';
+    const [heading] = tagsOf(code);
+    expect(sourceOf(code, heading?.['openStart'] as Node)).toBe('<h{{ level }}');
+    expect(attributeSources(code, heading as Node)).toEqual(['id="a"']);
+  });
+});
+
+describe('Twig tags inside markup', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
+
+  it('parses a conditional attribute written straight after the tag name, closed where the template closes it', () => {
+    const code = '<div{% if a %} class="x"{% endif %}><p>y</p></div><span>z</span>';
+    const div = namedTag(code, 'div');
+    expect(sourceOf(code, div['openStart'] as Node)).toBe('<div');
+    expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+    expect(childTagNames(div)).toEqual(['p']);
+  });
+
+  it('leaves a Twig tag that builds the tag name alone', () => {
+    const code = '<h{% if big %}1{% else %}2{% endif %} id="a">x</h1>';
+    expect(sourceOf(code, tagsOf(code)[0]?.['openStart'] as Node).startsWith('<h{%')).toBe(true);
+  });
+
+  it('closes an element whose name is built with {{ }} where the template closes it', () => {
+    const code = '<h{{ level ?? 3 }} class="a">x</h{{ level ?? 3 }}><span>after</span>';
+    const [heading] = tagsOf(code);
+    expect(sourceOf(code, heading?.['close'] as Node)).toBe('</h{{ level ?? 3 }}>');
+    expect(childTagNames(heading as Node)).toEqual([]);
+  });
+
+  it('parses an element whose whole name is Twig, followed by Drupal attributes', () => {
+    const code = '<{{ list_type }}{{ attributes }}><li>x</li></{{ list_type }}><span>after</span>';
+    const [list] = tagsOf(code);
+    expect(list?.['name']).toBe('{{ list_type }}');
+    expect((list?.['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(['{{ attributes }}']);
+    expect(sourceOf(code, list?.['close'] as Node)).toBe('</{{ list_type }}>');
+    expect(childTagNames(list as Node)).toEqual(['li']);
+  });
+
+});
+
 describe('tags without optional whitespace', () => {
   it('still parses {%include%} written without a space after the tag name', () => {
     expect(expressionOf("{%include'card'with{classes:['a']}%}")).toMatchObject({

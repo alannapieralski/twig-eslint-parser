@@ -36,14 +36,14 @@ What counts as one attribute:
 
 - Every HTML attribute, including ones whose value contains Twig (`id="item-{{ id }}"`).
 - Drupal attributes printed straight after the tag name, such as `<div{{ attributes }}>`,
-  `<legend{{ legend.attributes }}>` or `<div{{ create_attribute(...) }}>`. They move to their own
-  line like any other attribute, which renders the same HTML.
+  `<legend{{ legend.attributes }}>` or `<div{{ create_attribute(...) }}>`, and conditional
+  attributes such as `<div{% if id %} id="{{ id }}"{% endif %}>`. They move to their own line like
+  any other attribute, which renders the same HTML.
 - A Twig block that spans several attributes, such as `{% if checked %}checked disabled{% endif %}`.
   It stays together on one line.
 
-Other Twig straight after the tag name, such as `<h{{ level }}>`, is part of the tag name and is
-neither counted nor moved. Tags whose whole name is Twig, such as `<{{ html_element }}>`, are not
-parsed as tags, so they are not checked.
+Twig that builds the tag name, such as `<h{{ level }}>` or `<{{ html_element }}>`, stays on the
+tag's line and is not counted as an attribute.
 
 `<script>` and `<style>` tags are checked too. Attribute values that already span several lines
 are kept as they are.

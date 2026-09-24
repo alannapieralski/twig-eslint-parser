@@ -84,6 +84,23 @@ silently.
 
 Invalid Twig, such as an unclosed `{{`, is reported by ESLint as a parsing error with its position.
 
+## Markup
+
+`@html-eslint/parser` reads the markup with its Twig preset, but on its own it cannot tell where a
+tag name ends and Twig begins. The parser adjusts the text it hands over so the tree matches the
+template:
+
+- Drupal attributes printed straight after a tag name (`<div{{ attributes }}>`,
+  `<legend{{ legend.attributes }}>`, `<div{{ create_attribute(...) }}>`) and Twig tags written there
+  (`<div{% if id %} id="{{ id }}"{% endif %}>`) are read as attributes, so the element closes where
+  the template closes it.
+- Twig that builds a tag name (`<h{{ level }}>`, `<{{ html_element }}>`) is read as part of the
+  name, so the opening and closing tags pair up. The tag's `name` is the Twig as written.
+- Twig comments are blanked, since they output nothing.
+
+Every node's range and location still point at the original template, and every node's text is the
+original text, except that Twig comments read as blank space.
+
 ## Strings
 
 Every Twig string becomes a `TemplateLiteral` whose range covers the Twig quotes, because Twig
@@ -101,6 +118,10 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   same-length identifier (`_lass`) so the expression parses; rules see the new name.
 - **Concatenated strings** (`'c-grid--' ~ count ~ '-items'`) stay separate strings joined by `+`,
   so rules see each fixed fragment on its own.
+- **Elements opened or closed in different Twig branches**, such as
+  `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
+  as one document, so the element and its parents appear unclosed. `@html-eslint/parser` records the
+  branches in `Program.branchSegments`.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig

@@ -50,9 +50,10 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed('<h{{ level }} class="a" id="b" role="c">x</h{{ level }}>')).toBe('<h{{ level }}\n  class="a"\n  id="b"\n  role="c"\n>x</h{{ level }}>');
   });
 
-  it('leaves tags whose whole name is Twig alone, since they are not parsed as tags', async () => {
-    const code = '<{{ html_element }} class="a" id="b" role="c">x</{{ html_element }}>';
-    expect(await lint(code)).toEqual({ output: code, messages: [] });
+  it('lays out tags whose whole name is Twig, keeping the name on the tag line', async () => {
+    expect(await fixed('<{{ html_element }} class="a" id="b" role="c">x</{{ html_element }}>')).toBe(
+      '<{{ html_element }}\n  class="a"\n  id="b"\n  role="c"\n>x</{{ html_element }}>',
+    );
   });
 
   it('puts /> of a self-closing tag on its own line', async () => {
