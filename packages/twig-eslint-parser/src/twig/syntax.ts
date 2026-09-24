@@ -17,6 +17,7 @@ export const javascriptByTwigOperator: Readonly<Record<string, string>> = {
   '..': '+',
   '//': '/',
   '?:': '||',
+  '? :': '||',
   '<=>': '==',
 };
 

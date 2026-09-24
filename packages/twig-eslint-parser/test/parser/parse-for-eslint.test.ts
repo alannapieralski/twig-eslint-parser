@@ -159,7 +159,7 @@ describe('operators', () => {
     ['{{ a === b }}', 'BinaryExpression'],
     ['{{ a ?? b }}', 'LogicalExpression'],
     ['{{ a ?: b }}', 'LogicalExpression'],
-    ['{{ a ? : b }}', 'BinaryExpression'],
+    ['{{ a ? : b }}', 'LogicalExpression'],
     ['{{ a ? b : c }}', 'ConditionalExpression'],
     ['{{ a ? b }}', 'BinaryExpression'],
     ['{{ a is defined }}', 'BinaryExpression'],

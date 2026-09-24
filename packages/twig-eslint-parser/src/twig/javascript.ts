@@ -191,9 +191,8 @@ function canBecomeTemplateLiteral(tokens: readonly TwigToken[], openingIndex: nu
   return true;
 }
 
-function classifyColon(frame: Frame, previous: TwigToken | undefined, beforePrevious: TwigToken | undefined): 'hash-key' | 'spaced-elvis' | 'named-argument' | 'ternary' {
+function classifyColon(frame: Frame, previous: TwigToken | undefined, beforePrevious: TwigToken | undefined): 'hash-key' | 'named-argument' | 'ternary' {
   if (frame.opener === '{' && frame.hashExpects === 'key') return 'hash-key';
-  if (isPunctuation(previous, '?') && frame.openQuestionMarkIndices.length > 0) return 'spaced-elvis';
 
   const followsArgumentName = previous?.type === 'NAME' && (isPunctuation(beforePrevious, '(') || isPunctuation(beforePrevious, ','));
   if (frame.opener === '(' && !frame.closesComputedKey && followsArgumentName && frame.openQuestionMarkIndices.length === 0) return 'named-argument';
@@ -262,10 +261,6 @@ function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex:
         if (token.value === ':') {
           const colonKind = classifyColon(frame, previous, beforePrevious);
           if (colonKind === 'hash-key') frame.hashExpects = 'value';
-          if (colonKind === 'spaced-elvis') {
-            pieces[frame.openQuestionMarkIndices.pop() as number] = '|';
-            pieces[index] = ' ';
-          }
           if (colonKind === 'named-argument') pieces[index] = '=';
           if (colonKind === 'ternary') frame.openQuestionMarkIndices.pop();
         }
