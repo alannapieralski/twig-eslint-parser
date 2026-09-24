@@ -84,12 +84,20 @@ silently.
 
 Invalid Twig, such as an unclosed `{{`, is reported by ESLint as a parsing error with its position.
 
+## Strings
+
+Every Twig string becomes a `TemplateLiteral` whose range covers the Twig quotes, because Twig
+strings behave like JavaScript template literals: they may span lines, and double-quoted ones
+interpolate with `#{ }`, which becomes an expression. Two cases stay a plain `Literal`: hash keys
+such as `'class'` in `{'class': ...}`, which cannot be template literals, and strings containing a
+backtick or `${`, which a template literal would read differently.
+
 ## Known limitations
 
 - **JavaScript reserved words** used as bare Twig variables (`{{ class }}`) are renamed to a
   same-length identifier (`_lass`) so the expression parses; rules see the new name.
-- **Concatenated strings** (`'c-grid--' ~ count ~ '-items'`) stay separate string literals joined
-  by `+`, so rules see each fixed fragment on its own.
+- **Concatenated strings** (`'c-grid--' ~ count ~ '-items'`) stay separate strings joined by `+`,
+  so rules see each fixed fragment on its own.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig

@@ -189,16 +189,14 @@ function describeLayout(block: TwigBlock): ExpressionLayout | undefined {
   return describeTagLayout(block);
 }
 
-function findMatchingClosingQuote(tokens: readonly TwigToken[], openingIndex: number): { closingIndex: number; isInterpolated: boolean } {
+function findMatchingClosingQuote(tokens: readonly TwigToken[], openingIndex: number): number {
   let depth = 0;
-  let isInterpolated = false;
   for (let index = openingIndex; index < tokens.length; index += 1) {
     const token = tokens[index];
     if (token?.type === 'OPENING_QUOTE') depth += 1;
-    if (token?.type === 'INTERPOLATION_START' && depth === 1) isInterpolated = true;
     if (token?.type === 'CLOSING_QUOTE') {
       depth -= 1;
-      if (depth === 0) return { closingIndex: index, isInterpolated };
+      if (depth === 0) return index;
     }
   }
   throw new Error(`Twig string opened at offset ${tokens[openingIndex]?.start} has no closing quote.`);
@@ -312,9 +310,10 @@ function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex:
         break;
       }
       case 'OPENING_QUOTE': {
-        if (token.value !== '"') break;
-        const { closingIndex, isInterpolated } = findMatchingClosingQuote(tokens, index);
-        if (isInterpolated && canBecomeTemplateLiteral(tokens, index, closingIndex)) {
+        const isHashKey = frame.opener === '{' && frame.hashExpects === 'key';
+        if (isHashKey) break;
+        const closingIndex = findMatchingClosingQuote(tokens, index);
+        if (canBecomeTemplateLiteral(tokens, index, closingIndex)) {
           pieces[index] = '`';
           templateLiteralQuoteIndices.add(closingIndex);
         }

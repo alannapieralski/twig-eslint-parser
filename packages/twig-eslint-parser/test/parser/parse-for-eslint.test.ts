@@ -56,6 +56,13 @@ describe('fixtures', () => {
 
     const literals = collectNodes(statements, (node) => node.type === 'Literal');
     for (const literal of literals) expect(sourceOf(code, literal)).toBe(literal['raw']);
+
+    const strings = collectNodes(statements, (node) => node.type === 'TemplateLiteral');
+    for (const string of strings) {
+      const source = sourceOf(code, string);
+      expect(source.at(0)).toMatch(/['"]/);
+      expect(source.at(-1)).toBe(source.at(0));
+    }
   });
 });
 
@@ -85,8 +92,34 @@ describe('strings and numbers', () => {
     expect(sourceOf(code, expression)).toBe('"a-#{b}-c"');
   });
 
-  it('keeps plain double-quoted strings, including ones with a lone #', () => {
-    expect(expressionOf('{{ "hash # here" }}')).toMatchObject({ type: 'Literal', value: 'hash # here' });
+  it.each([
+    ["{{ 'flex p-4' }}", 'flex p-4'],
+    ['{{ "hash # here" }}', 'hash # here'],
+    ["{{ 'it\\'s' }}", "it's"],
+  ])('turns the plain string in %s into a template literal without expressions, keeping its Twig quotes in range', (code, cooked) => {
+    const expression = expressionOf(code);
+    expect(expression).toMatchObject({ type: 'TemplateLiteral', expressions: [], quasis: [{ value: { cooked } }] });
+    expect(sourceOf(code, expression)).toBe(code.slice(3, -3));
+  });
+
+  it('parses strings that span several lines, which Twig allows', () => {
+    const code = "{% set classes = ['\n  flex p-4\n  md:grid\n', \"\n  a #{b}\n\"] %}";
+    const elements = (onlyStatement(code)['declarations'] as Node[])[0]?.['init'] as Node;
+    expect(elements).toMatchObject({
+      type: 'ArrayExpression',
+      elements: [{ type: 'TemplateLiteral', expressions: [] }, { type: 'TemplateLiteral', expressions: [{ name: 'b' }] }],
+    });
+  });
+
+  it('keeps hash keys plain string literals, since a template literal cannot be a key', () => {
+    expect(expressionOf("{{ create_attribute({'class': 'flex'}) }}")).toMatchObject({
+      arguments: [{ type: 'ObjectExpression', properties: [{ key: { type: 'Literal', value: 'class' }, value: { type: 'TemplateLiteral' } }] }],
+    });
+  });
+
+  it('keeps strings containing a backtick or ${ as plain literals', () => {
+    expect(expressionOf("{{ 'a`b' }}")).toMatchObject({ type: 'Literal', value: 'a`b' });
+    expect(expressionOf("{{ 'a${b}' }}")).toMatchObject({ type: 'Literal', value: 'a${b}' });
   });
 
   it('accepts escaped quotes and escaped line breaks', () => {
@@ -140,7 +173,7 @@ describe('operators', () => {
 
   it('keeps short ternaries inside arrays separate per element', () => {
     const expression = expressionOf("{{ [required ? 'a', 'b'] }}");
-    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'BinaryExpression' }, { type: 'Literal' }] });
+    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'BinaryExpression' }, { type: 'TemplateLiteral' }] });
   });
 
   it('parses arrow functions, spreads and dynamic macro calls', () => {
@@ -166,8 +199,8 @@ describe('tags', () => {
 
   it('keeps multi-line {% set %} positions on their real lines', () => {
     const code = "{%\n  set classes = [\n    'first',\n    'second',\n  ]\n%}";
-    const literals = collectNodes(onlyStatement(code), (node) => node.type === 'Literal');
-    expect(literals.map((literal) => [sourceOf(code, literal), literal.loc.start.line])).toEqual([["'first'", 3], ["'second'", 4]]);
+    const strings = collectNodes(onlyStatement(code), (node) => node.type === 'TemplateLiteral');
+    expect(strings.map((string) => [sourceOf(code, string), string.loc.start.line])).toEqual([["'first'", 3], ["'second'", 4]]);
   });
 
   it('keeps multiple-target {% set %} a declaration', () => {
@@ -187,7 +220,7 @@ describe('tags', () => {
     expect(expressionOf("{% include 'card' with { classes: ['a'] } only %}")).toMatchObject({
       type: 'CallExpression',
       callee: { name: 'include' },
-      arguments: [{ type: 'Literal', value: 'card' }, { type: 'ObjectExpression' }],
+      arguments: [{ type: 'TemplateLiteral', quasis: [{ value: { cooked: 'card' } }] }, { type: 'ObjectExpression' }],
     });
     expect(expressionOf("{% embed 'card' ignore missing with { a: 1 } %}")).toMatchObject({ type: 'CallExpression', callee: { name: 'embed' } });
   });
@@ -249,7 +282,7 @@ describe('tags without optional whitespace', () => {
   it('still parses {%include%} written without a space after the tag name', () => {
     expect(expressionOf("{%include'card'with{classes:['a']}%}")).toMatchObject({
       type: 'SequenceExpression',
-      expressions: [{ type: 'Literal', value: 'card' }, { type: 'ObjectExpression' }],
+      expressions: [{ type: 'TemplateLiteral', quasis: [{ value: { cooked: 'card' } }] }, { type: 'ObjectExpression' }],
     });
   });
 });
