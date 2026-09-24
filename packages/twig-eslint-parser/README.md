@@ -96,6 +96,8 @@ template:
   the template closes it.
 - Twig that builds a tag name (`<h{{ level }}>`, `<{{ html_element }}>`) is read as part of the
   name, so the opening and closing tags pair up. The tag's `name` is the Twig as written.
+- Twig delimiters inside Twig strings and inside `{% verbatim %}` are hidden from the HTML parser,
+  which would otherwise take `'{{'` for the start of a Twig block.
 - Twig comments are blanked, since they output nothing.
 
 Every node's range and location still point at the original template, and every node's text is the

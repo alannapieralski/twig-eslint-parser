@@ -21,6 +21,7 @@ const drupalAttributesPrint = /^\{\{[-~]?\s*(?:[\w.]*attributes\b|create_attribu
 const openTagNameAtEnd = /<[A-Za-z][\w:-]*$/;
 const tagNameStartAtEnd = /<\/?(?:[A-Za-z][\w:-]*)?$/;
 const attributeFollows = /^[\s>/{]/;
+const twigDelimiters = /\{\{|\}\}|\{%|%\}|\{#|#\}/g;
 
 function isRange(value: unknown): value is [number, number] {
   return Array.isArray(value) && value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number';
@@ -28,6 +29,19 @@ function isRange(value: unknown): value is [number, number] {
 
 function overlaps([start, end]: Range, ranges: readonly Range[]): boolean {
   return ranges.some(([rangeStart, rangeEnd]) => start < rangeEnd && rangeStart < end);
+}
+
+function findVerbatimBodies(blocks: readonly TwigBlock[]): Range[] {
+  const bodies: Range[] = [];
+  let bodyStart: number | undefined;
+  for (const block of blocks) {
+    if (block.tagName === 'verbatim') bodyStart = block.end;
+    if (block.tagName === 'endverbatim' && bodyStart !== undefined) {
+      bodies.push([bodyStart, block.start]);
+      bodyStart = undefined;
+    }
+  }
+  return bodies;
 }
 
 function letterFor(character: string): string {
@@ -41,6 +55,13 @@ function prepareMarkup(source: string, blocks: readonly TwigBlock[]): MarkupText
   const insertedOffsets: number[] = [];
   const rewrite = ([start, end]: Range, replacement: string) => {
     characters.splice(start, end - start, ...replacement.split(''));
+  };
+  const blankDelimiters = (range: Range) => {
+    const text = source.slice(...range);
+    const blanked = text.replace(twigDelimiters, '  ');
+    if (blanked === text) return;
+    rewrite(range, blanked);
+    rewrittenRanges.push(range);
   };
 
   let markupStart = 0;
@@ -56,6 +77,10 @@ function prepareMarkup(source: string, blocks: readonly TwigBlock[]): MarkupText
       rewrite(blockRange, blankPreservingLineBreaks(blockText));
       continue;
     }
+    for (const token of block.tokens) {
+      if (token.type === 'STRING') blankDelimiters([token.start, token.end]);
+    }
+
     const isDrupalAttributes = block.kind === 'print' && drupalAttributesPrint.test(blockText);
     const isAttributeTag = block.kind === 'tag' && attributeFollows.test(source.slice(block.end, block.end + 1));
     if (followsTagName && (isDrupalAttributes || isAttributeTag)) {
@@ -67,6 +92,7 @@ function prepareMarkup(source: string, blocks: readonly TwigBlock[]): MarkupText
       tagNameEnd = block.end;
     }
   }
+  for (const body of findVerbatimBodies(blocks)) blankDelimiters(body);
 
   let text = characters.join('');
   insertedOffsets.forEach((offset, index) => {

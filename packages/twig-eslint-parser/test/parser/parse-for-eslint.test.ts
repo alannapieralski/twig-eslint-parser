@@ -329,7 +329,33 @@ describe('Drupal attributes printed straight after a tag name', () => {
   });
 });
 
-describe('Twig tags inside markup', () => {
+describe('Twig delimiters inside Twig strings', () => {
+  it.each([
+    ["{% set markup = '<div{{ attributes }}>' %}", '<div{{ attributes }}>'],
+    ["{{ '}}' }}", '}}'],
+    ["{% set end = '%}' %}", '%}'],
+    ["{% set text = '{# not a comment #}' %}", '{# not a comment #}'],
+    ['{{ "a #{ \'{{\' } b" }}', '{{'],
+  ])('parses %s, keeping the string value and the markup after it', (twig, stringValue) => {
+    const { result, services } = parse(`${twig}<p>x</p>`);
+    expect(services.unconvertedBlocks).toEqual([]);
+    const strings = collectNodes(result.ast.twigBody, (node) => node.type === 'TemplateLiteral' || node.type === 'Literal');
+    const values = strings.flatMap((node) => (node.type === 'Literal' ? [node['value']] : (node['quasis'] as Node[]).map((quasi) => (quasi['value'] as { cooked: string }).cooked)));
+    expect(values).toContain(stringValue);
+    const tags = collectNodes(result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => tag['name'])).toEqual(['p']);
+  });
+
+  it('keeps an attribute whose Twig contains a delimiter in a string as one attribute of a closed element', () => {
+    const code = "<p title=\"{{ '}}' }}\" id=\"a\">x</p><span>after</span>";
+    const tags = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+    const paragraph = tags.find((tag) => tag['name'] === 'p') as Node;
+    expect((paragraph['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(["title=\"{{ '}}' }}\"", 'id="a"']);
+    expect(sourceOf(code, paragraph['close'] as Node)).toBe('</p>');
+  });
+});
+
+describe('Twig tags and verbatim content inside markup', () => {
   const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
   const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
@@ -363,6 +389,20 @@ describe('Twig tags inside markup', () => {
     expect(childTagNames(list as Node)).toEqual(['li']);
   });
 
+  it('parses verbatim content that holds Twig delimiters as text', () => {
+    const code = '{% verbatim %}{# {% endverbatim %}{{ x }}{% verbatim %} #}{% endverbatim %}<p>y</p>';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['p']);
+  });
+
+  it.each([
+    ["<div {{ '{{ attributes }}' }}>x</div>", "{{ '{{ attributes }}' }}"],
+    ["<p title=\"{{ '}}' }}\">x</p>", "\"{{ '}}' }}\""],
+  ])('keeps the original text in the HTML nodes of %s', (code, attributeText) => {
+    const [attribute] = tagsOf(code)[0]?.['attributes'] as Node[];
+    const texts = collectNodes(attribute, () => true).filter((node) => typeof node['value'] === 'string').map((node) => [node['value'], sourceOf(code, node)]);
+    for (const [value, source] of texts) expect(value).toBe(source);
+    expect(sourceOf(code, attribute as Node).endsWith(attributeText)).toBe(true);
+  });
 });
 
 describe('tags without optional whitespace', () => {
