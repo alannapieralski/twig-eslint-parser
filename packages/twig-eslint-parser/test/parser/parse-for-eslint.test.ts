@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findInterpolatedStrings, parseForESLint, type ParserOptions } from '../../src/index.js';
+import { checkParserOutput } from '../support/output-checks.js';
 
 type Node = { type: string; range: [number, number]; loc: { start: { line: number; column: number } }; [key: string]: unknown };
 
@@ -63,6 +64,13 @@ describe('fixtures', () => {
       expect(source.at(0)).toMatch(/['"]/);
       expect(source.at(-1)).toBe(source.at(0));
     }
+  });
+
+  it.each(fixtureNames)('%s produces output that matches the source node by node', (fixtureName) => {
+    const code = readFileSync(new URL(fixtureName, fixturesDirectory), 'utf8');
+    const rejectedByTwig = blocksTwigItselfRejectsByFixture[fixtureName] ?? [];
+    const issues = checkParserOutput(code).filter((issue) => !rejectedByTwig.some((source) => issue.detail.startsWith(source)));
+    expect(issues).toEqual([]);
   });
 });
 

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseForESLint } from '../src/index.js';
 import { findParityMismatches, type Golden } from './lexer/parity.js';
+import { checkParserOutput } from './support/output-checks.js';
 
 type OracleResult = Partial<Golden> & { path: string; twig: string; error?: string; line?: number };
 
@@ -60,6 +61,17 @@ describe.skipIf(corpusDirectories.length === 0)('local template corpus (TWIG_COR
         return [`${path}: threw ${error instanceof Error ? error.message : String(error)}`];
       }
     });
+    expect(reports.join('\n')).toBe('');
+  }, 600_000);
+
+  it('produces output that matches the source node by node in every template', () => {
+    const unpairableElements: string[] = [];
+    const reports = collectTemplatePaths(corpusDirectories).flatMap((path) => {
+      const issues = checkParserOutput(readFileSync(path, 'utf8'));
+      unpairableElements.push(...issues.filter((issue) => issue.check === 'html: element closes').map((issue) => `${path}: ${issue.detail}`));
+      return issues.filter((issue) => issue.check !== 'html: element closes').map((issue) => `${path}: ${issue.check}: ${issue.detail}`);
+    });
+    console.info(`${unpairableElements.length} elements are opened or closed across Twig branches, or never closed in their template:`, ...unpairableElements.slice(0, 20).map((line) => `\n  ${line}`));
     expect(reports.join('\n')).toBe('');
   }, 600_000);
 });
