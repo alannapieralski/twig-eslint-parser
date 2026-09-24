@@ -1,5 +1,15 @@
 import { blankPreservingLineBreaks } from '../source-text.js';
 import type { TwigBlock } from './blocks.js';
+import {
+  expressionTags,
+  includeKeywordsToBlank,
+  includeTags,
+  javascriptByTwigOperator,
+  javascriptByTwigTestOperator,
+  reservedJavaScriptWords,
+  tagsLeftUnconverted,
+  twoWordTests,
+} from './syntax.js';
 import type { TwigToken } from './tokens.js';
 
 type ExpressionLayout = {
@@ -16,38 +26,6 @@ type Frame = {
   readonly openQuestionMarkIndices: number[];
 };
 
-const javascriptByTwigOperator: Record<string, string> = {
-  'and': '&&',
-  'or': '||',
-  'xor': '^',
-  'not': '!',
-  'b-and': '&',
-  'b-or': '|',
-  'b-xor': '^',
-  'in': '==',
-  'not in': '!=',
-  'matches': '==',
-  'starts with': '==',
-  'ends with': '==',
-  'has some': ',',
-  'has every': ',',
-  '~': '+',
-  '..': '+',
-  '//': '/',
-  '?:': '||',
-  '<=>': '==',
-};
-
-const javascriptByTwigTestOperator: Record<string, string> = { 'is': '==', 'is not': '!=' };
-const twoWordTests: Record<string, string> = { same: 'as', divisible: 'by' };
-const expressionTags = new Set(['if', 'elseif', 'do', 'macro', 'with']);
-const includeTags = new Set(['include', 'embed']);
-const includeKeywordsToBlank = new Set(['only', 'ignore', 'missing']);
-const reservedJavaScriptWords = new Set([
-  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'enum',
-  'export', 'extends', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'return', 'super',
-  'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with',
-]);
 const nonSignificantTypes = new Set(['WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER', 'INLINE_COMMENT']);
 
 function padTo(replacement: string, length: number): string {
@@ -124,7 +102,7 @@ function describeSetLayout(block: TwigBlock, afterTagName: number, topLevelIndic
 
 function describeTagLayout(block: TwigBlock): ExpressionLayout | undefined {
   const tagName = block.tagName;
-  if (!tagName) return undefined;
+  if (!tagName || tagsLeftUnconverted.has(tagName)) return undefined;
 
   const afterTagName = indexAfterTagName(block);
   const topLevelIndices = findTopLevelIndices(block.tokens);
