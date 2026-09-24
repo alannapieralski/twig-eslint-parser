@@ -50,6 +50,8 @@ describe('configs.recommended on Twig and Drupal templates', () => {
     ['{% set grid_classes %} arrays', "{% set grid_classes = ['gap-fl-sm', 'nope'] %}"],
     ['addClass() inside <tag{{ attributes }}>', "<div{{ attributes.addClass(['mt-fl-sm', 'nope']) }}>x</div>"],
     ['removeClass()', "<div{{ attributes.removeClass('nope') }}>x</div>"],
+    ['a chained addClass()', "<div{{ attributes.addClass(classes).addClass(['mt-fl-sm', 'nope']) }}>x</div>"],
+    ['removeClass() chained after addClass()', "{% set image = attributes.addClass('mt-fl-sm').removeClass('nope') %}"],
     ['create_attribute() with an array', "{% set image = create_attribute({'class': ['size-full', 'nope']}) %}"],
     ['create_attribute() with a string', "{% set image = create_attribute({'class': 'nope size-full'}) %}"],
     ['{% include with { classes } %} arrays', "{% include 'numiko:card' with { classes: ['w-full', 'nope'] } only %}"],

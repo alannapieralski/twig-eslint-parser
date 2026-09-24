@@ -12,6 +12,6 @@ export const twigSelectors: readonly ClassSelector[] = [
 
 export const drupalSelectors: readonly ClassSelector[] = [
   ...twigSelectors,
-  { kind: 'callee', path: '^.*\\.(?:addClass|removeClass)$', match: [{ type: 'strings' }] },
+  { kind: 'callee', name: '^(?:addClass|removeClass)$', match: [{ type: 'strings' }] },
   { kind: 'callee', name: '^create_attribute$', match: [{ type: 'objectValues', path: '^class(?:\\[\\d+\\])?$' }] },
 ];

@@ -77,7 +77,7 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | `class="..."` without Twig inside | better-tailwindcss defaults |
 | `{% set classes = [...] %}`, `{% set grid_classes = '...' %}` | `twigSelectors`: variables named `classes` or ending in `_classes` |
 | `{% include 'x' with { classes: [...] } %}`, `{% embed %}`, `include('x', { classes })` | `twigSelectors`: the `classes` value of the hash |
-| `attributes.addClass(...)`, `.removeClass(...)` | `drupalSelectors` |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors`: matched by method name, since Drupal's Attribute is the only Twig object with these methods |
 | `create_attribute({ 'class': [...] })` | `drupalSelectors` |
 
 `drupalSelectors` includes `twigSelectors`. Both are exported as plain better-tailwindcss selector
