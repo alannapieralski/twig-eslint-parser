@@ -9,6 +9,7 @@ export { parseForESLint };
 export { findInterpolatedStrings } from './twig/interpolated-strings.js';
 export type { ParserOptions, TwigParseResult, TwigParserServices, UnconvertedTwigBlock } from './parse-for-eslint.js';
 export type { OmittedAttribute } from './attributes.js';
+export { HtmlSyntaxError } from './markup.js';
 export { TwigSyntaxError } from './twig/tokens.js';
 
 export default { meta, parseForESLint };

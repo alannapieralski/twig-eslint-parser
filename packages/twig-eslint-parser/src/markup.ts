@@ -120,9 +120,25 @@ function visitNodes(root: unknown, visit: (node: Record<string, unknown>) => voi
   walk(root);
 }
 
-function mapPositionsToSource(result: HtmlParseResult, insertedOffsets: readonly number[], locate: (offset: number) => SourcePosition): void {
+export class HtmlSyntaxError extends Error {
+  readonly lineNumber: number;
+  readonly column: number;
+
+  constructor(message: string, lineNumber: number, column: number) {
+    super(message);
+    this.name = 'HtmlSyntaxError';
+    this.lineNumber = lineNumber;
+    this.column = column;
+  }
+}
+
+function createSourceOffsetMapper(insertedOffsets: readonly number[]): (offset: number) => number {
   const spacePositions = insertedOffsets.map((offset, index) => offset + index);
-  const toSource = (offset: number) => offset - spacePositions.filter((position) => position < offset).length;
+  return (offset) => offset - spacePositions.filter((position) => position < offset).length;
+}
+
+function mapPositionsToSource(result: HtmlParseResult, insertedOffsets: readonly number[], locate: (offset: number) => SourcePosition): void {
+  const toSource = createSourceOffsetMapper(insertedOffsets);
 
   visitNodes(result.ast, (node) => {
     if (!isRange(node['range'])) return;
@@ -155,12 +171,23 @@ function restoreSourceText(result: HtmlParseResult, source: string, markup: Mark
   });
 }
 
+function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: number } {
+  return error instanceof SyntaxError && typeof (error as { pos?: unknown }).pos === 'number';
+}
+
+function parseHtml(source: string, markup: MarkupText, options: MarkupParserOptions): HtmlParseResult {
+  try {
+    return parseHtmlForESLint(markup.text, { templateEngineSyntax: TEMPLATE_ENGINE_SYNTAX.TWIG, ...options });
+  } catch (error) {
+    if (!isPositionedSyntaxError(error)) throw error;
+    const position = createOffsetLocator(source)(createSourceOffsetMapper(markup.insertedOffsets)(error.pos));
+    throw new HtmlSyntaxError(error.message.replace(/ \(\d+:\d+\)$/, ''), position.line, position.column + 1);
+  }
+}
+
 export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
   const markup = prepareMarkup(source, blocks);
-  const result = parseHtmlForESLint(markup.text, {
-    templateEngineSyntax: TEMPLATE_ENGINE_SYNTAX.TWIG,
-    ...options,
-  });
+  const result = parseHtml(source, markup, options);
   if (markup.insertedOffsets.length > 0) mapPositionsToSource(result, markup.insertedOffsets, createOffsetLocator(source));
   if (markup.rewrittenRanges.length > 0) restoreSourceText(result, source, markup);
   return result;

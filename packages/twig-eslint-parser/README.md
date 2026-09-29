@@ -82,7 +82,8 @@ silently.
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
 | `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name and range. `twig-tailwind/no-interpolated-attributes` reports them. |
 
-Invalid Twig, such as an unclosed `{{`, is reported by ESLint as a parsing error with its position.
+Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag missing its `>`, are reported by ESLint as a
+parsing error with its position.
 
 ## Markup
 
