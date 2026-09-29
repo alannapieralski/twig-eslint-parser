@@ -49,8 +49,9 @@ export default [
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
   into more array items by hand;
-- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) and
-  [`twig-tailwind/no-interpolated-classes`](docs/rules/no-interpolated-classes.md) as errors.
+- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md),
+  [`twig-tailwind/no-interpolated-classes`](docs/rules/no-interpolated-classes.md) and
+  [`twig-tailwind/no-unparsed-twig`](docs/rules/no-unparsed-twig.md) as errors.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
 them. Override any rule in your own config object as usual.
@@ -107,6 +108,7 @@ export default [
 |---|---|---|
 | [`no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) | Disallow Twig inside attribute values such as `class=""` | error |
 | [`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) | Disallow `#{ }` inside class strings | error |
+| [`no-unparsed-twig`](docs/rules/no-unparsed-twig.md) | Report Twig blocks the parser could not read | error |
 
 ## Interpolated strings
 

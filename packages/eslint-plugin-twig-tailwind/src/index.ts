@@ -6,6 +6,7 @@ import twigParser from 'twig-eslint-parser';
 import { createProcessor } from './processor.js';
 import { noInterpolatedAttributes } from './rules/no-interpolated-attributes.js';
 import { noInterpolatedClasses } from './rules/no-interpolated-classes.js';
+import { noUnparsedTwig } from './rules/no-unparsed-twig.js';
 import { drupalSelectors } from './selectors.js';
 
 const { name, version } = createRequire(import.meta.url)('../package.json') as { name: string; version: string };
@@ -15,6 +16,7 @@ const plugin = {
   rules: {
     'no-interpolated-attributes': noInterpolatedAttributes,
     'no-interpolated-classes': noInterpolatedClasses,
+    'no-unparsed-twig': noUnparsedTwig,
   },
   processors: { twig: createProcessor({ name, version }) },
   configs: {} as { recommended: Linter.Config },
@@ -39,6 +41,7 @@ const recommended: Linter.Config = {
     'better-tailwindcss/enforce-consistent-line-wrapping': ['warn', { selectors: attributeSelectors }],
     'twig-tailwind/no-interpolated-attributes': 'error',
     'twig-tailwind/no-interpolated-classes': 'error',
+    'twig-tailwind/no-unparsed-twig': 'error',
   },
 };
 

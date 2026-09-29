@@ -1,5 +1,5 @@
 import type { Rule } from 'eslint';
-import type { TwigParserServices } from 'twig-eslint-parser';
+import { readTwigServices } from './twig-services.js';
 
 type AttributeNode = {
   readonly type: 'Attribute';
@@ -18,14 +18,6 @@ function isAttributeNode(value: unknown): value is AttributeNode {
 
 function containsTwig(attribute: AttributeNode): boolean {
   return attribute.value?.parts?.some((part) => part.type === 'Template') ?? false;
-}
-
-function readTwigServices(context: Rule.RuleContext): TwigParserServices {
-  const services = context.sourceCode.parserServices as { twig?: TwigParserServices } | undefined;
-  if (!services?.twig) {
-    throw new Error('twig-tailwind/no-interpolated-attributes needs twig-eslint-parser as the parser for this file.');
-  }
-  return services.twig;
 }
 
 export const noInterpolatedAttributes: Rule.RuleModule = {
