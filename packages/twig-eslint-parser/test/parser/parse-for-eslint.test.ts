@@ -199,6 +199,32 @@ describe('operators', () => {
     expect(checkParserOutput(code)).toEqual([]);
   });
 
+  it.each([
+    ['{{ a ?? b and c }}', '&&'],
+    ['{{ a ?? b or c }}', '||'],
+    ['{{ a ?? b ?: c }}', '||'],
+    ["{{ a ?? b ? 'c' }}", '&&'],
+    ['{{ a ?? b == c }}', '=='],
+    ['{{ a ?? b is empty }}', '=='],
+    ["{{ a|default(1) ?? b.c(d) ~ 'e' }}", '+'],
+  ])('groups the ?? in %s as Twig does, under %s', (code, operator) => {
+    expect(expressionOf(code)).toMatchObject({ operator, left: { type: 'LogicalExpression', operator: '??' } });
+    expect(checkParserOutput(code)).toEqual([]);
+  });
+
+  it.each([
+    ['{{ a and b ?? c }}', { operator: '&&', right: { operator: '??' } }],
+    ['{{ not a ?? b }}', { type: 'UnaryExpression', argument: { operator: '??' } }],
+    ['{{ x or a ?? b ?? c }}', { operator: '||', right: { operator: '??', left: { operator: '??' } } }],
+  ])('groups the ?? chain in %s as Twig does', (code, shape) => {
+    expect(expressionOf(code)).toMatchObject(shape);
+    expect(checkParserOutput(code)).toEqual([]);
+  });
+
+  it('reads ?? as || when there is no space for brackets around it', () => {
+    expect(expressionOf('{{ f(a??b and c) }}')).toMatchObject({ arguments: [{ operator: '||', right: { operator: '&&' } }] });
+  });
+
   it('parses arrow functions, spreads and dynamic macro calls', () => {
     expect(onlyStatement('{{ items|map(i => i.x) }}')).toBeDefined();
     expect(onlyStatement('{{ [...a, ...b] }}')).toBeDefined();

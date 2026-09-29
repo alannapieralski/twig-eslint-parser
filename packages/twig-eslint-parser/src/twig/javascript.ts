@@ -199,16 +199,124 @@ function classifyColon(frame: Frame, previous: TwigToken | undefined, beforePrev
   return 'ternary';
 }
 
+function isUntouchedBlankAt(tokens: readonly TwigToken[], pieces: readonly string[], index: number, edge: 'first' | 'last'): boolean {
+  const token = tokens[index];
+  const character = edge === 'first' ? token?.value[0] : token?.value.at(-1);
+  return token?.type === 'WHITESPACE' && pieces[index] === token.value && (character === ' ' || character === '\t');
+}
+
+function isOpener(token: TwigToken): boolean {
+  return (token.type === 'PUNCTUATION' && '([{'.includes(token.value)) || token.type === 'OPENING_QUOTE' || token.type === 'INTERPOLATION_START';
+}
+
+function isCloser(token: TwigToken): boolean {
+  return (token.type === 'PUNCTUATION' && ')]}'.includes(token.value)) || token.type === 'CLOSING_QUOTE' || token.type === 'INTERPOLATION_END';
+}
+
+function findPartnerIndex(tokens: readonly TwigToken[], index: number, step: 1 | -1): number {
+  let depth = 0;
+  for (let candidate = index; candidate >= 0 && candidate < tokens.length; candidate += step) {
+    const token = tokens[candidate] as TwigToken;
+    if (isOpener(token)) depth += step;
+    if (isCloser(token)) depth -= step;
+    if (depth === 0) return candidate;
+  }
+  throw new Error(`Twig bracket at offset ${tokens[index]?.start} has no partner.`);
+}
+
+function isOperandPart(token: TwigToken): boolean {
+  if (token.type === 'NAME' || token.type === 'NUMBER') return true;
+  return isPunctuation(token, '.') || isPunctuation(token, '|') || (token.type === 'OPERATOR' && token.value === '?.');
+}
+
+function isNullCoalescing(token: TwigToken | undefined): boolean {
+  return token?.type === 'OPERATOR' && token.value === '??';
+}
+
+function isBindingNeighbour(token: TwigToken | undefined): boolean {
+  if (token?.type === 'TEST_OPERATOR') return true;
+  return (token?.type === 'OPERATOR' && token.value !== '=') || isPunctuation(token, '?');
+}
+
+type ExpressionSpan = { readonly fromIndex: number; readonly toIndex: number; readonly replacements: ReadonlyMap<number, string> };
+
+function findPreviousSignificantIndex(tokens: readonly TwigToken[], span: ExpressionSpan, beforeIndex: number): number | undefined {
+  for (let index = beforeIndex - 1; index >= span.fromIndex; index -= 1) {
+    if (isSignificant(tokens[index] as TwigToken)) return index;
+  }
+  return undefined;
+}
+
+function findNextSignificantIndex(tokens: readonly TwigToken[], span: ExpressionSpan, afterIndex: number): number | undefined {
+  for (let index = afterIndex + 1; index < span.toIndex; index += 1) {
+    if (isSignificant(tokens[index] as TwigToken)) return index;
+  }
+  return undefined;
+}
+
+function findLeftOperandStart(tokens: readonly TwigToken[], span: ExpressionSpan, operatorIndex: number): number {
+  let start = operatorIndex;
+  for (let index = findPreviousSignificantIndex(tokens, span, operatorIndex); index !== undefined; index = findPreviousSignificantIndex(tokens, span, start)) {
+    const token = tokens[index] as TwigToken;
+    if (span.replacements.has(index)) break;
+    if (isCloser(token)) start = findPartnerIndex(tokens, index, -1);
+    else if (isOperandPart(token)) start = index;
+    else break;
+  }
+  return start;
+}
+
+function findRightOperandEnd(tokens: readonly TwigToken[], span: ExpressionSpan, operatorIndex: number): number {
+  let end = operatorIndex;
+  for (let index = findNextSignificantIndex(tokens, span, operatorIndex); index !== undefined; index = findNextSignificantIndex(tokens, span, end)) {
+    const token = tokens[index] as TwigToken;
+    const isUnaryPrefix = end === operatorIndex && token.type === 'OPERATOR' && ['not', '-', '+'].includes(token.value);
+    if (span.replacements.has(index)) break;
+    if (isOpener(token)) end = findPartnerIndex(tokens, index, 1);
+    else if (isOperandPart(token) || isUnaryPrefix) end = index;
+    else break;
+  }
+  return end;
+}
+
+function bracketNullCoalescing(tokens: readonly TwigToken[], span: ExpressionSpan, pieces: string[]): void {
+  const bracketedOperatorIndices = new Set<number>();
+  for (let index = span.fromIndex; index < span.toIndex; index += 1) {
+    if (!isNullCoalescing(tokens[index]) || bracketedOperatorIndices.has(index)) continue;
+
+    const chainOperatorIndices = [index];
+    let end = findRightOperandEnd(tokens, span, index);
+    for (let next = findNextSignificantIndex(tokens, span, end); next !== undefined && isNullCoalescing(tokens[next]); next = findNextSignificantIndex(tokens, span, end)) {
+      chainOperatorIndices.push(next);
+      end = findRightOperandEnd(tokens, span, next);
+    }
+    chainOperatorIndices.forEach((operatorIndex) => bracketedOperatorIndices.add(operatorIndex));
+
+    const start = findLeftOperandStart(tokens, span, index);
+    const before = findPreviousSignificantIndex(tokens, span, start);
+    const after = findNextSignificantIndex(tokens, span, end);
+    const isMixed = (before !== undefined && isBindingNeighbour(tokens[before])) || (after !== undefined && isBindingNeighbour(tokens[after]));
+    if (!isMixed) continue;
+
+    const openingIndex = start - 1;
+    const closingIndex = end + 1;
+    const hasRoomForBrackets = openingIndex >= span.fromIndex && closingIndex < span.toIndex
+      && isUntouchedBlankAt(tokens, pieces, openingIndex, 'last') && isUntouchedBlankAt(tokens, pieces, closingIndex, 'first');
+    if (!hasRoomForBrackets) {
+      chainOperatorIndices.forEach((operatorIndex) => { pieces[operatorIndex] = '||'; });
+      continue;
+    }
+    pieces[openingIndex] = `${(pieces[openingIndex] as string).slice(0, -1)}(`;
+    pieces[closingIndex] = `)${(pieces[closingIndex] as string).slice(1)}`;
+  }
+}
+
 function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex: number, pieces: string[], replacements: ReadonlyMap<number, string>): void {
   const frames: Frame[] = [{ opener: 'root', closesComputedKey: false, hashExpects: undefined, openQuestionMarkIndices: [] }];
   const templateLiteralQuoteIndices = new Set<number>();
   const recentSignificant: TwigToken[] = [];
   const currentFrame = () => frames[frames.length - 1] as Frame;
-  const isUntouchedBlank = (index: number, edge: 'first' | 'last') => {
-    const token = tokens[index];
-    const character = edge === 'first' ? token?.value[0] : token?.value.at(-1);
-    return token?.type === 'WHITESPACE' && pieces[index] === token.value && (character === ' ' || character === '\t');
-  };
+  const isUntouchedBlank = (index: number, edge: 'first' | 'last') => isUntouchedBlankAt(tokens, pieces, index, edge);
   const resolveShortTernaries = (frame: Frame) => {
     for (const index of frame.openQuestionMarkIndices.splice(0)) {
       pieces[index] = '&';
@@ -332,6 +440,7 @@ export function toSameLengthJavaScript(block: TwigBlock): string | undefined {
   const closingIndex = tokens.length - 1;
   const pieces = tokens.map((token) => blankPreservingLineBreaks(token.value));
   mapExpression(tokens, layout.expressionStartIndex, closingIndex, pieces, layout.replacements);
+  bracketNullCoalescing(tokens, { fromIndex: layout.expressionStartIndex, toIndex: closingIndex, replacements: layout.replacements }, pieces);
 
   for (const [index, replacement] of layout.replacements) {
     if (index < layout.expressionStartIndex) pieces[index] = replacement;
