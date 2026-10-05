@@ -1,0 +1,15 @@
+{{ a is constant('PHP_EOL') }} {{ a is not constant('PHP_EOL') }}
+{{ a is defined }} {{ a is not defined }}
+{{ a is divisible by(3) }} {{ a is not divisible by(3) }} {{ a is divisible  by(3) }}
+{{ a is empty }} {{ a is not empty }}
+{{ a is even }} {{ a is not even }}
+{{ a is iterable }} {{ a is not iterable }}
+{{ a is mapping }} {{ a is not mapping }}
+{{ a is none }} {{ a is not none }}
+{{ a is null }} {{ a is not null }}
+{{ a is odd }} {{ a is not odd }}
+{{ a is same as(b) }} {{ a is not same as(b) }} {{ a is same  as(b) }}
+{{ a is sequence }} {{ a is not sequence }}
+{{ a is true }} {{ a is not true }}
+{% if a is empty and b is not null %}{% endif %}
+{{ (a is odd) ? 'odd' : 'even' }}

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseForESLint, type ParserOptions } from '../../src/index.js';
+import { findInterpolatedStrings, parseForESLint, type ParserOptions } from '../../src/index.js';
+import { checkParserOutput } from '../support/output-checks.js';
 
 type Node = { type: string; range: [number, number]; loc: { start: { line: number; column: number } }; [key: string]: unknown };
 
@@ -56,6 +57,20 @@ describe('fixtures', () => {
 
     const literals = collectNodes(statements, (node) => node.type === 'Literal');
     for (const literal of literals) expect(sourceOf(code, literal)).toBe(literal['raw']);
+
+    const strings = collectNodes(statements, (node) => node.type === 'TemplateLiteral');
+    for (const string of strings) {
+      const source = sourceOf(code, string);
+      expect(source.at(0)).toMatch(/['"]/);
+      expect(source.at(-1)).toBe(source.at(0));
+    }
+  });
+
+  it.each(fixtureNames)('%s produces output that matches the source node by node', (fixtureName) => {
+    const code = readFileSync(new URL(fixtureName, fixturesDirectory), 'utf8');
+    const rejectedByTwig = blocksTwigItselfRejectsByFixture[fixtureName] ?? [];
+    const issues = checkParserOutput(code).filter((issue) => !rejectedByTwig.some((source) => issue.detail.startsWith(source)));
+    expect(issues).toEqual([]);
   });
 });
 
@@ -85,8 +100,39 @@ describe('strings and numbers', () => {
     expect(sourceOf(code, expression)).toBe('"a-#{b}-c"');
   });
 
-  it('keeps plain double-quoted strings, including ones with a lone #', () => {
-    expect(expressionOf('{{ "hash # here" }}')).toMatchObject({ type: 'Literal', value: 'hash # here' });
+  it.each([
+    ["{{ 'flex p-4' }}", 'flex p-4'],
+    ['{{ "hash # here" }}', 'hash # here'],
+    ["{{ 'it\\'s' }}", "it's"],
+  ])('turns the plain string in %s into a template literal without expressions, keeping its Twig quotes in range', (code, cooked) => {
+    const expression = expressionOf(code);
+    expect(expression).toMatchObject({ type: 'TemplateLiteral', expressions: [], quasis: [{ value: { cooked } }] });
+    expect(sourceOf(code, expression)).toBe(code.slice(3, -3));
+  });
+
+  it('parses strings that span several lines, which Twig allows', () => {
+    const code = "{% set classes = ['\n  flex p-4\n  md:grid\n', \"\n  a #{b}\n\"] %}";
+    const elements = (onlyStatement(code)['declarations'] as Node[])[0]?.['init'] as Node;
+    expect(elements).toMatchObject({
+      type: 'ArrayExpression',
+      elements: [{ type: 'TemplateLiteral', expressions: [] }, { type: 'TemplateLiteral', expressions: [{ name: 'b' }] }],
+    });
+  });
+
+  it('keeps hash keys plain string literals, since a template literal cannot be a key', () => {
+    expect(expressionOf("{{ create_attribute({'class': 'flex'}) }}")).toMatchObject({
+      arguments: [{ type: 'ObjectExpression', properties: [{ key: { type: 'Literal', value: 'class' }, value: { type: 'TemplateLiteral' } }] }],
+    });
+  });
+
+  it('keeps strings containing a backtick or ${ as plain literals', () => {
+    expect(expressionOf("{{ 'a`b' }}")).toMatchObject({ type: 'Literal', value: 'a`b' });
+    expect(expressionOf("{{ 'a${b}' }}")).toMatchObject({ type: 'Literal', value: 'a${b}' });
+  });
+
+  it('finds the range of every interpolated string, including ones nested inside another interpolation', () => {
+    const code = `<p class="a #{b}">{% set c = ['x', "y #{z}", "p #{q ~ "r #{s}"}"] %}{{ 'plain #{no}' }}</p>`;
+    expect(findInterpolatedStrings(code).map((range) => code.slice(...range))).toEqual(['"y #{z}"', '"r #{s}"', '"p #{q ~ "r #{s}"}"']);
   });
 
   it('accepts escaped quotes and escaped line breaks', () => {
@@ -113,9 +159,9 @@ describe('operators', () => {
     ['{{ a === b }}', 'BinaryExpression'],
     ['{{ a ?? b }}', 'LogicalExpression'],
     ['{{ a ?: b }}', 'LogicalExpression'],
-    ['{{ a ? : b }}', 'BinaryExpression'],
+    ['{{ a ? : b }}', 'LogicalExpression'],
     ['{{ a ? b : c }}', 'ConditionalExpression'],
-    ['{{ a ? b }}', 'BinaryExpression'],
+    ['{{ a ? b }}', 'LogicalExpression'],
     ['{{ a is defined }}', 'BinaryExpression'],
     ['{{ a is not same as(b) }}', 'BinaryExpression'],
     ['{{ a?.b }}', 'ChainExpression'],
@@ -140,7 +186,43 @@ describe('operators', () => {
 
   it('keeps short ternaries inside arrays separate per element', () => {
     const expression = expressionOf("{{ [required ? 'a', 'b'] }}");
-    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'BinaryExpression' }, { type: 'Literal' }] });
+    expect(expression).toMatchObject({ type: 'ArrayExpression', elements: [{ type: 'LogicalExpression', operator: '&&' }, { type: 'TemplateLiteral' }] });
+  });
+
+  it.each([
+    ["{{ a ? 'b' }}", '&&'],
+    ["{{ a ?'b' }}", '&&'],
+    ["{{ a?'b' }}", '&'],
+    ["{{ a ?\n  'b' }}", '&&'],
+  ])('turns the short ternary in %s into %s, keeping the value on the right', (code, operator) => {
+    expect(expressionOf(code)).toMatchObject({ operator, right: { type: 'TemplateLiteral' } });
+    expect(checkParserOutput(code)).toEqual([]);
+  });
+
+  it.each([
+    ['{{ a ?? b and c }}', '&&'],
+    ['{{ a ?? b or c }}', '||'],
+    ['{{ a ?? b ?: c }}', '||'],
+    ["{{ a ?? b ? 'c' }}", '&&'],
+    ['{{ a ?? b == c }}', '=='],
+    ['{{ a ?? b is empty }}', '=='],
+    ["{{ a|default(1) ?? b.c(d) ~ 'e' }}", '+'],
+  ])('groups the ?? in %s as Twig does, under %s', (code, operator) => {
+    expect(expressionOf(code)).toMatchObject({ operator, left: { type: 'LogicalExpression', operator: '??' } });
+    expect(checkParserOutput(code)).toEqual([]);
+  });
+
+  it.each([
+    ['{{ a and b ?? c }}', { operator: '&&', right: { operator: '??' } }],
+    ['{{ not a ?? b }}', { type: 'UnaryExpression', argument: { operator: '??' } }],
+    ['{{ x or a ?? b ?? c }}', { operator: '||', right: { operator: '??', left: { operator: '??' } } }],
+  ])('groups the ?? chain in %s as Twig does', (code, shape) => {
+    expect(expressionOf(code)).toMatchObject(shape);
+    expect(checkParserOutput(code)).toEqual([]);
+  });
+
+  it('reads ?? as || when there is no space for brackets around it', () => {
+    expect(expressionOf('{{ f(a??b and c) }}')).toMatchObject({ arguments: [{ operator: '||', right: { operator: '&&' } }] });
   });
 
   it('parses arrow functions, spreads and dynamic macro calls', () => {
@@ -166,8 +248,8 @@ describe('tags', () => {
 
   it('keeps multi-line {% set %} positions on their real lines', () => {
     const code = "{%\n  set classes = [\n    'first',\n    'second',\n  ]\n%}";
-    const literals = collectNodes(onlyStatement(code), (node) => node.type === 'Literal');
-    expect(literals.map((literal) => [sourceOf(code, literal), literal.loc.start.line])).toEqual([["'first'", 3], ["'second'", 4]]);
+    const strings = collectNodes(onlyStatement(code), (node) => node.type === 'TemplateLiteral');
+    expect(strings.map((string) => [sourceOf(code, string), string.loc.start.line])).toEqual([["'first'", 3], ["'second'", 4]]);
   });
 
   it('keeps multiple-target {% set %} a declaration', () => {
@@ -187,7 +269,7 @@ describe('tags', () => {
     expect(expressionOf("{% include 'card' with { classes: ['a'] } only %}")).toMatchObject({
       type: 'CallExpression',
       callee: { name: 'include' },
-      arguments: [{ type: 'Literal', value: 'card' }, { type: 'ObjectExpression' }],
+      arguments: [{ type: 'TemplateLiteral', quasis: [{ value: { cooked: 'card' } }] }, { type: 'ObjectExpression' }],
     });
     expect(expressionOf("{% embed 'card' ignore missing with { a: 1 } %}")).toMatchObject({ type: 'CallExpression', callee: { name: 'embed' } });
   });
@@ -245,11 +327,133 @@ describe('markup and options', () => {
   });
 });
 
+describe('Drupal attributes printed straight after a tag name', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const attributeSources = (code: string, tag: Node) => (tag['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute));
+
+  it('parses <div{{ attributes }}> as a div with an attribute, closed where the template closes it', () => {
+    const code = '<div{{ attributes }}><p>x</p></div><span>after</span>';
+    const div = namedTag(code, 'div');
+    expect(sourceOf(code, div['openStart'] as Node)).toBe('<div');
+    expect(attributeSources(code, div)).toEqual(['{{ attributes }}']);
+    expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+    expect((div['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name'])).toEqual(['p']);
+  });
+
+  it.each(['legend.attributes', "attributes|without('role')", 'attributes.addClass(classes)', "create_attribute({'class': 'a'})"])(
+    'recognises {{ %s }} as an attribute',
+    (expression) => {
+      const code = `<div{{ ${expression} }} id="a">x</div>`;
+      expect(attributeSources(code, namedTag(code, 'div'))).toEqual([`{{ ${expression} }}`, 'id="a"']);
+    },
+  );
+
+  it('keeps every later range and line/column exact after several of them', () => {
+    const code = '<ul{{ attributes }}>\n  <li{{ item.attributes }} class="a">x</li>\n</ul>';
+    const li = namedTag(code, 'li');
+    const [, classAttribute] = li['attributes'] as Node[];
+    expect(attributeSources(code, li)).toEqual(['{{ item.attributes }}', 'class="a"']);
+    expect(classAttribute?.loc.start).toEqual({ line: 2, column: code.split('\n')[1]?.indexOf('class') });
+    expect(sourceOf(code, li['close'] as Node)).toBe('</li>');
+  });
+
+  it('keeps the Twig branch ranges pointing at the original template', () => {
+    const code = '{% if a %}<div{{ attributes }}>x</div>{% else %}<p>y</p>{% endif %}';
+    const ast = parse(code).result.ast as unknown as { branchSegments: { start: number; end: number }[]; branchControlRanges: [number, number][] };
+    expect(ast.branchSegments.map(({ start, end }) => code.slice(start, end))).toEqual(['<div{{ attributes }}>x</div>', '<p>y</p>']);
+    expect(ast.branchControlRanges.map((range) => code.slice(...range))).toEqual(['{% if a %}', '{% else %}', '{% endif %}']);
+  });
+
+  it('leaves Twig that is part of a tag name alone', () => {
+    const code = '<h{{ level }} id="a">x</h{{ level }}>';
+    const [heading] = tagsOf(code);
+    expect(sourceOf(code, heading?.['openStart'] as Node)).toBe('<h{{ level }}');
+    expect(attributeSources(code, heading as Node)).toEqual(['id="a"']);
+  });
+});
+
+describe('Twig delimiters inside Twig strings', () => {
+  it.each([
+    ["{% set markup = '<div{{ attributes }}>' %}", '<div{{ attributes }}>'],
+    ["{{ '}}' }}", '}}'],
+    ["{% set end = '%}' %}", '%}'],
+    ["{% set text = '{# not a comment #}' %}", '{# not a comment #}'],
+    ['{{ "a #{ \'{{\' } b" }}', '{{'],
+  ])('parses %s, keeping the string value and the markup after it', (twig, stringValue) => {
+    const { result, services } = parse(`${twig}<p>x</p>`);
+    expect(services.unconvertedBlocks).toEqual([]);
+    const strings = collectNodes(result.ast.twigBody, (node) => node.type === 'TemplateLiteral' || node.type === 'Literal');
+    const values = strings.flatMap((node) => (node.type === 'Literal' ? [node['value']] : (node['quasis'] as Node[]).map((quasi) => (quasi['value'] as { cooked: string }).cooked)));
+    expect(values).toContain(stringValue);
+    const tags = collectNodes(result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => tag['name'])).toEqual(['p']);
+  });
+
+  it('keeps an attribute whose Twig contains a delimiter in a string as one attribute of a closed element', () => {
+    const code = "<p title=\"{{ '}}' }}\" id=\"a\">x</p><span>after</span>";
+    const tags = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+    const paragraph = tags.find((tag) => tag['name'] === 'p') as Node;
+    expect((paragraph['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(["title=\"{{ '}}' }}\"", 'id="a"']);
+    expect(sourceOf(code, paragraph['close'] as Node)).toBe('</p>');
+  });
+});
+
+describe('Twig tags and verbatim content inside markup', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
+
+  it('parses a conditional attribute written straight after the tag name, closed where the template closes it', () => {
+    const code = '<div{% if a %} class="x"{% endif %}><p>y</p></div><span>z</span>';
+    const div = namedTag(code, 'div');
+    expect(sourceOf(code, div['openStart'] as Node)).toBe('<div');
+    expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+    expect(childTagNames(div)).toEqual(['p']);
+  });
+
+  it('leaves a Twig tag that builds the tag name alone', () => {
+    const code = '<h{% if big %}1{% else %}2{% endif %} id="a">x</h1>';
+    expect(sourceOf(code, tagsOf(code)[0]?.['openStart'] as Node).startsWith('<h{%')).toBe(true);
+  });
+
+  it('closes an element whose name is built with {{ }} where the template closes it', () => {
+    const code = '<h{{ level ?? 3 }} class="a">x</h{{ level ?? 3 }}><span>after</span>';
+    const [heading] = tagsOf(code);
+    expect(sourceOf(code, heading?.['close'] as Node)).toBe('</h{{ level ?? 3 }}>');
+    expect(childTagNames(heading as Node)).toEqual([]);
+  });
+
+  it('parses an element whose whole name is Twig, followed by Drupal attributes', () => {
+    const code = '<{{ list_type }}{{ attributes }}><li>x</li></{{ list_type }}><span>after</span>';
+    const [list] = tagsOf(code);
+    expect(list?.['name']).toBe('{{ list_type }}');
+    expect((list?.['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(['{{ attributes }}']);
+    expect(sourceOf(code, list?.['close'] as Node)).toBe('</{{ list_type }}>');
+    expect(childTagNames(list as Node)).toEqual(['li']);
+  });
+
+  it('parses verbatim content that holds Twig delimiters as text', () => {
+    const code = '{% verbatim %}{# {% endverbatim %}{{ x }}{% verbatim %} #}{% endverbatim %}<p>y</p>';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['p']);
+  });
+
+  it.each([
+    ["<div {{ '{{ attributes }}' }}>x</div>", "{{ '{{ attributes }}' }}"],
+    ["<p title=\"{{ '}}' }}\">x</p>", "\"{{ '}}' }}\""],
+  ])('keeps the original text in the HTML nodes of %s', (code, attributeText) => {
+    const [attribute] = tagsOf(code)[0]?.['attributes'] as Node[];
+    const texts = collectNodes(attribute, () => true).filter((node) => typeof node['value'] === 'string').map((node) => [node['value'], sourceOf(code, node)]);
+    for (const [value, source] of texts) expect(value).toBe(source);
+    expect(sourceOf(code, attribute as Node).endsWith(attributeText)).toBe(true);
+  });
+});
+
 describe('tags without optional whitespace', () => {
   it('still parses {%include%} written without a space after the tag name', () => {
     expect(expressionOf("{%include'card'with{classes:['a']}%}")).toMatchObject({
       type: 'SequenceExpression',
-      expressions: [{ type: 'Literal', value: 'card' }, { type: 'ObjectExpression' }],
+      expressions: [{ type: 'TemplateLiteral', quasis: [{ value: { cooked: 'card' } }] }, { type: 'ObjectExpression' }],
     });
   });
 });

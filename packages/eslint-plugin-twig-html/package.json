@@ -1,0 +1,49 @@
+{
+  "name": "eslint-plugin-twig-html",
+  "version": "0.0.0",
+  "description": "ESLint rules for the HTML in Twig and Drupal templates, built on twig-eslint-parser.",
+  "license": "Apache-2.0",
+  "author": "Numiko",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alannapieralski/twig-eslint-parser.git",
+    "directory": "packages/eslint-plugin-twig-html"
+  },
+  "bugs": "https://github.com/alannapieralski/twig-eslint-parser/issues",
+  "homepage": "https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/eslint-plugin-twig-html#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "LICENSE"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "twig",
+    "drupal",
+    "html"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "prepack": "npm run build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "twig-eslint-parser": "0.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0 || ^10.0.0"
+  }
+}

@@ -1,13 +1,14 @@
 # twig-eslint-parser
 
-ESLint for Twig templates, with Tailwind CSS linting for Drupal themes.
+ESLint for Twig templates, with Tailwind CSS and HTML linting for Drupal themes.
 
 | Package | What it is |
 |---|---|
 | [`twig-eslint-parser`](packages/twig-eslint-parser) | The parser: HTML markup plus Twig expressions as one ESLint AST with exact source ranges. No rules. |
-| [`eslint-plugin-twig-tailwind`](packages/eslint-plugin-twig-tailwind) | The glue for [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss): Twig and Drupal class selectors, a recommended config and the `no-interpolated-attributes` rule. |
+| [`eslint-plugin-twig-tailwind`](packages/eslint-plugin-twig-tailwind) | The glue for [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss): Twig and Drupal class selectors, a processor for interpolated strings, a recommended config and the `no-interpolated-attributes` and `no-interpolated-classes` rules. |
+| [`eslint-plugin-twig-html`](packages/eslint-plugin-twig-html) | Rules for the HTML in Twig templates that understand Twig blocks, starting with `attrs-newline`. |
 
-Both packages share one version and are released together.
+All packages share one version and are released together.
 
 ## Development
 
@@ -41,11 +42,11 @@ hand.
 ## Releasing
 
 Releases use [release-it](https://github.com/release-it/release-it) from the repository root. One
-run releases both packages at the same version.
+run releases every package at the same version.
 
 Before the first release:
 
-1. Log in to npm with the account that will own both packages: `npm login`.
+1. Log in to npm with the account that will own the packages: `npm login`.
 2. Create a GitHub token that can create releases on this repository and export it as
    `GITHUB_TOKEN`.
 
@@ -60,10 +61,10 @@ release-it will:
 1. Check the npm login, then run the lexer drift check, typechecks and all tests.
 2. Work out the next version from the commits since the last `v*` tag (`fix` is a patch, `feat` a
    minor, a breaking change a major) and ask you to confirm it.
-3. Write `CHANGELOG.md`, bump the root and both packages to that version, point the plugin at the
-   same parser version and update the lockfile.
-4. Publish `twig-eslint-parser`, then `eslint-plugin-twig-tailwind`, to npm, asking for a one-time
-   password if the account needs one.
+3. Write `CHANGELOG.md`, bump the root and every package to that version, point both plugins at
+   the same parser version and update the lockfile.
+4. Publish `twig-eslint-parser`, then `eslint-plugin-twig-tailwind` and `eslint-plugin-twig-html`,
+   to npm, asking for a one-time password if the account needs one.
 5. Commit `chore(release): x.y.z`, tag `vx.y.z`, push, and create the GitHub Release with the
    changelog as its notes.
 

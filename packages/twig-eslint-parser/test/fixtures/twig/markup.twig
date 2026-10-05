@@ -1,0 +1,16 @@
+{% set classes = ['card', is_featured ? 'card--featured'] %}
+<div{{ attributes.addClass(classes) }}>
+  <nav{{ attributes|without('role') }} role="navigation" aria-label="{{ 'Main'|trans }}"></nav>
+  <legend{{ legend.attributes }}>Legend</legend>
+  <div{{ create_attribute({'class': ['a', 'b']}) }}></div>
+  <div{% if id %} id="{{ id }}"{% endif %} class="c">Conditional</div>
+  <input type="checkbox"{% if checked %} checked{% endif %} name="agree">
+  <h{{ level }} class="title">Heading</h{{ level }}>
+  <{{ html_element }}{{ element_attributes }}>Element</{{ html_element }}>
+  <{{ tag|default('span') }} class="d">Default</{{ tag|default('span') }}>
+  <p title="{{ '}}' }}" data-open="{{ '{{' ~ '%}' }}">Delimiters in strings</p>
+  <span class="e {{ modifier }}">Interpolated class</span>
+  <img src="{{ src }}" alt="{{ alt|default('') }}"/>
+</div>
+{% set markup = '<div{{ attributes }}>' %}
+{% verbatim %}<article{{ attributes }}>{# not a comment</article>{% endverbatim %}

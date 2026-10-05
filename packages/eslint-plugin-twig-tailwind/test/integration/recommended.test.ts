@@ -50,6 +50,10 @@ describe('configs.recommended on Twig and Drupal templates', () => {
     ['{% set grid_classes %} arrays', "{% set grid_classes = ['gap-fl-sm', 'nope'] %}"],
     ['addClass() inside <tag{{ attributes }}>', "<div{{ attributes.addClass(['mt-fl-sm', 'nope']) }}>x</div>"],
     ['removeClass()', "<div{{ attributes.removeClass('nope') }}>x</div>"],
+    ['a chained addClass()', "<div{{ attributes.addClass(classes).addClass(['mt-fl-sm', 'nope']) }}>x</div>"],
+    ['removeClass() chained after addClass()', "{% set image = attributes.addClass('mt-fl-sm').removeClass('nope') %}"],
+    ['a short ternary in {% set classes %}', "{% set classes = ['gap-fl-sm', active ? 'nope'] %}"],
+    ['a short ternary in addClass()', "<div{{ attributes.addClass([count == 1 ? 'nope']) }}>x</div>"],
     ['create_attribute() with an array', "{% set image = create_attribute({'class': ['size-full', 'nope']}) %}"],
     ['create_attribute() with a string', "{% set image = create_attribute({'class': 'nope size-full'}) %}"],
     ['{% include with { classes } %} arrays', "{% include 'numiko:card' with { classes: ['w-full', 'nope'] } only %}"],
@@ -78,6 +82,80 @@ describe('configs.recommended on Twig and Drupal templates', () => {
     const code = "<span{{ attributes.addClass('text-surface-primary-accent shrink-0 mt-1') }}>y</span>";
     const result = await lint(code, { fix: true });
     expect(result.output).toBe("<span{{ attributes.addClass('mt-1 shrink-0 text-surface-primary-accent') }}>y</span>");
+  });
+
+  it.each([
+    ['a {% set %} array', "{% set classes = ['mt-1 flex w-full shrink-0', 'items-center justify-center gap-4 overflow-hidden p-6 text-left'] %}"],
+    ['an addClass() argument', "<div{{ attributes.addClass('mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden p-6 text-left') }}></div>"],
+  ])('leaves a long class string in %s on one line, since line wrapping only applies to class=""', async (_, code) => {
+    const result = await lint(code, { fix: true });
+    expect(result.output ?? code).toBe(code);
+  });
+
+  it('still wraps a long class="" attribute across lines', async () => {
+    const code = '<p class="mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden p-6 text-left">x</p>';
+    const result = await lint(code, { fix: true });
+    expect(result.output).toBe('<p class="\n  mt-1 flex w-full shrink-0 items-center justify-center gap-4 overflow-hidden\n  p-6 text-left\n">x</p>');
+  });
+});
+
+describe('interpolated strings ("#{ }")', () => {
+  const interpolated = '{% set classes = "flex #{modifier} p-4 items-center" %}';
+
+  it('silences better-tailwindcss inside them, so --fix cannot scramble the interpolation', async () => {
+    const result = await lint(interpolated, { fix: true });
+    expect(result.output ?? interpolated).toBe(interpolated);
+    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-tailwind/no-interpolated-classes']);
+  });
+
+  it('keeps linting and fixing every other string in the same file', async () => {
+    const code = `${interpolated}\n<span{{ attributes.addClass('shrink-0 mt-1') }}>y</span>`;
+    const result = await lint(code, { fix: true });
+    expect(result.output).toBe(`${interpolated}\n<span{{ attributes.addClass('mt-1 shrink-0') }}>y</span>`);
+  });
+
+  it('stays silent about them when twig-tailwind/no-interpolated-classes is turned off', async () => {
+    const result = await lint(interpolated, { rules: { 'twig-tailwind/no-interpolated-classes': 'off' } });
+    expect(result.messages).toEqual([]);
+  });
+});
+
+describe('twig-tailwind/no-interpolated-classes', () => {
+  function reportedSources(code: string, messages: { line: number; column: number; endLine?: number | undefined; endColumn?: number | undefined }[]): string[] {
+    const lineStarts = [0, ...[...code.matchAll(/\n/g)].map((match) => (match.index as number) + 1)];
+    const offset = (line: number, column: number) => (lineStarts[line - 1] as number) + column - 1;
+    return messages.map((message) => code.slice(offset(message.line, message.column), offset(message.endLine as number, message.endColumn as number)));
+  }
+
+  it.each([
+    ['{% set classes %}', '{% set classes = ["flex #{modifier}"] %}'],
+    ['{% set grid_classes %}', '{% set grid_classes = "grid #{columns}" %}'],
+    ['a ternary inside {% set classes %}', "{% set classes = [active ? \"is-#{state}\" : 'flex'] %}"],
+    ['addClass()', '<div{{ attributes.addClass("flex #{modifier}") }}></div>'],
+    ['a chained addClass()', "<div{{ attributes.addClass(classes).addClass(\"flex #{modifier}\") }}></div>"],
+    ['{% include with { classes } %}', '{% include \'numiko:card\' with { classes: [\'w-full\', "c-#{variant}"] } only %}'],
+    ['include()', '{{ include(\'numiko:card\', { classes: "c-#{variant}" }) }}'],
+    ['create_attribute()', '{% set image = create_attribute({\'class\': ["c-#{variant}"]}) %}'],
+  ])('reports the interpolated class string in %s', async (_, code) => {
+    const result = await lint(code);
+    const messages = result.messages.filter((message) => message.ruleId === 'twig-tailwind/no-interpolated-classes');
+    expect(reportedSources(code, messages)).toEqual([code.match(/"[^"]*#\{[^"]*"/)?.[0]]);
+  });
+
+  it.each([
+    ['a non-class variable', '{% set title = "Hello #{name}" %}'],
+    ['a printed string', '{{ "Hello #{name}" }}'],
+    ['a non-class include value', '{% include \'numiko:card\' with { title: "Hello #{name}" } only %}'],
+    ['the condition of a ternary', "{% set classes = [\"#{a}\" == b ? 'flex' : 'grid'] %}"],
+  ])('ignores %s', async (_, code) => {
+    const result = await lint(code);
+    expect(result.messages.map((message) => message.ruleId)).not.toContain('twig-tailwind/no-interpolated-classes');
+  });
+
+  it('follows the selectors setting', async () => {
+    const code = '<div{{ attributes.addClass("flex #{modifier}") }}></div>';
+    const result = await lint(code, { selectors: [...getDefaultSelectors(), ...twigSelectors] });
+    expect(result.messages).toEqual([]);
   });
 });
 
@@ -112,6 +190,21 @@ describe('twig-tailwind/no-interpolated-attributes', () => {
 
   it('does not report the Twig-built class attributes the option hides when the rule is off', async () => {
     const result = await lint('<p class="flex {{ extra }}">x</p>', { rules: { 'twig-tailwind/no-interpolated-attributes': 'off' } });
+    expect(result.messages).toEqual([]);
+  });
+});
+
+describe('twig-tailwind/no-unparsed-twig', () => {
+  it('reports a Twig block the parser could not read at its position', async () => {
+    const code = '<p>\n  {{ a b c }}\n</p>';
+    const result = await lint(code);
+    expect(describeMessages(result.messages)).toEqual([
+      '2:3 twig-tailwind/no-unparsed-twig This Twig block could not be parsed (Unexpected token b), so nothing inside it is linted. Check the expression is valid Twig.',
+    ]);
+  });
+
+  it('stays quiet about valid Twig that mixes ?? with and', async () => {
+    const result = await lint("{% set classes = [modifier ?? 'w-full' and active ? 'flex'] %}");
     expect(result.messages).toEqual([]);
   });
 });

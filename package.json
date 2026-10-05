@@ -6,7 +6,8 @@
   "type": "module",
   "workspaces": [
     "packages/twig-eslint-parser",
-    "packages/eslint-plugin-twig-tailwind"
+    "packages/eslint-plugin-twig-tailwind",
+    "packages/eslint-plugin-twig-html"
   ],
   "devEngines": {
     "runtime": {
@@ -74,7 +75,7 @@
       ],
       "after:bump": [
         "npm version ${version} --workspaces --no-git-tag-version --no-workspaces-update",
-        "npm pkg set dependencies.twig-eslint-parser=${version} -w eslint-plugin-twig-tailwind",
+        "npm pkg set dependencies.twig-eslint-parser=${version} -w eslint-plugin-twig-tailwind -w eslint-plugin-twig-html",
         "npm install --package-lock-only --ignore-scripts"
       ]
     }
