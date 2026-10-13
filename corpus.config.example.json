@@ -1,0 +1,7 @@
+{
+  "roots": [
+    { "path": "/path/to/a/drupal/project", "quick": true },
+    "/path/to/another/drupal/project"
+  ],
+  "exclude": ["node_modules", "vendor", ".git"]
+}

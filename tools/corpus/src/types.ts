@@ -1,0 +1,55 @@
+export type Template = {
+  readonly root: string;
+  readonly path: string;
+  readonly relativePath: string;
+  readonly source: string;
+};
+
+export type Finding = {
+  readonly check: string;
+  readonly severity: 'failure' | 'report';
+  readonly template: Template;
+  readonly message: string;
+  readonly line?: number;
+  readonly before?: string;
+  readonly after?: string;
+};
+
+export type FixChange = {
+  readonly template: Template;
+  readonly before: string;
+  readonly after: string;
+};
+
+export type CheckContext = {
+  readonly sampleSize: number;
+};
+
+export type CheckOutcome = {
+  readonly findings: readonly Finding[];
+  readonly stats: Readonly<Record<string, number>>;
+  readonly skipped?: string;
+  readonly changes?: readonly FixChange[];
+};
+
+export type Check = {
+  readonly id: string;
+  readonly rule?: string;
+  readonly run: (templates: readonly Template[], context: CheckContext) => Promise<CheckOutcome> | CheckOutcome;
+};
+
+export type PackageCorpus = {
+  readonly package: string;
+  readonly checks: readonly Check[];
+};
+
+export type CorpusOptions = {
+  readonly package?: string;
+  readonly rule?: string;
+  readonly check?: string;
+  readonly roots?: readonly string[];
+  readonly quick: boolean;
+  readonly sample: number;
+  readonly updateBaseline: boolean;
+  readonly list: boolean;
+};
