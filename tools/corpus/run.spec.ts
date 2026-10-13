@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { checkOfKey, findingKey, loadBaseline, writeBaseline } from './src/baseline.js';
 import { discoverTemplates, loadConfig } from './src/config.js';
 import { createProgressReporter, stderrOutput } from './src/progress.js';
-import { buildCheckReports, writeReport, type CheckResult } from './src/report.js';
+import { buildCheckReport, buildCheckReports, writeReport, type CheckResult } from './src/report.js';
 import { selectChecks } from './src/select.js';
 import type { CorpusOptions, PackageCorpus, Template } from './src/types.js';
 
@@ -50,8 +50,7 @@ describe.skipIf(options.list)('corpus', () => {
     const outcome = await check.run(templates, { sampleSize: options.sample, progress: reporter.track(label, templates.length) });
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
-    const [report] = buildCheckReports([result], baseline);
-    if (!report) throw new Error(`No report was built for ${check.id}.`);
+    const report = buildCheckReport(result, baseline);
     reporter.phase(report.skipped === undefined
       ? `${label}: done in ${report.seconds.toFixed(1)}s, ${report.reports} reports, ${report.failures} failures (${report.newFailures.length} new)`
       : `${label}: skipped, ${report.skipped}`);

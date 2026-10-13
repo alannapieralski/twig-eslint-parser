@@ -100,8 +100,11 @@ describe('twig-html/attrs-newline', () => {
 
   it('is not applied to .svg.twig templates by the recommended config', async () => {
     const eslint = new ESLint({ overrideConfigFile: true, overrideConfig: [twigHtml.configs.recommended] });
-    const [result] = await eslint.lintText('<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>', { filePath: 'sprite.svg.twig' });
-    expect(result?.messages.map((message) => message.ruleId)).toEqual([null]);
+    const code = '<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>';
+    const [sprite] = await eslint.lintText(code, { filePath: 'sprite.svg.twig' });
+    const [template] = await eslint.lintText(code, { filePath: 'template.html.twig' });
+    expect(template?.messages.map((message) => message.ruleId)).toContain('twig-html/attrs-newline');
+    expect(sprite?.messages.map((message) => message.ruleId)).not.toContain('twig-html/attrs-newline');
   });
 
   it('can keep > on the line of the last attribute', async () => {

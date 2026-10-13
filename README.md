@@ -65,9 +65,9 @@ the templates you actually have: Drupal core, contributed modules and your theme
 ### Progress
 
 The run prints what it is doing to the terminal as it goes: the roots found and how many
-templates each holds, then for each check a `starting` line, a progress line every 10% (or every 5
-seconds), and a `done` line with its reports and failures. On a terminal the progress line rewrites
-in place; piped or in a log it prints one line per step.
+templates each holds, then for each check a `starting` line, a progress line, and a `done` line with
+its reports and failures. On a terminal the progress line rewrites in place a few times a second;
+piped or in a log it prints a line every 10% (or every 5 seconds).
 
 ### The report
 

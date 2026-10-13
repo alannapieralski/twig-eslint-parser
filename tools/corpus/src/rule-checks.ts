@@ -17,6 +17,7 @@ type TemplateInspection = {
   readonly isParseable: boolean;
   readonly reports: readonly Finding[];
   readonly failures: readonly Finding[];
+  readonly skipped?: Finding;
   readonly change?: FixChange;
 };
 
@@ -51,8 +52,8 @@ async function inspectTemplate(
   const reportRun = await lintSource(reporter, template, template.source);
   const parseError = reportRun.messages.find((message) => message.fatal);
   if (parseError) {
-    const skipped: Finding = { check, severity: 'report', template, message: `skipped, the template cannot be parsed: ${parseError.message}`, line: parseError.line };
-    return { isParseable: false, reports: [skipped], failures: [] };
+    const skipped: Finding = { check, severity: 'skipped', template, message: `the template cannot be parsed: ${parseError.message}`, line: parseError.line };
+    return { isParseable: false, reports: [], failures: [], skipped };
   }
 
   const reports = reportRun.messages
@@ -82,16 +83,22 @@ async function runRuleCheck(
   const fixerFor = createLinterPool(config, true);
   const findings: Finding[] = [];
   const changes: FixChange[] = [];
-  const stats = { templates: templates.length, unparseable: 0, withReports: 0, reports: 0, fixed: 0 };
+  const stats = { templates: templates.length, ignored: 0, unparseable: 0, withReports: 0, reports: 0, fixed: 0 };
 
   for (const [index, template] of templates.entries()) {
-    context.progress(index, { reports: stats.reports, fixed: stats.fixed, skipped: stats.unparseable });
+    context.progress(index, { reports: stats.reports, fixed: stats.fixed, skipped: stats.ignored + stats.unparseable });
     try {
+      if (await reporterFor(template.root).isPathIgnored(template.path)) {
+        stats.ignored += 1;
+        findings.push({ check: ruleId, severity: 'skipped', template, message: 'the plugin config ignores this template' });
+        continue;
+      }
       const inspection = await inspectTemplate(template, ruleId, fixKeeps, reporterFor(template.root), fixerFor(template.root));
       if (!inspection.isParseable) stats.unparseable += 1;
-      if (inspection.isParseable && inspection.reports.length > 0) stats.withReports += 1;
+      if (inspection.reports.length > 0) stats.withReports += 1;
       stats.reports += inspection.reports.length;
       findings.push(...inspection.reports, ...inspection.failures);
+      if (inspection.skipped) findings.push(inspection.skipped);
       if (!inspection.change) continue;
       stats.fixed += 1;
       if (context.sampleSize > 0) changes.push(inspection.change);
