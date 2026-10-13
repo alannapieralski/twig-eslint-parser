@@ -1,4 +1,4 @@
-type AttributeNode = {
+export type AttributeNode = {
   readonly type: 'Attribute';
   readonly range: [number, number];
   readonly key: { readonly value: string };
@@ -7,11 +7,11 @@ type AttributeNode = {
 
 export type OmittedAttribute = { readonly name: string; readonly range: readonly [number, number] };
 
-function isAttributeNode(value: unknown): value is AttributeNode {
+export function isAttributeNode(value: unknown): value is AttributeNode {
   return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'Attribute';
 }
 
-function containsTwig(attribute: AttributeNode): boolean {
+export function containsTwig(attribute: AttributeNode): boolean {
   return attribute.value?.parts?.some((part) => part.type === 'Template') ?? false;
 }
 

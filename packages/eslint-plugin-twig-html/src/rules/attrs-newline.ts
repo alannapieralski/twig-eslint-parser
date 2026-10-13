@@ -1,4 +1,5 @@
 import type { AST, Rule } from 'eslint';
+import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
 
 type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
@@ -10,24 +11,19 @@ type TagNode = {
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number };
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
-const twigBlockOpeners = new Set(['if', 'for', 'block', 'with', 'apply', 'autoescape', 'spaceless', 'embed', 'macro', 'filter', 'sandbox', 'cache', 'verbatim']);
-
-function twigBlockDepthChange(text: string): number {
-  let change = 0;
-  for (const [, tagName = ''] of text.matchAll(/\{%[-~]?\s*(\w+)/g)) {
-    if (tagName.startsWith('end')) change -= 1;
-    else if (twigBlockOpeners.has(tagName)) change += 1;
-  }
-  return change;
+function twigDepthChangeWithin(range: Range, blocks: readonly TwigBlockSummary[]): number {
+  return blocks
+    .filter((block) => block.range[0] >= range[0] && block.range[1] <= range[1])
+    .reduce((depth, block) => depth + block.depthChange, 0);
 }
 
-function groupAttributes(attributes: TagNode['attributes'], text: string): Range[] {
+function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];
   let groupStart: number | undefined;
   let depth = 0;
   for (const attribute of attributes) {
     groupStart ??= attribute.range[0];
-    depth += twigBlockDepthChange(text.slice(...attribute.range));
+    depth += twigDepthChangeWithin(attribute.range, blocks);
     if (depth <= 0) {
       groups.push([groupStart, attribute.range[1]]);
       groupStart = undefined;
@@ -87,9 +83,10 @@ export const attrsNewline: Rule.RuleModule = {
   create(context) {
     const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
+    const { blocks } = readTwigServices(context.sourceCode, context.id);
 
     const check = (node: TagNode) => {
-      const groups = groupAttributes(node.attributes, text);
+      const groups = groupAttributes(node.attributes, blocks);
       if (groups.length <= options.ifAttrsMoreThan) return;
 
       const gaps = describeGaps(node, groups, text, options);

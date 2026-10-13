@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findInterpolatedStrings, parseForESLint, type ParserOptions } from '../../src/index.js';
+import { findInterpolatedStrings, parseForESLint, readTwigServices, type ParserOptions } from '../../src/index.js';
 import { checkParserOutput } from '../support/output-checks.js';
 
 type Node = { type: string; range: [number, number]; loc: { start: { line: number; column: number } }; [key: string]: unknown };
@@ -324,6 +324,33 @@ describe('markup and options', () => {
   it('reports blocks it cannot convert instead of dropping them silently', () => {
     const { services } = parse('<p>{{ foo.is not }}</p>');
     expect(services.unconvertedBlocks).toMatchObject([{ kind: 'print', tagName: undefined, range: [3, 19] }]);
+  });
+});
+
+describe('block structure services', () => {
+  it('lists every block with its range and how it changes Twig nesting', () => {
+    const code = '{% if a %}{{ b }}{# c #}{% else %}{% endif %}';
+    const { services } = parse(code);
+    expect(services.blocks.map((block) => [block.kind, block.tagName, code.slice(...block.range), block.depthChange])).toEqual([
+      ['tag', 'if', '{% if a %}', 1],
+      ['print', undefined, '{{ b }}', 0],
+      ['comment', undefined, '{# c #}', 0],
+      ['tag', 'else', '{% else %}', 0],
+      ['tag', 'endif', '{% endif %}', -1],
+    ]);
+  });
+});
+
+describe('readTwigServices', () => {
+  it('returns the Twig services of a file parsed by this parser', () => {
+    const { result } = parse('<p>{{ a }}</p>');
+    const sourceCode = { parserServices: result.services } as Parameters<typeof readTwigServices>[0];
+    expect(readTwigServices(sourceCode, 'some-rule').convertedBlockCount).toBe(1);
+  });
+
+  it('names the consumer when another parser produced the file', () => {
+    const sourceCode = { parserServices: {} } as Parameters<typeof readTwigServices>[0];
+    expect(() => readTwigServices(sourceCode, 'some-rule')).toThrow('some-rule needs twig-eslint-parser as the parser for this file.');
   });
 });
 

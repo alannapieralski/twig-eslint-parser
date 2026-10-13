@@ -73,13 +73,14 @@ silently.
 
 ## Parser services
 
-`context.sourceCode.parserServices.twig` describes what happened to the file:
+`readTwigServices(context.sourceCode, context.id)` reads `context.sourceCode.parserServices.twig`, and throws a clear error when another parser parsed the file. It describes what happened to the file:
 
 | Property | Meaning |
 |---|---|
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
+| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise. `twig-html/attrs-newline` uses it to keep attributes wrapped in a Twig block together. |
 | `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name and range. `twig-tailwind/no-interpolated-attributes` reports them. |
 
 Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag missing its `>`, are reported by ESLint as a

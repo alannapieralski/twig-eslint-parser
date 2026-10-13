@@ -1,0 +1,24 @@
+type PluginModule = typeof import('eslint-plugin-better-tailwindcss');
+type DefaultsModule = typeof import('eslint-plugin-better-tailwindcss/defaults');
+
+type BetterTailwindcss = {
+  readonly plugin: PluginModule['default'];
+  readonly getDefaultSelectors: DefaultsModule['getDefaultSelectors'];
+};
+
+async function loadBetterTailwindcss(): Promise<BetterTailwindcss> {
+  try {
+    const [pluginModule, defaultsModule] = await Promise.all([
+      import('eslint-plugin-better-tailwindcss'),
+      import('eslint-plugin-better-tailwindcss/defaults'),
+    ]);
+    return { plugin: pluginModule.default, getDefaultSelectors: defaultsModule.getDefaultSelectors };
+  } catch (error) {
+    throw new Error(
+      'eslint-plugin-twig-tailwind could not load eslint-plugin-better-tailwindcss, which it needs as a peer dependency. Install it with: npm install --save-dev eslint-plugin-better-tailwindcss',
+      { cause: error },
+    );
+  }
+}
+
+export const betterTailwindcss = await loadBetterTailwindcss();

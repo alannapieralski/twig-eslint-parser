@@ -1,24 +1,9 @@
 import type { Rule } from 'eslint';
-import { readTwigServices } from './twig-services.js';
-
-type AttributeNode = {
-  readonly type: 'Attribute';
-  readonly range: [number, number];
-  readonly key: { readonly value: string };
-  readonly value?: { readonly parts?: readonly { readonly type: string }[] };
-};
+import { containsTwig, isAttributeNode, readTwigServices, type AttributeNode } from 'twig-eslint-parser';
 
 type NodeWithAttributes = { readonly attributes?: readonly unknown[] };
 
 const defaultAttributeNames = ['class'];
-
-function isAttributeNode(value: unknown): value is AttributeNode {
-  return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'Attribute';
-}
-
-function containsTwig(attribute: AttributeNode): boolean {
-  return attribute.value?.parts?.some((part) => part.type === 'Template') ?? false;
-}
 
 export const noInterpolatedAttributes: Rule.RuleModule = {
   meta: {
@@ -49,13 +34,13 @@ export const noInterpolatedAttributes: Rule.RuleModule = {
     const checkAttributes = (node: Rule.Node) => {
       const attributes = (node as unknown as NodeWithAttributes).attributes ?? [];
       for (const attribute of attributes.filter(isAttributeNode)) {
-        if (isRestricted(attribute.key.value) && containsTwig(attribute)) report(attribute.key.value, attribute.range);
+        if (isRestricted(attribute.key.value) && containsTwig(attribute as AttributeNode)) report(attribute.key.value, attribute.range);
       }
     };
 
     return {
       Program() {
-        for (const attribute of readTwigServices(context).omittedAttributes) {
+        for (const attribute of readTwigServices(context.sourceCode, context.id).omittedAttributes) {
           if (isRestricted(attribute.name)) report(attribute.name, attribute.range);
         }
       },

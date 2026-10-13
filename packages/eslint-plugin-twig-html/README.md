@@ -1,6 +1,6 @@
 # eslint-plugin-twig-html
 
-ESLint rules for the HTML in Twig and Drupal templates. The rules read the markup through
+ESLint rules for the HTML layout in Twig templates. The rules read the markup through
 [`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser)
 and understand Twig blocks, so their fixes keep Twig nesting and Twig inside tags intact.
 
