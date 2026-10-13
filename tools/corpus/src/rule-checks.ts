@@ -84,12 +84,13 @@ async function runRuleCheck(
   const changes: FixChange[] = [];
   const stats = { templates: templates.length, unparseable: 0, withReports: 0, reports: 0, fixed: 0 };
 
-  for (const template of templates) {
+  for (const [index, template] of templates.entries()) {
+    context.progress(index, { reports: stats.reports, fixed: stats.fixed, skipped: stats.unparseable });
     try {
       const inspection = await inspectTemplate(template, ruleId, fixKeeps, reporterFor(template.root), fixerFor(template.root));
       if (!inspection.isParseable) stats.unparseable += 1;
       if (inspection.isParseable && inspection.reports.length > 0) stats.withReports += 1;
-      if (inspection.isParseable) stats.reports += inspection.reports.length;
+      stats.reports += inspection.reports.length;
       findings.push(...inspection.reports, ...inspection.failures);
       if (!inspection.change) continue;
       stats.fixed += 1;

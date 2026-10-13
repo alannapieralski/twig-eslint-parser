@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { findingKey } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { describeFixProblems } from '../src/fix-invariants.js';
+import { createProgressReporter } from '../src/progress.js';
 import { ruleChecks, type CorpusPlugin } from '../src/rule-checks.js';
 import { selectChecks } from '../src/select.js';
 import type { Check, Finding, Template } from '../src/types.js';
@@ -66,7 +67,7 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: rule }), prefix: 'fake', ...(fixKeeps && { rules: { rewrite: { fixKeeps } } }) });
     if (!check) throw new Error('No check was created.');
-    const { findings } = await check.run([template(root)], { sampleSize: 0 });
+    const { findings } = await check.run([template(root)], { sampleSize: 0, progress: () => undefined });
     return findings.filter((finding) => finding.severity === 'failure');
   }
 
@@ -97,9 +98,9 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': '<div class="a"\n  <p>x</p>' });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: fixingRule((s) => s) }), prefix: 'fake' });
     const brokenTemplate: Template = { root, path: join(root, 'a.twig'), relativePath: 'a.twig', source: '<div class="a"\n  <p>x</p>' };
-    const { findings, stats } = await check!.run([brokenTemplate], { sampleSize: 0 });
+    const { findings, stats } = await check!.run([brokenTemplate], { sampleSize: 0, progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['report', expect.stringContaining('skipped, the template cannot be parsed')]]);
-    expect(stats).toMatchObject({ unparseable: 1, reports: 0, withReports: 0 });
+    expect(stats).toMatchObject({ unparseable: 1, reports: 1, withReports: 0 });
   });
 
   it('catches a rule that crashes', async () => {
@@ -161,5 +162,56 @@ describe('findingKey', () => {
   it('stays the same when a template moves, and changes when its content does', () => {
     expect(findingKey(finding('/one/a.twig', 'same'))).toBe(findingKey(finding('/two/a.twig', 'same')));
     expect(findingKey(finding('/one/a.twig', 'same'))).not.toBe(findingKey(finding('/one/a.twig', 'other')));
+  });
+});
+
+describe('createProgressReporter', () => {
+  function reporterWith(isTerminal: boolean) {
+    const written: string[] = [];
+    let time = 0;
+    const reporter = createProgressReporter({ write: (text) => { written.push(text); }, isTerminal }, () => time);
+    return { reporter, written, advance: (milliseconds: number) => { time += milliseconds; } };
+  }
+
+  it('prints a phase as one prefixed line', () => {
+    const { reporter, written } = reporterWith(false);
+    reporter.phase('config: 2 roots');
+    expect(written).toEqual(['[corpus] config: 2 roots\n']);
+  });
+
+  it('prints a line each time a log passes another 10%, with counts and speed', () => {
+    const { reporter, written, advance } = reporterWith(false);
+    const progress = reporter.track('1/1 a/b', 100);
+    advance(2000);
+    progress(5, { reports: 1 });
+    progress(10, { reports: 3 });
+    progress(15, { reports: 4 });
+    expect(written).toEqual(['[corpus] 1/1 a/b  10/100 (10%)  reports 3  5 templates/s\n']);
+  });
+
+  it('prints a line after 5 seconds even without a new 10% step', () => {
+    const { reporter, written, advance } = reporterWith(false);
+    const progress = reporter.track('x', 1000);
+    advance(5000);
+    progress(3);
+    expect(written).toHaveLength(1);
+  });
+
+  it('prints nothing at the start or the end, which the phase lines cover', () => {
+    const { reporter, written, advance } = reporterWith(false);
+    const progress = reporter.track('x', 10);
+    advance(60_000);
+    progress(0);
+    progress(10);
+    expect(written).toEqual([]);
+  });
+
+  it('rewrites one line on a terminal', () => {
+    const { reporter, written, advance } = reporterWith(true);
+    const progress = reporter.track('x', 100);
+    advance(300);
+    progress(2);
+    expect(written[0]).toMatch(/^\r\x1b\[2K\[corpus\] x {2}2\/100/);
+    expect(written[0]).not.toContain('\n');
   });
 });

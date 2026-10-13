@@ -58,6 +58,7 @@ function run(command: string, args: string[], environment: NodeJS.ProcessEnv): n
   return result.status ?? 1;
 }
 
+console.error('[corpus] building twig-eslint-parser');
 const buildStatus = run('npm', ['run', 'build', '-w', 'twig-eslint-parser', '--silent'], process.env);
 if (buildStatus !== 0) process.exit(buildStatus);
 
@@ -67,6 +68,7 @@ process.exit(run(
   {
     ...process.env,
     CORPUS_OPTIONS: JSON.stringify(options),
+    CORPUS_TTY: process.stderr.isTTY ? '1' : '0',
     NODE_OPTIONS: `${process.env['NODE_OPTIONS'] ?? ''} --disable-warning=ESLintIgnoreWarning`.trim(),
   },
 ));

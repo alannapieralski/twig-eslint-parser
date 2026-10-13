@@ -66,9 +66,10 @@ const lexerParity: Check = {
 
 const convertsEveryBlock: Check = {
   id: 'parser/converts-every-block',
-  run(templates): CheckOutcome {
+  run(templates, context): CheckOutcome {
     const findings: Finding[] = [];
-    for (const template of templates) {
+    for (const [index, template] of templates.entries()) {
+      context.progress(index, { failures: findings.length });
       try {
         for (const block of parseForESLint(template.source).services.twig.unconvertedBlocks) {
           findings.push({ check: 'parser/converts-every-block', severity: 'failure', template, message: `${template.source.slice(...block.range)} (${block.reason})` });
@@ -83,10 +84,11 @@ const convertsEveryBlock: Check = {
 
 const outputMatchesSource: Check = {
   id: 'parser/output-matches-source',
-  run(templates): CheckOutcome {
+  run(templates, context): CheckOutcome {
     const findings: Finding[] = [];
     let unpairableElements = 0;
-    for (const template of templates) {
+    for (const [index, template] of templates.entries()) {
+      context.progress(index, { findings: findings.length });
       for (const issue of checkParserOutput(template.source)) {
         if (issue.check === 'parses') continue;
         const isUnpairable = issue.check === 'html: element closes';

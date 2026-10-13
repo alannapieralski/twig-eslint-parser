@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { checkOfKey, findingKey, loadBaseline, writeBaseline } from './src/baseline.js';
 import { discoverTemplates, loadConfig } from './src/config.js';
+import { createProgressReporter, stderrOutput } from './src/progress.js';
 import { buildCheckReports, writeReport, type CheckResult } from './src/report.js';
 import { selectChecks } from './src/select.js';
 import type { CorpusOptions, PackageCorpus, Template } from './src/types.js';
@@ -17,6 +18,7 @@ function readOptions(): CorpusOptions {
 }
 
 const options = readOptions();
+const reporter = createProgressReporter(stderrOutput(process.env['CORPUS_TTY'] === '1'));
 const packages = Object.values(import.meta.glob<{ default: PackageCorpus }>('../../packages/*/test/corpus.ts', { eager: true })).map((module) => module.default);
 const selectedChecks = selectChecks(packages, options);
 
@@ -34,15 +36,26 @@ describe.skipIf(options.list)('corpus', () => {
   beforeAll(() => {
     templates = discoverTemplates(loadConfig(repositoryRoot, process.env), options);
     expect(templates.length, 'no templates found in the corpus roots').toBeGreaterThan(0);
+    const countsByRoot = Map.groupBy(templates, (template) => template.root);
+    reporter.phase(`config: ${countsByRoot.size} roots, ${templates.length} templates, ${selectedChecks.length} checks`);
+    for (const [root, rootTemplates] of countsByRoot) reporter.phase(`  ${rootTemplates.length} templates in ${root}`);
   });
 
-  it.each(selectedChecks)('$check.id', async ({ package: packageName, check }) => {
+  const numberedChecks = selectedChecks.map((selected, index) => ({ ...selected, position: `${index + 1}/${selectedChecks.length}` }));
+
+  it.each(numberedChecks)('$check.id', async ({ package: packageName, check, position }) => {
+    const label = `${position} ${check.id}`;
+    reporter.phase(`${label}: starting`);
     const started = performance.now();
-    const outcome = await check.run(templates, { sampleSize: options.sample });
+    const outcome = await check.run(templates, { sampleSize: options.sample, progress: reporter.track(label, templates.length) });
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
     const [report] = buildCheckReports([result], baseline);
-    if (options.updateBaseline || !report || report.newFailures.length === 0) return;
+    if (!report) throw new Error(`No report was built for ${check.id}.`);
+    reporter.phase(report.skipped === undefined
+      ? `${label}: done in ${report.seconds.toFixed(1)}s, ${report.reports} reports, ${report.failures} failures (${report.newFailures.length} new)`
+      : `${label}: skipped, ${report.skipped}`);
+    if (options.updateBaseline || report.newFailures.length === 0) return;
     throw new Error(`${report.newFailures.length} failures are not in the baseline. See corpus-report/summary.md.`);
   });
 

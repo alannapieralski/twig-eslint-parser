@@ -23,6 +23,7 @@ export type FixChange = {
 
 export type CheckContext = {
   readonly sampleSize: number;
+  readonly progress: (done: number, counts?: Readonly<Record<string, number>>) => void;
 };
 
 export type CheckOutcome = {
