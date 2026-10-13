@@ -140,9 +140,9 @@ Twig 3.x syntax up to 3.28, verified against real Twig:
 - Every fixture matches Twig 3.28.0's own tokens exactly, and its output passes the node-by-node
   checks in `test/support/output-checks.ts`: ranges, locations and text match the source, every
   string appears once, every tag and attribute is read, and every element closes.
-- On 1,534 real templates (Drupal core, contributed modules, a Numiko theme and Drupal's code
-  generator) the lexer matches Twig on every token and the output passes the same checks, apart
-  from elements opened or closed in different Twig branches.
+- On about 19,000 real templates (Drupal core, contributed modules and themes) the lexer matches
+  Twig on every token and the output passes the same checks, apart from elements opened or closed
+  in different Twig branches and a few templates with invalid HTML.
 
 ## Upgrading Twig
 
@@ -157,7 +157,7 @@ Twig 3.x syntax up to 3.28, verified against real Twig:
    - **Operators, tests and tags:** every Twig-specific table lives in `src/twig/syntax.ts`:
      operators and their JavaScript stand-ins, two-word tests, and which tags are converted or
      deliberately left unconverted.
-5. Run the corpus check below on real templates before releasing.
+5. Run `npm run corpus` on real templates before releasing.
 
 ## The twig-lexer fork
 
@@ -182,7 +182,7 @@ Run these from the repository root; see the [root README](https://github.com/ala
 | `npm run vendor:check -w twig-eslint-parser` / `vendor:write` | Checks or regenerates `src/lexer` from pristine plus patches. |
 | `npm run golden:twig -w twig-eslint-parser` | Regenerates the fixture golden files with real Twig (needs PHP and `composer install` in `tools/twig-oracle`). |
 | `npm run syntax:twig -w twig-eslint-parser` | Regenerates `twig-syntax.json` from the installed Twig (same requirements). |
-| `TWIG_CORPUS=dir:dir npm test -w twig-eslint-parser -- test/corpus.test.ts` | Checks the lexer against real Twig, and the parser's output node by node, on every template in the given directories (needs PHP). |
+| `npm run corpus -w twig-eslint-parser` | Checks the lexer against real Twig, and the parser's output node by node, on every template in your corpus (needs PHP). See the root README. |
 
 ## Licence
 

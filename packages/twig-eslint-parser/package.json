@@ -44,7 +44,8 @@
     "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
     "syntax:twig": "php tools/twig-oracle/syntax.php test/fixtures/twig/twig-syntax.json",
     "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
-    "vendor:write": "node scripts/vendor-twig-lexer.ts --write"
+    "vendor:write": "node scripts/vendor-twig-lexer.ts --write",
+    "corpus": "node ../../tools/corpus/cli.ts --package twig-eslint-parser"
   },
   "dependencies": {
     "@html-eslint/parser": "0.66.0",
