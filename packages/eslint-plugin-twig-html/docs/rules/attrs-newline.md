@@ -98,5 +98,15 @@ skipped.
 Turn it off if your templates are laid out by a formatter.
 
 `configs.recommended` skips `**/*.svg.twig`. SVG sprites put many short tags on one line, and one
-attribute per line would make them much longer for no gain. To lint them anyway, apply the rule to
-`**/*.svg.twig` in your own config.
+attribute per line would make them much longer for no gain. The skipped files get no parser either,
+so to lint them anyway, reuse the whole recommended config for them:
+
+```js
+// eslint.config.js
+import twigHtml from 'eslint-plugin-twig-html';
+
+export default [
+  twigHtml.configs.recommended,
+  { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [] },
+];
+```
