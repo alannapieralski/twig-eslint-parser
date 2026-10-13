@@ -21,9 +21,13 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
-  it('leaves tags with two attributes alone', async () => {
-    const code = '<a href="{{ url }}" class="flex w-full items-center justify-center gap-4 overflow-hidden">x</a>';
+  it('leaves tags with one attribute alone', async () => {
+    const code = '<a class="flex w-full items-center justify-center gap-4 overflow-hidden">x</a>';
     expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it('lays out a tag with two attributes', async () => {
+    expect(await fixed('<a href="{{ url }}" class="flex">x</a>')).toBe('<a\n  href="{{ url }}"\n  class="flex"\n>x</a>');
   });
 
   it('indents from the line the tag starts on, inside Twig blocks', async () => {
@@ -41,12 +45,12 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe(expected);
   });
 
-  it('does not report Drupal attributes plus one more attribute', async () => {
-    expect((await lint('<div{{ attributes }} id="a">x</div>')).messages).toEqual([]);
+  it('does not report Drupal attributes on their own', async () => {
+    expect((await lint('<div{{ attributes }}>x</div>')).messages).toEqual([]);
   });
 
   it('treats Twig inside a tag name as part of the name, never as an attribute', async () => {
-    expect((await lint('<h{{ level }} class="a" id="b">x</h{{ level }}>')).messages).toEqual([]);
+    expect((await lint('<h{{ level }} class="a">x</h{{ level }}>')).messages).toEqual([]);
     expect(await fixed('<h{{ level }} class="a" id="b" role="c">x</h{{ level }}>')).toBe('<h{{ level }}\n  class="a"\n  id="b"\n  role="c"\n>x</h{{ level }}>');
   });
 
@@ -66,7 +70,7 @@ describe('twig-html/attrs-newline', () => {
   });
 
   it('does not count a Twig block spanning attributes as more than one', async () => {
-    expect((await lint('<input {% if checked %}checked disabled{% endif %} type="checkbox">')).messages).toEqual([]);
+    expect((await lint('<input {% if checked %}checked disabled{% endif %}>')).messages).toEqual([]);
   });
 
   it('keeps multi-line attribute values as they are', async () => {

@@ -78,14 +78,14 @@ export const attrsNewline: Rule.RuleModule = {
       additionalProperties: false,
     }],
     messages: {
-      attributeLine: 'Put each attribute on its own line, indented one step from the tag, when a tag has more than {{max}} attributes.',
+      attributeLine: 'Put each attribute on its own line, indented one step from the tag.',
       closeOnOwnLine: 'Put "{{close}}" on its own line, in line with the tag.',
       closeAfterLastAttribute: 'Put "{{close}}" straight after the last attribute.',
     },
   },
 
   create(context) {
-    const options: Required<Options> = { ifAttrsMoreThan: 2, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
+    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
 
     const check = (node: TagNode) => {
@@ -105,7 +105,7 @@ export const attrsNewline: Rule.RuleModule = {
       context.report({
         loc,
         messageId,
-        data: { max: String(options.ifAttrsMoreThan), close: node.openEnd.value },
+        data: { close: node.openEnd.value },
         ...(isFixable && { fix: (fixer) => wrongGaps.map((gap) => fixer.replaceTextRange([...gap.range], gap.expected)) }),
       });
     };

@@ -38,7 +38,7 @@ config, which uses the same parser.
 
 | Rule | Description | Recommended | Fixable |
 |---|---|---|---|
-| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 2 attributes on its own line, indented one step from the tag | warn | yes |
+| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
 
 ## Why not @html-eslint's rules
 
