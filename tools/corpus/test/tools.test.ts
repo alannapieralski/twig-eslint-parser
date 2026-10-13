@@ -93,6 +93,15 @@ describe('ruleChecks', () => {
     expect(failures.map((failure) => failure.message)).toContain('the fix changes more than whitespace');
   });
 
+  it('lists a template it cannot parse as a skipped report instead of ignoring it', async () => {
+    const root = createCorpusDirectory({ 'a.twig': '<div class="a"\n  <p>x</p>' });
+    const [check] = ruleChecks({ plugin: pluginWith({ rewrite: fixingRule((s) => s) }), prefix: 'fake' });
+    const brokenTemplate: Template = { root, path: join(root, 'a.twig'), relativePath: 'a.twig', source: '<div class="a"\n  <p>x</p>' };
+    const { findings, stats } = await check!.run([brokenTemplate], { sampleSize: 0 });
+    expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['report', expect.stringContaining('skipped, the template cannot be parsed')]]);
+    expect(stats).toMatchObject({ unparseable: 1, reports: 0, withReports: 0 });
+  });
+
   it('catches a rule that crashes', async () => {
     const crashing: Rule.RuleModule = { meta: { type: 'problem', schema: [] }, create: () => { throw new Error('boom'); } };
     const failures = await failuresOf(crashing);

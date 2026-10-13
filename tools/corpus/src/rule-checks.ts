@@ -49,7 +49,11 @@ async function inspectTemplate(
   fixer: ESLint,
 ): Promise<TemplateInspection> {
   const reportRun = await lintSource(reporter, template, template.source);
-  if (reportRun.messages.some((message) => message.fatal)) return { isParseable: false, reports: [], failures: [] };
+  const parseError = reportRun.messages.find((message) => message.fatal);
+  if (parseError) {
+    const skipped: Finding = { check, severity: 'report', template, message: `skipped, the template cannot be parsed: ${parseError.message}`, line: parseError.line };
+    return { isParseable: false, reports: [skipped], failures: [] };
+  }
 
   const reports = reportRun.messages
     .filter((message) => message.ruleId === check)
@@ -84,8 +88,8 @@ async function runRuleCheck(
     try {
       const inspection = await inspectTemplate(template, ruleId, fixKeeps, reporterFor(template.root), fixerFor(template.root));
       if (!inspection.isParseable) stats.unparseable += 1;
-      if (inspection.reports.length > 0) stats.withReports += 1;
-      stats.reports += inspection.reports.length;
+      if (inspection.isParseable && inspection.reports.length > 0) stats.withReports += 1;
+      if (inspection.isParseable) stats.reports += inspection.reports.length;
       findings.push(...inspection.reports, ...inspection.failures);
       if (!inspection.change) continue;
       stats.fixed += 1;
