@@ -26,22 +26,24 @@ export type CheckReport = {
 const maxFailureFilesPerCheck = 25;
 const maxListedFailuresPerCheck = 10;
 
+export function buildCheckReport({ package: packageName, check, outcome, seconds }: CheckResult, baseline: ReadonlySet<string>): CheckReport {
+  const failures = outcome.findings.filter((finding) => finding.severity === 'failure');
+  const newFailures = failures.filter((finding) => !baseline.has(findingKey(finding)));
+  return {
+    package: packageName,
+    id: check.id,
+    stats: outcome.stats,
+    ...(outcome.skipped !== undefined && { skipped: outcome.skipped }),
+    reports: outcome.findings.filter((finding) => finding.severity === 'report').length,
+    failures: failures.length,
+    knownFailures: failures.length - newFailures.length,
+    newFailures,
+    seconds,
+  };
+}
+
 export function buildCheckReports(results: readonly CheckResult[], baseline: ReadonlySet<string>): CheckReport[] {
-  return results.map(({ package: packageName, check, outcome, seconds }) => {
-    const failures = outcome.findings.filter((finding) => finding.severity === 'failure');
-    const newFailures = failures.filter((finding) => !baseline.has(findingKey(finding)));
-    return {
-      package: packageName,
-      id: check.id,
-      stats: outcome.stats,
-      ...(outcome.skipped !== undefined && { skipped: outcome.skipped }),
-      reports: outcome.findings.length - failures.length,
-      failures: failures.length,
-      knownFailures: failures.length - newFailures.length,
-      newFailures,
-      seconds,
-    };
-  });
+  return results.map((result) => buildCheckReport(result, baseline));
 }
 
 function checkDirectoryName(id: string): string {
@@ -75,8 +77,8 @@ export function renderSummary(reports: readonly CheckReport[], templateCount: nu
   return `${lines.join('\n')}\n`;
 }
 
-function statusOf(finding: Finding, baseline: ReadonlySet<string>): 'report' | 'known' | 'new' {
-  if (finding.severity === 'report') return 'report';
+function statusOf(finding: Finding, baseline: ReadonlySet<string>): 'report' | 'skipped' | 'known' | 'new' {
+  if (finding.severity !== 'failure') return finding.severity;
   return baseline.has(findingKey(finding)) ? 'known' : 'new';
 }
 

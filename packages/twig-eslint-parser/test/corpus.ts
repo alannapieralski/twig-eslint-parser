@@ -40,7 +40,7 @@ function describeLexerMismatches(template: Template, golden: Golden): string[] {
 
 const lexerParity: Check = {
   id: 'parser/lexer-parity',
-  run(templates): CheckOutcome {
+  run(templates, context): CheckOutcome {
     const skipped = oracleUnavailableReason();
     if (skipped !== undefined) return { findings: [], stats: {}, skipped };
 
@@ -48,7 +48,8 @@ const lexerParity: Check = {
     const findings: Finding[] = [];
     let comparedTokens = 0;
     let rejectedByTwig = 0;
-    for (const result of tokenizeWithTwig(templates)) {
+    for (const [index, result] of tokenizeWithTwig(templates).entries()) {
+      context.progress(index, { findings: findings.length });
       const template = templatesByPath.get(result.path);
       if (!template) throw new Error(`The Twig oracle returned a template that was not sent: ${result.path}`);
       if (result.error !== undefined) {

@@ -7,7 +7,7 @@ export type Template = {
 
 export type Finding = {
   readonly check: string;
-  readonly severity: 'failure' | 'report';
+  readonly severity: 'failure' | 'report' | 'skipped';
   readonly template: Template;
   readonly message: string;
   readonly line?: number;

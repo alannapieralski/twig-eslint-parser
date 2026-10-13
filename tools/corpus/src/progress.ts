@@ -13,7 +13,16 @@ const logPercentStep = 10;
 const clearLine = '\r\x1b[2K';
 
 export function stderrOutput(isTerminal: boolean): ProgressOutput {
-  return { write: (text) => { writeSync(2, text); }, isTerminal };
+  return {
+    write: (text) => {
+      try {
+        writeSync(2, text);
+      } catch {
+        return;
+      }
+    },
+    isTerminal,
+  };
 }
 
 function describeCounts(counts: Readonly<Record<string, number>>): string {
@@ -34,9 +43,10 @@ export function createProgressReporter(output: ProgressOutput, now: () => number
       const current = now();
       const percent = Math.floor((done / total) * 100);
       const percentStep = Math.floor(percent / logPercentStep);
-      const interval = output.isTerminal ? terminalIntervalMilliseconds : logIntervalMilliseconds;
-      const reachedNewStep = !output.isTerminal && percentStep > lastPercentStep;
-      if (!reachedNewStep && current - lastPrintedAt < interval) return;
+      const isDue = output.isTerminal
+        ? current - lastPrintedAt >= terminalIntervalMilliseconds
+        : percentStep > lastPercentStep || current - lastPrintedAt >= logIntervalMilliseconds;
+      if (!isDue) return;
       lastPrintedAt = current;
       lastPercentStep = percentStep;
       const perSecond = Math.round(done / Math.max((current - startedAt) / 1000, 0.001));
