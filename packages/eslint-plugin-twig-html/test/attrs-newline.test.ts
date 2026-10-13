@@ -98,6 +98,12 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed('<script src="a.js" type="module" defer></script>')).toBe('<script\n  src="a.js"\n  type="module"\n  defer\n></script>');
   });
 
+  it('is not applied to .svg.twig templates by the recommended config', async () => {
+    const eslint = new ESLint({ overrideConfigFile: true, overrideConfig: [twigHtml.configs.recommended] });
+    const [result] = await eslint.lintText('<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>', { filePath: 'sprite.svg.twig' });
+    expect(result?.messages.map((message) => message.ruleId)).toEqual([null]);
+  });
+
   it('can keep > on the line of the last attribute', async () => {
     expect(await fixed('<a href="#" class="a" id="b">x</a>', { closeStyle: 'sameline' })).toBe('<a\n  href="#"\n  class="a"\n  id="b">x</a>');
     expect(await fixed('<img src="a" alt="" loading="lazy" />', { closeStyle: 'sameline' })).toBe('<img\n  src="a"\n  alt=""\n  loading="lazy" />');

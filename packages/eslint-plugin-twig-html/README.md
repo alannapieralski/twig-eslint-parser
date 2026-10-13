@@ -30,7 +30,7 @@ import twigHtml from 'eslint-plugin-twig-html';
 export default [twigHtml.configs.recommended];
 ```
 
-`configs.recommended` applies to `**/*.twig`, sets `twig-eslint-parser` as the parser and turns on
+`configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
 `twig-html/attrs-newline` as a warning. It works next to `eslint-plugin-twig-tailwind`'s recommended
 config, which uses the same parser.
 
