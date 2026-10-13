@@ -10,6 +10,7 @@ type OracleResult = Partial<Golden> & { path: string; twig: string; error?: stri
 
 const oracleDirectory = resolve(import.meta.dirname, '../tools/twig-oracle');
 const oracleScript = resolve(oracleDirectory, 'tokenize.php');
+const oracleChunkSize = 500;
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -30,6 +31,12 @@ function tokenizeWithTwig(templates: readonly Template[]): OracleResult[] {
   return output.split('\n').filter((line) => line !== '').map((line) => JSON.parse(line) as OracleResult);
 }
 
+function* tokenizeInChunks(templates: readonly Template[]): Generator<OracleResult> {
+  for (let start = 0; start < templates.length; start += oracleChunkSize) {
+    yield* tokenizeWithTwig(templates.slice(start, start + oracleChunkSize));
+  }
+}
+
 function describeLexerMismatches(template: Template, golden: Golden): string[] {
   try {
     return findParityMismatches(template.source, golden);
@@ -48,8 +55,10 @@ const lexerParity: Check = {
     const findings: Finding[] = [];
     let comparedTokens = 0;
     let rejectedByTwig = 0;
-    for (const [index, result] of tokenizeWithTwig(templates).entries()) {
+    let index = 0;
+    for (const result of tokenizeInChunks(templates)) {
       context.progress(index, { findings: findings.length });
+      index += 1;
       const template = templatesByPath.get(result.path);
       if (!template) throw new Error(`The Twig oracle returned a template that was not sent: ${result.path}`);
       if (result.error !== undefined) {
