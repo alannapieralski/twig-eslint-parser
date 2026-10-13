@@ -11,19 +11,26 @@ type TagNode = {
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number };
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
-function twigDepthChangeWithin(range: Range, blocks: readonly TwigBlockSummary[]): number {
-  return blocks
-    .filter((block) => block.range[0] >= range[0] && block.range[1] <= range[1])
-    .reduce((depth, block) => depth + block.depthChange, 0);
+function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
+  let low = searchFrom;
+  let high = blocks.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((blocks[middle]?.range[0] ?? Infinity) < offset) low = middle + 1;
+    else high = middle;
+  }
+  return low;
 }
 
 function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];
+  let blockIndex = 0;
   let groupStart: number | undefined;
   let depth = 0;
   for (const attribute of attributes) {
     groupStart ??= attribute.range[0];
-    depth += twigDepthChangeWithin(attribute.range, blocks);
+    blockIndex = firstBlockIndexFrom(attribute.range[0], blocks, blockIndex);
+    for (let block = blocks[blockIndex]; block && block.range[1] <= attribute.range[1]; block = blocks[++blockIndex]) depth += block.depthChange;
     if (depth <= 0) {
       groups.push([groupStart, attribute.range[1]]);
       groupStart = undefined;

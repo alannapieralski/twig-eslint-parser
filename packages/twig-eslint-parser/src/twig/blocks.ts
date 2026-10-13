@@ -17,16 +17,20 @@ export type TwigBlockSummary = {
   readonly depthChange: -1 | 0 | 1;
 };
 
-const nestingTagNames = new Set(['if', 'for', 'block', 'with', 'apply', 'autoescape', 'spaceless', 'embed', 'macro', 'filter', 'sandbox', 'cache', 'verbatim']);
+function opensNesting(block: TwigBlock, closedTagNames: ReadonlySet<string>): boolean {
+  if (block.tagName === undefined || !closedTagNames.has(block.tagName)) return false;
+  const isInlineSet = block.tagName === 'set' && block.tokens.some((token) => token.type === 'OPERATOR' && token.value === '=');
+  return !isInlineSet;
+}
 
-function nestingDepthChange(block: TwigBlock): TwigBlockSummary['depthChange'] {
-  if (block.tagName === undefined) return 0;
-  if (block.tagName.startsWith('end')) return -1;
-  return nestingTagNames.has(block.tagName) ? 1 : 0;
+function nestingDepthChange(block: TwigBlock, closedTagNames: ReadonlySet<string>): TwigBlockSummary['depthChange'] {
+  if (block.tagName?.startsWith('end')) return -1;
+  return opensNesting(block, closedTagNames) ? 1 : 0;
 }
 
 export function summariseTwigBlocks(blocks: readonly TwigBlock[]): TwigBlockSummary[] {
-  return blocks.map((block) => ({ kind: block.kind, tagName: block.tagName, range: [block.start, block.end], depthChange: nestingDepthChange(block) }));
+  const closedTagNames = new Set(blocks.flatMap((block) => (block.tagName?.startsWith('end') ? [block.tagName.slice('end'.length)] : [])));
+  return blocks.map((block) => ({ kind: block.kind, tagName: block.tagName, range: [block.start, block.end], depthChange: nestingDepthChange(block, closedTagNames) }));
 }
 
 const blockKindByOpeningType: Partial<Record<TwigTokenType, { kind: TwigBlockKind; closingType: TwigTokenType }>> = {

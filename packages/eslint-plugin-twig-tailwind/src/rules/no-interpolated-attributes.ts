@@ -1,5 +1,5 @@
 import type { Rule } from 'eslint';
-import { containsTwig, isAttributeNode, readTwigServices, type AttributeNode } from 'twig-eslint-parser';
+import { containsTwig, isAttributeNode, readTwigServices } from 'twig-eslint-parser';
 
 type NodeWithAttributes = { readonly attributes?: readonly unknown[] };
 
@@ -34,7 +34,7 @@ export const noInterpolatedAttributes: Rule.RuleModule = {
     const checkAttributes = (node: Rule.Node) => {
       const attributes = (node as unknown as NodeWithAttributes).attributes ?? [];
       for (const attribute of attributes.filter(isAttributeNode)) {
-        if (isRestricted(attribute.key.value) && containsTwig(attribute as AttributeNode)) report(attribute.key.value, attribute.range);
+        if (isRestricted(attribute.key.value) && containsTwig(attribute)) report(attribute.key.value, attribute.range);
       }
     };
 

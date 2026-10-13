@@ -23,6 +23,7 @@ const plugin = {
 } satisfies ESLint.Plugin;
 
 const { getDefaultSelectors } = betterTailwindcss;
+const classSelectors = [...getDefaultSelectors(), ...twigSelectors];
 const attributeSelectors = getDefaultSelectors().filter((selector) => selector.kind === 'attribute');
 
 const recommended: Linter.Config = {
@@ -35,7 +36,7 @@ const recommended: Linter.Config = {
     parserOptions: { ignoreInterpolatedAttributes: ['class'] },
   },
   settings: {
-    'better-tailwindcss': { selectors: [...getDefaultSelectors(), ...twigSelectors] },
+    'better-tailwindcss': { selectors: classSelectors },
   },
   rules: {
     ...betterTailwindcss.plugin.configs.recommended.rules,
@@ -50,7 +51,7 @@ const drupal: Linter.Config = {
   name: 'twig-tailwind/drupal',
   files: ['**/*.twig'],
   settings: {
-    'better-tailwindcss': { selectors: [...getDefaultSelectors(), ...twigSelectors, ...drupalSelectors] },
+    'better-tailwindcss': { selectors: [...classSelectors, ...drupalSelectors] },
   },
 };
 

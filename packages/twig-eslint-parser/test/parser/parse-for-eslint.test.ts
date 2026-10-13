@@ -341,6 +341,19 @@ describe('block structure services', () => {
   });
 });
 
+describe('block form tags in block structure services', () => {
+  it('opens nesting for block-form set and trans but not for an inline set', () => {
+    const { services } = parse('{% set a = 1 %}{% set b %}x{% endset %}{% trans %}y{% endtrans %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['set', 0],
+      ['set', 1],
+      ['endset', -1],
+      ['trans', 1],
+      ['endtrans', -1],
+    ]);
+  });
+});
+
 describe('readTwigServices', () => {
   it('returns the Twig services of a file parsed by this parser', () => {
     const { result } = parse('<p>{{ a }}</p>');
