@@ -38,7 +38,8 @@
     "build": "tsc -b tsconfig.build.json",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "corpus": "node ../../tools/corpus/cli.ts --package eslint-plugin-twig-html"
   },
   "dependencies": {
     "twig-eslint-parser": "0.0.0"

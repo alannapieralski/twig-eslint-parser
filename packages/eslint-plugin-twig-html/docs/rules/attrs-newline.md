@@ -85,7 +85,7 @@ The defaults match Vue's threshold.
 
 - `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values and the unfixable Twig-comment case.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
-- `test/corpus-fix-safety.test.ts` does the same for real templates, and also checks a second pass changes nothing. It only runs with `TWIG_CORPUS=dir:dir npm test -w eslint-plugin-twig-html -- test/corpus-fix-safety.test.ts`.
+- `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
 
 Run over 15 real Drupal projects (17,914 templates, Drupal core and contrib included): 4,770 tags
 were reported at a threshold of 2. The fix changed only whitespace in every file, every fixed template
