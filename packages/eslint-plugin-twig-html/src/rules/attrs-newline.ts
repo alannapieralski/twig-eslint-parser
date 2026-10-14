@@ -49,12 +49,13 @@ function lineIndentation(text: string, offset: number): string {
   return /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
 }
 
-function lineBreakOf(text: string): string {
+// Returns '\r\n' when the file uses Windows line endings, otherwise '\n'.
+function lineBreakUsedIn(text: string): string {
   return text.includes('\r\n') ? '\r\n' : '\n';
 }
 
 function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
-  const lineBreak = lineBreakOf(text);
+  const lineBreak = lineBreakUsedIn(text);
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
   const indentUnit = tagIndentation.includes('\t') ? '\t' : ' '.repeat(options.indent);
   const attributeBreak = `${lineBreak}${tagIndentation}${indentUnit}`;
