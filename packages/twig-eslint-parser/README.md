@@ -99,8 +99,12 @@ position in the markup says:
   Tags and attribute prints become attributes of their own (`<span {% if x %}class="a"{% endif %}>`
   has the attributes `{% if x %}`, `class` and `{% endif %}`); comments between attributes are
   skipped.
-- Any other print continues the name it touches: `<h{{ level }}>`, `<{{ html_element }}>` and
-  `data-{{ name }}="x"`. The tag's `name` is the Twig as written.
+- A print touching the end of a tag name is read as attributes (`<div{{ attr }}>`, whatever the
+  expression is called) unless a close tag spells the same Twig into the name
+  (`<h{{ level }}>...</h{{ level }}>`), in which case it continues the name. An element with no
+  close tag, such as `<input{{ attr }}>`, is therefore read as attributes. A print straight after
+  `<` (`<{{ html_element }}>`) is the tag name, and any other print touching a name continues it
+  (`data-{{ name }}="x"`). The tag's `name` is the Twig as written.
 - Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
   `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
   as a browser does, so one element that is never closed, such as Drupal's

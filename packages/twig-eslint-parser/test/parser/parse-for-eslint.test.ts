@@ -369,6 +369,7 @@ describe('readTwigServices', () => {
 
 describe('Drupal attributes printed straight after a tag name', () => {
   const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
   const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const attributeSources = (code: string, tag: Node) => (tag['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute));
 
@@ -388,6 +389,43 @@ describe('Drupal attributes printed straight after a tag name', () => {
       expect(attributeSources(code, namedTag(code, 'div'))).toEqual([`{{ ${expression} }}`, 'id="a"']);
     },
   );
+
+  it.each(['attr', 'wrapper_attrs', 'item.link_attributes', 'options.html|join(" ")'])(
+    'reads {{ %s }} straight after a tag name as an attribute when no close tag spells it into the name',
+    (expression) => {
+      const code = `<div{{ ${expression} }} id="a"><p>x</p></div><span>after</span>`;
+      const div = namedTag(code, 'div');
+      expect(attributeSources(code, div)).toEqual([`{{ ${expression} }}`, 'id="a"']);
+      expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+      expect(childTagNames(div)).toEqual(['p']);
+    },
+  );
+
+  it('keeps the elements after a void element with an unrecognised print as siblings', () => {
+    const code = '<input{{ attr }}><span>after</span>';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['input', 'span']);
+    expect(childTagNames(namedTag(code, 'input'))).toEqual([]);
+  });
+
+  it('reads a print after a Twig tag name as attributes while the name print stays in the name', () => {
+    const code = '<{{ tag }}{{ attr }}><li>x</li></{{ tag }}><span>after</span>';
+    const [wrapper] = tagsOf(code);
+    expect(wrapper?.['name']).toBe('{{ tag }}');
+    expect((wrapper?.['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(['{{ attr }}']);
+    expect(sourceOf(code, wrapper?.['close'] as Node)).toBe('</{{ tag }}>');
+  });
+
+  it('keeps a print in the name when a close tag spells it, whatever the expression is', () => {
+    const code = '<h{{ attributes }}>x</h{{ attributes }}><span>after</span>';
+    const [heading] = tagsOf(code);
+    expect(heading?.['name']).toBe('h{{ attributes }}');
+    expect(sourceOf(code, heading?.['close'] as Node)).toBe('</h{{ attributes }}>');
+  });
+
+  it('is not misled by a less-than sign inside Twig', () => {
+    const code = '{% if a <b{{ c }} %}<div{{ attr }}>x</div>{% endif %}';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['div']);
+  });
 
   it('keeps every later range and line/column exact after several of them', () => {
     const code = '<ul{{ attributes }}>\n  <li{{ item.attributes }} class="a">x</li>\n</ul>';

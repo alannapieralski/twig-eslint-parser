@@ -2,6 +2,7 @@ import type { TemplateWrapper } from './es-html-parser/types/index.js';
 import { annotateBranches } from './html/branches.js';
 import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './html/program.js';
 import { createOffsetLocator } from './source-text.js';
+import { classifyPrintsInTagNames, type TagNamePrintRole } from './tag-name-roles.js';
 import { summariseTwigBlocks, type TwigBlock } from './twig/blocks.js';
 
 export type MarkupParserOptions = { readonly rawContentTags?: readonly string[] };
@@ -55,9 +56,10 @@ function delimiterEnd(block: TwigBlock): number {
   return block.end - lineBreak.length;
 }
 
-function templateInfoOf(source: string, block: TwigBlock): TemplateWrapper {
+function templateInfoOf(source: string, block: TwigBlock, tagNamePrintRoles: ReadonlyMap<TwigBlock, TagNamePrintRole>): TemplateWrapper {
   const end = delimiterEnd(block);
-  const isAttributesPrint = block.kind === 'print' && attributesPrint.test(source.slice(block.start, end));
+  const tagNameRole = tagNamePrintRoles.get(block);
+  const isAttributesPrint = block.kind === 'print' && (tagNameRole ? tagNameRole === 'starts-attributes' : attributesPrint.test(source.slice(block.start, end)));
   return { open: [block.start, block.start + 2], close: [end - 2, end], kind: block.kind, ...(isAttributesPrint && { role: 'attributes' as const }) };
 }
 
@@ -100,8 +102,9 @@ function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: 
 
 export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
   const markup = blankVerbatimDelimiters(source, blocks);
+  const tagNamePrintRoles = classifyPrintsInTagNames(source, blocks);
   const parseOptions = {
-    templateInfos: blocks.map((block) => templateInfoOf(source, block)),
+    templateInfos: blocks.map((block) => templateInfoOf(source, block, tagNamePrintRoles)),
     rawContentTags: [...rawTextElements, ...(options.rawContentTags ?? [])],
   };
   let result: HtmlParseResult;
