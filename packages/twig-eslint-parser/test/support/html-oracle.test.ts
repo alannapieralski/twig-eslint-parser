@@ -1,0 +1,187 @@
+import { describe, expect, it } from 'vitest';
+import { parseForESLint } from '../../src/index.js';
+import type { Golden } from '../lexer/parity.js';
+import { compareWithHtmlOracle, twigRangesFromOracle, type TwigRange } from './html-oracle.js';
+
+const twigTypeByKind = {
+  text: 'text',
+  print: 'begin of print statement',
+  endPrint: 'end of print statement',
+  tag: 'begin of statement block',
+  endTag: 'end of statement block',
+  end: 'end of template',
+} as const;
+
+type CompactToken = readonly [kind: keyof typeof twigTypeByKind, byteOffset: number, text?: string];
+
+function golden(tokens: readonly CompactToken[]): Golden {
+  return { twig: '3.28.0', tokens: tokens.map(([kind, offset, text]) => ({ type: twigTypeByKind[kind], value: text ?? '', line: 1, offset })) };
+}
+
+function plainHtml(source: string): CompactToken[] {
+  return [['text', 0, source], ['end', Buffer.byteLength(source)]];
+}
+
+function oracleIssues(source: string, tokens: readonly CompactToken[]) {
+  return compareWithHtmlOracle(source, twigRangesFromOracle(source, golden(tokens)), parseForESLint(source).ast).map(({ check, detail }) => ({ check, detail }));
+}
+
+function checksOf(issues: readonly { check: string }[]): string[] {
+  return [...new Set(issues.map((issue) => issue.check))].sort();
+}
+
+describe('twigRangesFromOracle', () => {
+  it('derives print, tag and comment ranges through whitespace control, verbatim and multibyte text', () => {
+    const source = '<p class="{{ a }}">  {{- b -}}  {# c #}  {%- if x ~%}é\n{% endif %}{% verbatim %}{{ y }}{% endverbatim %}</p>{# end #}';
+    const tokens: CompactToken[] = [
+      ['text', 0, '<p class="'], ['print', 10], ['endPrint', 15], ['text', 17, '">'], ['print', 21], ['endPrint', 27],
+      ['tag', 41], ['endTag', 50], ['text', 53, 'é\n'], ['tag', 56], ['endTag', 65], ['text', 81, '{{ y }}'], ['text', 105, '</p>'], ['end', 118],
+    ];
+
+    expect(twigRangesFromOracle(source, golden(tokens))).toEqual<TwigRange[]>([
+      { start: 10, end: 17, kind: 'print' },
+      { start: 21, end: 30, kind: 'print' },
+      { start: 32, end: 39, kind: 'comment' },
+      { start: 41, end: 53, kind: 'tag' },
+      { start: 55, end: 66, kind: 'tag' },
+      { start: 66, end: 80, kind: 'tag' },
+      { start: 87, end: 104, kind: 'tag' },
+      { start: 108, end: 117, kind: 'comment' },
+    ]);
+  });
+
+  it('matches normalised text against CRLF line endings', () => {
+    const source = '<p>\r\n{# note #}\r\n{{ a }}\r\n</p>';
+    const tokens: CompactToken[] = [['text', 0, '<p>\n'], ['print', 17], ['endPrint', 22], ['text', 24, '\n</p>'], ['end', 30]];
+
+    expect(twigRangesFromOracle(source, golden(tokens))).toEqual<TwigRange[]>([
+      { start: 5, end: 15, kind: 'comment' },
+      { start: 17, end: 24, kind: 'print' },
+    ]);
+  });
+
+  it('throws when the tokens do not describe the source', () => {
+    const source = '<p>{{ a }}</p>';
+
+    expect(() => twigRangesFromOracle(source, golden([['text', 0, '<p>'], ['endPrint', 8], ['end', 14]]))).toThrow(/closes no open print block/);
+    expect(() => twigRangesFromOracle(source, golden([['text', 0, '<div>'], ['end', 14]]))).toThrow(/does not match the source/);
+    expect(() => twigRangesFromOracle(source, golden([['text', 0, '<p>'], ['end', 14]]))).toThrow(/Twig emitted no token/);
+    expect(() => twigRangesFromOracle(source, golden([['text', 0, '<p>'], ['print', 3], ['endPrint', 7], ['text', 10, '</p>'], ['end', 14]]))).toThrow(/Expected "}}"/);
+  });
+});
+
+describe('compareWithHtmlOracle', () => {
+  it('passes clean markup with Twig in text and attribute values', () => {
+    const source = '<ul class="list {{ modifier }}" data-id=\'{{ id }}\'>\n  {% for item in items %}\n    <li>{{ item }}</li>\n  {% endfor %}\n</ul>';
+    const tokens: CompactToken[] = [
+      ['text', 0, '<ul class="list '], ['print', 16], ['endPrint', 28], ['text', 30, '" data-id=\''], ['print', 41], ['endPrint', 47],
+      ['text', 49, '\'>\n  '], ['tag', 54], ['endTag', 75], ['text', 78, '    <li>'], ['print', 86], ['endPrint', 94],
+      ['text', 96, '</li>\n  '], ['tag', 104], ['endTag', 114], ['text', 117, '</ul>'], ['end', 122],
+    ];
+
+    expect(oracleIssues(source, tokens)).toEqual([]);
+  });
+
+  it('passes Drupal attribute prints after a tag name and Twig inside a tag name', () => {
+    const source = '<div{{ attributes }}><h{{ level }} class="a">t</h{{ level }}></div>';
+    const tokens: CompactToken[] = [
+      ['text', 0, '<div'], ['print', 4], ['endPrint', 18], ['text', 20, '><h'], ['print', 23], ['endPrint', 32],
+      ['text', 34, ' class="a">t</h'], ['print', 49], ['endPrint', 58], ['text', 60, '></div>'], ['end', 67],
+    ];
+
+    expect(oracleIssues(source, tokens)).toEqual([]);
+  });
+
+  it('parses noscript content as markup, like a browser with scripting disabled', () => {
+    const source = '<noscript><img src="a.png" alt=""></noscript>';
+
+    expect(oracleIssues(source, plainHtml(source))).toEqual([]);
+  });
+
+  it('reports a Twig tag glued to an attribute name', () => {
+    const source = '<span {% if x %}class="a"{% endif %}>t</span>';
+    const tokens: CompactToken[] = [['text', 0, '<span '], ['tag', 6], ['endTag', 14], ['text', 16, 'class="a"'], ['tag', 25], ['endTag', 34], ['text', 36, '>t</span>'], ['end', 45]];
+
+    expect(oracleIssues(source, tokens)).toEqual([
+      { check: 'html-oracle: attribute names', detail: 'line 1: oracle reads the name "class" in "{% if x %}class"' },
+    ]);
+  });
+
+  it('reports a print and a Twig tag merged into one attribute', () => {
+    const source = '<p {{ a }}{% if b %} id="c"{% endif %}>t</p>';
+    const tokens: CompactToken[] = [['text', 0, '<p '], ['print', 3], ['endPrint', 8], ['tag', 10], ['endTag', 18], ['text', 20, ' id="c"'], ['tag', 27], ['endTag', 36], ['text', 38, '>t</p>'], ['end', 44]];
+
+    expect(oracleIssues(source, tokens)).toEqual([
+      { check: 'html-oracle: attribute names', detail: 'line 1: attribute key glues a Twig tag to other content "{{ a }}{% if b %}"' },
+    ]);
+  });
+
+  it('reports an end tag the parser drops after an unclosed placeholder element', () => {
+    const source = '<html><head><head-placeholder token="x"></head><body></body></html>';
+
+    expect(checksOf(oracleIssues(source, plainHtml(source)))).toEqual(['html-oracle: end tags', 'html-oracle: implied end tags']);
+  });
+
+  it('reports a close tag with a Twig name that the parser does not pair', () => {
+    const source = '<{{ element }} id="a">t</{{element}}>';
+    const tokens: CompactToken[] = [['text', 0, '<'], ['print', 1], ['endPrint', 12], ['text', 14, ' id="a">t</'], ['print', 25], ['endPrint', 34], ['text', 36, '>'], ['end', 37]];
+
+    expect(oracleIssues(source, tokens)).toEqual([
+      { check: 'html-oracle: end tags', detail: 'line 1: end tag is not the close of any element "</{{element}}>"' },
+    ]);
+  });
+
+  it('separates stray end tags from dropped ones', () => {
+    const source = '<div></div></div>';
+
+    expect(oracleIssues(source, plainHtml(source))).toEqual([
+      { check: 'html-oracle: unmatched end tags', detail: 'line 1: end tag is not the close of any element "</div>"' },
+    ]);
+  });
+
+  it('reports tags parsed inside textarea content', () => {
+    const source = '<textarea>\n<b>x</b></textarea>';
+
+    expect(oracleIssues(source, plainHtml(source))).toEqual([
+      { check: 'html-oracle: raw text', detail: 'line 2: <b> is parsed as a tag inside raw text "<b>"' },
+    ]);
+  });
+
+  it('reports a Twig method call read as part of the tag name', () => {
+    const source = "<div{{ x.addClass('y') }}>t</div>";
+    const tokens: CompactToken[] = [['text', 0, '<div'], ['print', 4], ['endPrint', 23], ['text', 25, '>t</div>'], ['end', 33]];
+
+    expect(checksOf(oracleIssues(source, tokens))).toEqual(['html-oracle: end tags', 'html-oracle: tag names']);
+  });
+
+  it('compares attribute names and value ranges by offset', () => {
+    const source = '<a href="x" id=y>t</a>';
+    const ast = {
+      type: 'Program',
+      body: [{
+        type: 'Tag',
+        name: 'a',
+        openStart: { value: '<a', range: [0, 2] },
+        openEnd: { value: '>', range: [16, 17] },
+        close: { value: '</a>', range: [18, 22] },
+        attributes: [
+          { key: { value: 'href', range: [3, 7] }, value: { value: 'x"', range: [9, 11] } },
+        ],
+      }],
+    };
+
+    expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual(['html-oracle: attribute values', 'html-oracle: attributes']);
+  });
+
+  it('de-duplicates identical issues', () => {
+    const source = `<textarea>${'<b></b>'.repeat(30)}</textarea>`;
+
+    expect(oracleIssues(source, plainHtml(source))).toHaveLength(1);
+  });
+
+  it('bounds the issues for one template', () => {
+    const source = `<textarea>${'\n<b></b>'.repeat(30)}</textarea>`;
+
+    expect(oracleIssues(source, plainHtml(source))).toHaveLength(20);
+  });
+});

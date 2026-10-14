@@ -1,0 +1,23 @@
+{# first #}<b class="k">x</b>{# second #}
+{# a #}{# b #} <i>between</i> {#- c -#} <s>trimmed</s>
+<span>{# one #}{{ value }}{# two #}</span>
+{# quotes '{{ inside }}' and "{% here %}" #}<em>after</em>
+{# hash # inside #} <u>{# ## #}</u>{#~ line ~#}	<q>tab</q>
+{{ value # inline comment with 'quotes' and }}
+}}
+{% if value # inline comment with %} and }}
+%}yes{% endif %}
+{{ [
+  1, # a
+  2 # b
+]|length }}
+{{ "string # with hash" # and then a comment
+}}
+{% verbatim %}
+<b>{# not a comment #}</b>
+{{ not.lexed }}
+{%- endverbatim -%}
+
+<i>after verbatim</i>
+{% verbatim ~%}  
+  one line {%~ endverbatim %}

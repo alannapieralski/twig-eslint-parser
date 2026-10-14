@@ -1,0 +1,269 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "text",
+            "value": "<b class=\"k\">x</b>",
+            "line": 1,
+            "offset": 11
+        },
+        {
+            "type": "text",
+            "value": " <i>between</i>",
+            "line": 2,
+            "offset": 56
+        },
+        {
+            "type": "text",
+            "value": "<s>trimmed</s>\n<span>",
+            "line": 2,
+            "offset": 82
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 112
+        },
+        {
+            "type": "name",
+            "value": "value",
+            "line": 3,
+            "offset": 115,
+            "end": 120
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 121
+        },
+        {
+            "type": "text",
+            "value": "</span>\n",
+            "line": 3,
+            "offset": 132
+        },
+        {
+            "type": "text",
+            "value": "<em>after</em>\n",
+            "line": 4,
+            "offset": 184
+        },
+        {
+            "type": "text",
+            "value": " <u>",
+            "line": 5,
+            "offset": 218
+        },
+        {
+            "type": "text",
+            "value": "</u>",
+            "line": 5,
+            "offset": 230
+        },
+        {
+            "type": "text",
+            "value": "<q>tab</q>\n",
+            "line": 5,
+            "offset": 247
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 258
+        },
+        {
+            "type": "name",
+            "value": "value",
+            "line": 6,
+            "offset": 261,
+            "end": 266
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 305
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 7,
+            "offset": 307
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 8,
+            "offset": 308
+        },
+        {
+            "type": "name",
+            "value": "if",
+            "line": 8,
+            "offset": 311,
+            "end": 313
+        },
+        {
+            "type": "name",
+            "value": "value",
+            "line": 8,
+            "offset": 314,
+            "end": 319
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 9,
+            "offset": 352
+        },
+        {
+            "type": "text",
+            "value": "yes",
+            "line": 9,
+            "offset": 354
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 9,
+            "offset": 357
+        },
+        {
+            "type": "name",
+            "value": "endif",
+            "line": 9,
+            "offset": 360,
+            "end": 365
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 9,
+            "offset": 366
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 369
+        },
+        {
+            "type": "operator",
+            "value": "[",
+            "line": 10,
+            "offset": 372,
+            "end": 373
+        },
+        {
+            "type": "number",
+            "value": 1,
+            "line": 11,
+            "offset": 376,
+            "end": 377
+        },
+        {
+            "type": "punctuation",
+            "value": ",",
+            "line": 11,
+            "offset": 377,
+            "end": 378
+        },
+        {
+            "type": "number",
+            "value": 2,
+            "line": 12,
+            "offset": 385,
+            "end": 386
+        },
+        {
+            "type": "punctuation",
+            "value": "]",
+            "line": 13,
+            "offset": 391,
+            "end": 392
+        },
+        {
+            "type": "operator",
+            "value": "|",
+            "line": 13,
+            "offset": 392,
+            "end": 393
+        },
+        {
+            "type": "name",
+            "value": "length",
+            "line": 13,
+            "offset": 393,
+            "end": 399
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 13,
+            "offset": 400
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 13,
+            "offset": 402
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 14,
+            "offset": 403
+        },
+        {
+            "type": "string",
+            "value": "string # with hash",
+            "line": 14,
+            "offset": 407
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 15,
+            "offset": 448
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 15,
+            "offset": 450
+        },
+        {
+            "type": "text",
+            "value": "\n<b>{# not a comment #}</b>\n{{ not.lexed }}",
+            "line": 21,
+            "offset": 465
+        },
+        {
+            "type": "text",
+            "value": "<i>after verbatim</i>\n",
+            "line": 21,
+            "offset": 530
+        },
+        {
+            "type": "text",
+            "value": "\n  one line",
+            "line": 23,
+            "offset": 569
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 23,
+            "offset": 599
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 24,
+            "offset": 600
+        }
+    ]
+}

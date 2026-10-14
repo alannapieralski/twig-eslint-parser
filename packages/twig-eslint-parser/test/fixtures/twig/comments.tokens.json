@@ -17,7 +17,8 @@
             "type": "name",
             "value": "foo",
             "line": 15,
-            "offset": 449
+            "offset": 449,
+            "end": 452
         },
         {
             "type": "end of print statement",
@@ -41,7 +42,8 @@
             "type": "name",
             "value": "foo",
             "line": 17,
-            "offset": 476
+            "offset": 476,
+            "end": 479
         },
         {
             "type": "end of print statement",
@@ -65,25 +67,29 @@
             "type": "name",
             "value": "set",
             "line": 19,
-            "offset": 518
+            "offset": 518,
+            "end": 521
         },
         {
             "type": "name",
             "value": "x",
             "line": 19,
-            "offset": 522
+            "offset": 522,
+            "end": 523
         },
         {
             "type": "operator",
             "value": "=",
             "line": 19,
-            "offset": 524
+            "offset": 524,
+            "end": 525
         },
         {
             "type": "number",
             "value": 1,
             "line": 19,
-            "offset": 526
+            "offset": 526,
+            "end": 527
         },
         {
             "type": "end of statement block",
@@ -101,7 +107,8 @@
             "type": "operator",
             "value": "[",
             "line": 21,
-            "offset": 562
+            "offset": 562,
+            "end": 563
         },
         {
             "type": "string",
@@ -113,7 +120,8 @@
             "type": "punctuation",
             "value": ",",
             "line": 22,
-            "offset": 569
+            "offset": 569,
+            "end": 570
         },
         {
             "type": "string",
@@ -125,13 +133,15 @@
             "type": "punctuation",
             "value": ",",
             "line": 23,
-            "offset": 584
+            "offset": 584,
+            "end": 585
         },
         {
             "type": "punctuation",
             "value": "]",
             "line": 24,
-            "offset": 595
+            "offset": 595,
+            "end": 596
         },
         {
             "type": "end of print statement",

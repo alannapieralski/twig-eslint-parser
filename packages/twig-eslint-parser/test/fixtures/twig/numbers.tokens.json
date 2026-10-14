@@ -11,7 +11,8 @@
             "type": "number",
             "value": 0,
             "line": 1,
-            "offset": 3
+            "offset": 3,
+            "end": 4
         },
         {
             "type": "end of print statement",
@@ -35,7 +36,8 @@
             "type": "number",
             "value": 42,
             "line": 1,
-            "offset": 11
+            "offset": 11,
+            "end": 13
         },
         {
             "type": "end of print statement",
@@ -59,7 +61,8 @@
             "type": "number",
             "value": 1.5,
             "line": 1,
-            "offset": 20
+            "offset": 20,
+            "end": 23
         },
         {
             "type": "end of print statement",
@@ -83,7 +86,8 @@
             "type": "number",
             "value": 1000,
             "line": 1,
-            "offset": 30
+            "offset": 30,
+            "end": 35
         },
         {
             "type": "end of print statement",
@@ -107,7 +111,8 @@
             "type": "number",
             "value": 1000.5001,
             "line": 1,
-            "offset": 42
+            "offset": 42,
+            "end": 53
         },
         {
             "type": "end of print statement",
@@ -131,7 +136,8 @@
             "type": "number",
             "value": 1000,
             "line": 1,
-            "offset": 60
+            "offset": 60,
+            "end": 63
         },
         {
             "type": "end of print statement",
@@ -155,7 +161,8 @@
             "type": "number",
             "value": 1000,
             "line": 1,
-            "offset": 70
+            "offset": 70,
+            "end": 73
         },
         {
             "type": "end of print statement",
@@ -179,7 +186,8 @@
             "type": "number",
             "value": 0.0015,
             "line": 1,
-            "offset": 80
+            "offset": 80,
+            "end": 86
         },
         {
             "type": "end of print statement",
@@ -203,7 +211,8 @@
             "type": "number",
             "value": 25000000000,
             "line": 1,
-            "offset": 93
+            "offset": 93,
+            "end": 100
         },
         {
             "type": "end of print statement",
@@ -227,7 +236,8 @@
             "type": "number",
             "value": 100000000000,
             "line": 1,
-            "offset": 107
+            "offset": 107,
+            "end": 114
         },
         {
             "type": "end of print statement",
@@ -251,13 +261,15 @@
             "type": "operator",
             "value": "-",
             "line": 2,
-            "offset": 121
+            "offset": 121,
+            "end": 122
         },
         {
             "type": "number",
             "value": 1,
             "line": 2,
-            "offset": 122
+            "offset": 122,
+            "end": 123
         },
         {
             "type": "end of print statement",
@@ -281,13 +293,15 @@
             "type": "operator",
             "value": "+",
             "line": 2,
-            "offset": 130
+            "offset": 130,
+            "end": 131
         },
         {
             "type": "number",
             "value": 1,
             "line": 2,
-            "offset": 131
+            "offset": 131,
+            "end": 132
         },
         {
             "type": "end of print statement",
@@ -311,19 +325,22 @@
             "type": "number",
             "value": 1,
             "line": 2,
-            "offset": 139
+            "offset": 139,
+            "end": 140
         },
         {
             "type": "operator",
             "value": "..",
             "line": 2,
-            "offset": 140
+            "offset": 140,
+            "end": 142
         },
         {
             "type": "number",
             "value": 5,
             "line": 2,
-            "offset": 142
+            "offset": 142,
+            "end": 143
         },
         {
             "type": "end of print statement",
@@ -347,19 +364,22 @@
             "type": "name",
             "value": "items",
             "line": 2,
-            "offset": 150
+            "offset": 150,
+            "end": 155
         },
         {
             "type": "operator",
             "value": ".",
             "line": 2,
-            "offset": 155
+            "offset": 155,
+            "end": 156
         },
         {
             "type": "number",
             "value": 0,
             "line": 2,
-            "offset": 156
+            "offset": 156,
+            "end": 157
         },
         {
             "type": "end of print statement",
@@ -383,25 +403,29 @@
             "type": "name",
             "value": "items",
             "line": 2,
-            "offset": 164
+            "offset": 164,
+            "end": 169
         },
         {
             "type": "operator",
             "value": "[",
             "line": 2,
-            "offset": 169
+            "offset": 169,
+            "end": 170
         },
         {
             "type": "number",
             "value": 0,
             "line": 2,
-            "offset": 170
+            "offset": 170,
+            "end": 171
         },
         {
             "type": "punctuation",
             "value": "]",
             "line": 2,
-            "offset": 171
+            "offset": 171,
+            "end": 172
         },
         {
             "type": "end of print statement",

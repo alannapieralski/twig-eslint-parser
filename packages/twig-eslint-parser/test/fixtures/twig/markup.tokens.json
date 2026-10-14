@@ -11,25 +11,29 @@
             "type": "name",
             "value": "set",
             "line": 1,
-            "offset": 3
+            "offset": 3,
+            "end": 6
         },
         {
             "type": "name",
             "value": "classes",
             "line": 1,
-            "offset": 7
+            "offset": 7,
+            "end": 14
         },
         {
             "type": "operator",
             "value": "=",
             "line": 1,
-            "offset": 15
+            "offset": 15,
+            "end": 16
         },
         {
             "type": "operator",
             "value": "[",
             "line": 1,
-            "offset": 17
+            "offset": 17,
+            "end": 18
         },
         {
             "type": "string",
@@ -41,19 +45,22 @@
             "type": "punctuation",
             "value": ",",
             "line": 1,
-            "offset": 24
+            "offset": 24,
+            "end": 25
         },
         {
             "type": "name",
             "value": "is_featured",
             "line": 1,
-            "offset": 26
+            "offset": 26,
+            "end": 37
         },
         {
             "type": "operator",
             "value": "?",
             "line": 1,
-            "offset": 38
+            "offset": 38,
+            "end": 39
         },
         {
             "type": "string",
@@ -65,7 +72,8 @@
             "type": "punctuation",
             "value": "]",
             "line": 1,
-            "offset": 56
+            "offset": 56,
+            "end": 57
         },
         {
             "type": "end of statement block",
@@ -89,37 +97,43 @@
             "type": "name",
             "value": "attributes",
             "line": 2,
-            "offset": 68
+            "offset": 68,
+            "end": 78
         },
         {
             "type": "operator",
             "value": ".",
             "line": 2,
-            "offset": 78
+            "offset": 78,
+            "end": 79
         },
         {
             "type": "name",
             "value": "addClass",
             "line": 2,
-            "offset": 79
+            "offset": 79,
+            "end": 87
         },
         {
             "type": "operator",
             "value": "(",
             "line": 2,
-            "offset": 87
+            "offset": 87,
+            "end": 88
         },
         {
             "type": "name",
             "value": "classes",
             "line": 2,
-            "offset": 88
+            "offset": 88,
+            "end": 95
         },
         {
             "type": "punctuation",
             "value": ")",
             "line": 2,
-            "offset": 95
+            "offset": 95,
+            "end": 96
         },
         {
             "type": "end of print statement",
@@ -143,25 +157,29 @@
             "type": "name",
             "value": "attributes",
             "line": 3,
-            "offset": 110
+            "offset": 110,
+            "end": 120
         },
         {
             "type": "operator",
             "value": "|",
             "line": 3,
-            "offset": 120
+            "offset": 120,
+            "end": 121
         },
         {
             "type": "name",
             "value": "without",
             "line": 3,
-            "offset": 121
+            "offset": 121,
+            "end": 128
         },
         {
             "type": "operator",
             "value": "(",
             "line": 3,
-            "offset": 128
+            "offset": 128,
+            "end": 129
         },
         {
             "type": "string",
@@ -173,7 +191,8 @@
             "type": "punctuation",
             "value": ")",
             "line": 3,
-            "offset": 135
+            "offset": 135,
+            "end": 136
         },
         {
             "type": "end of print statement",
@@ -203,13 +222,15 @@
             "type": "operator",
             "value": "|",
             "line": 3,
-            "offset": 179
+            "offset": 179,
+            "end": 180
         },
         {
             "type": "name",
             "value": "trans",
             "line": 3,
-            "offset": 180
+            "offset": 180,
+            "end": 185
         },
         {
             "type": "end of print statement",
@@ -233,19 +254,22 @@
             "type": "name",
             "value": "legend",
             "line": 4,
-            "offset": 209
+            "offset": 209,
+            "end": 215
         },
         {
             "type": "operator",
             "value": ".",
             "line": 4,
-            "offset": 215
+            "offset": 215,
+            "end": 216
         },
         {
             "type": "name",
             "value": "attributes",
             "line": 4,
-            "offset": 216
+            "offset": 216,
+            "end": 226
         },
         {
             "type": "end of print statement",
@@ -269,19 +293,22 @@
             "type": "name",
             "value": "create_attribute",
             "line": 5,
-            "offset": 255
+            "offset": 255,
+            "end": 271
         },
         {
             "type": "operator",
             "value": "(",
             "line": 5,
-            "offset": 271
+            "offset": 271,
+            "end": 272
         },
         {
             "type": "punctuation",
             "value": "{",
             "line": 5,
-            "offset": 272
+            "offset": 272,
+            "end": 273
         },
         {
             "type": "string",
@@ -293,13 +320,15 @@
             "type": "punctuation",
             "value": ":",
             "line": 5,
-            "offset": 280
+            "offset": 280,
+            "end": 281
         },
         {
             "type": "operator",
             "value": "[",
             "line": 5,
-            "offset": 282
+            "offset": 282,
+            "end": 283
         },
         {
             "type": "string",
@@ -311,7 +340,8 @@
             "type": "punctuation",
             "value": ",",
             "line": 5,
-            "offset": 286
+            "offset": 286,
+            "end": 287
         },
         {
             "type": "string",
@@ -323,19 +353,22 @@
             "type": "punctuation",
             "value": "]",
             "line": 5,
-            "offset": 291
+            "offset": 291,
+            "end": 292
         },
         {
             "type": "punctuation",
             "value": "}",
             "line": 5,
-            "offset": 292
+            "offset": 292,
+            "end": 293
         },
         {
             "type": "punctuation",
             "value": ")",
             "line": 5,
-            "offset": 293
+            "offset": 293,
+            "end": 294
         },
         {
             "type": "end of print statement",
@@ -359,13 +392,15 @@
             "type": "name",
             "value": "if",
             "line": 6,
-            "offset": 314
+            "offset": 314,
+            "end": 316
         },
         {
             "type": "name",
             "value": "id",
             "line": 6,
-            "offset": 317
+            "offset": 317,
+            "end": 319
         },
         {
             "type": "end of statement block",
@@ -389,7 +424,8 @@
             "type": "name",
             "value": "id",
             "line": 6,
-            "offset": 330
+            "offset": 330,
+            "end": 332
         },
         {
             "type": "end of print statement",
@@ -413,7 +449,8 @@
             "type": "name",
             "value": "endif",
             "line": 6,
-            "offset": 339
+            "offset": 339,
+            "end": 344
         },
         {
             "type": "end of statement block",
@@ -437,13 +474,15 @@
             "type": "name",
             "value": "if",
             "line": 7,
-            "offset": 403
+            "offset": 403,
+            "end": 405
         },
         {
             "type": "name",
             "value": "checked",
             "line": 7,
-            "offset": 406
+            "offset": 406,
+            "end": 413
         },
         {
             "type": "end of statement block",
@@ -467,7 +506,8 @@
             "type": "name",
             "value": "endif",
             "line": 7,
-            "offset": 427
+            "offset": 427,
+            "end": 432
         },
         {
             "type": "end of statement block",
@@ -491,7 +531,8 @@
             "type": "name",
             "value": "level",
             "line": 8,
-            "offset": 457
+            "offset": 457,
+            "end": 462
         },
         {
             "type": "end of print statement",
@@ -515,7 +556,8 @@
             "type": "name",
             "value": "level",
             "line": 8,
-            "offset": 493
+            "offset": 493,
+            "end": 498
         },
         {
             "type": "end of print statement",
@@ -539,7 +581,8 @@
             "type": "name",
             "value": "html_element",
             "line": 9,
-            "offset": 509
+            "offset": 509,
+            "end": 521
         },
         {
             "type": "end of print statement",
@@ -557,7 +600,8 @@
             "type": "name",
             "value": "element_attributes",
             "line": 9,
-            "offset": 527
+            "offset": 527,
+            "end": 545
         },
         {
             "type": "end of print statement",
@@ -581,7 +625,8 @@
             "type": "name",
             "value": "html_element",
             "line": 9,
-            "offset": 561
+            "offset": 561,
+            "end": 573
         },
         {
             "type": "end of print statement",
@@ -605,25 +650,29 @@
             "type": "name",
             "value": "tag",
             "line": 10,
-            "offset": 584
+            "offset": 584,
+            "end": 587
         },
         {
             "type": "operator",
             "value": "|",
             "line": 10,
-            "offset": 587
+            "offset": 587,
+            "end": 588
         },
         {
             "type": "name",
             "value": "default",
             "line": 10,
-            "offset": 588
+            "offset": 588,
+            "end": 595
         },
         {
             "type": "operator",
             "value": "(",
             "line": 10,
-            "offset": 595
+            "offset": 595,
+            "end": 596
         },
         {
             "type": "string",
@@ -635,7 +684,8 @@
             "type": "punctuation",
             "value": ")",
             "line": 10,
-            "offset": 602
+            "offset": 602,
+            "end": 603
         },
         {
             "type": "end of print statement",
@@ -659,25 +709,29 @@
             "type": "name",
             "value": "tag",
             "line": 10,
-            "offset": 629
+            "offset": 629,
+            "end": 632
         },
         {
             "type": "operator",
             "value": "|",
             "line": 10,
-            "offset": 632
+            "offset": 632,
+            "end": 633
         },
         {
             "type": "name",
             "value": "default",
             "line": 10,
-            "offset": 633
+            "offset": 633,
+            "end": 640
         },
         {
             "type": "operator",
             "value": "(",
             "line": 10,
-            "offset": 640
+            "offset": 640,
+            "end": 641
         },
         {
             "type": "string",
@@ -689,7 +743,8 @@
             "type": "punctuation",
             "value": ")",
             "line": 10,
-            "offset": 647
+            "offset": 647,
+            "end": 648
         },
         {
             "type": "end of print statement",
@@ -743,7 +798,8 @@
             "type": "operator",
             "value": "~",
             "line": 11,
-            "offset": 696
+            "offset": 696,
+            "end": 697
         },
         {
             "type": "string",
@@ -773,7 +829,8 @@
             "type": "name",
             "value": "modifier",
             "line": 12,
-            "offset": 753
+            "offset": 753,
+            "end": 761
         },
         {
             "type": "end of print statement",
@@ -797,7 +854,8 @@
             "type": "name",
             "value": "src",
             "line": 13,
-            "offset": 807
+            "offset": 807,
+            "end": 810
         },
         {
             "type": "end of print statement",
@@ -821,25 +879,29 @@
             "type": "name",
             "value": "alt",
             "line": 13,
-            "offset": 823
+            "offset": 823,
+            "end": 826
         },
         {
             "type": "operator",
             "value": "|",
             "line": 13,
-            "offset": 826
+            "offset": 826,
+            "end": 827
         },
         {
             "type": "name",
             "value": "default",
             "line": 13,
-            "offset": 827
+            "offset": 827,
+            "end": 834
         },
         {
             "type": "operator",
             "value": "(",
             "line": 13,
-            "offset": 834
+            "offset": 834,
+            "end": 835
         },
         {
             "type": "string",
@@ -851,7 +913,8 @@
             "type": "punctuation",
             "value": ")",
             "line": 13,
-            "offset": 837
+            "offset": 837,
+            "end": 838
         },
         {
             "type": "end of print statement",
@@ -875,19 +938,22 @@
             "type": "name",
             "value": "set",
             "line": 15,
-            "offset": 855
+            "offset": 855,
+            "end": 858
         },
         {
             "type": "name",
             "value": "markup",
             "line": 15,
-            "offset": 859
+            "offset": 859,
+            "end": 865
         },
         {
             "type": "operator",
             "value": "=",
             "line": 15,
-            "offset": 866
+            "offset": 866,
+            "end": 867
         },
         {
             "type": "string",

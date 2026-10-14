@@ -1,0 +1,912 @@
+{
+    "twig": "3.28.0",
+    "tokens": [
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 0
+        },
+        {
+            "type": "string",
+            "value": "{{",
+            "line": 1,
+            "offset": 3
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 8
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 10
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 11
+        },
+        {
+            "type": "string",
+            "value": "}}",
+            "line": 1,
+            "offset": 14
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 19
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 21
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 22
+        },
+        {
+            "type": "string",
+            "value": "{%",
+            "line": 1,
+            "offset": 25
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 30
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 32
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 33
+        },
+        {
+            "type": "string",
+            "value": "%}",
+            "line": 1,
+            "offset": 36
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 41
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 43
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 44
+        },
+        {
+            "type": "string",
+            "value": "{#",
+            "line": 1,
+            "offset": 47
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 52
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 1,
+            "offset": 54
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 55
+        },
+        {
+            "type": "string",
+            "value": "#}",
+            "line": 1,
+            "offset": 58
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 1,
+            "offset": 63
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 1,
+            "offset": 65
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 66
+        },
+        {
+            "type": "string",
+            "value": "{{",
+            "line": 2,
+            "offset": 69
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 74
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 76
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 77
+        },
+        {
+            "type": "string",
+            "value": "}}",
+            "line": 2,
+            "offset": 80
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 85
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 87
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 88
+        },
+        {
+            "type": "string",
+            "value": "{%",
+            "line": 2,
+            "offset": 91
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 96
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 98
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 99
+        },
+        {
+            "type": "string",
+            "value": "%}",
+            "line": 2,
+            "offset": 102
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 107
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 109
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 110
+        },
+        {
+            "type": "string",
+            "value": "{#",
+            "line": 2,
+            "offset": 114
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 118
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 2,
+            "offset": 120
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 121
+        },
+        {
+            "type": "string",
+            "value": "#}",
+            "line": 2,
+            "offset": 125
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 2,
+            "offset": 129
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 2,
+            "offset": 131
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 132
+        },
+        {
+            "type": "string",
+            "value": "open #} close ",
+            "line": 3,
+            "offset": 136
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 3,
+            "offset": 150
+        },
+        {
+            "type": "name",
+            "value": "name",
+            "line": 3,
+            "offset": 153,
+            "end": 157
+        },
+        {
+            "type": "operator",
+            "value": "~",
+            "line": 3,
+            "offset": 158,
+            "end": 159
+        },
+        {
+            "type": "string",
+            "value": "#}",
+            "line": 3,
+            "offset": 160
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 3,
+            "offset": 165
+        },
+        {
+            "type": "string",
+            "value": " end",
+            "line": 3,
+            "offset": 166
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 3,
+            "offset": 172
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 3,
+            "offset": 174
+        },
+        {
+            "type": "begin of statement block",
+            "value": "",
+            "line": 3,
+            "offset": 175
+        },
+        {
+            "type": "name",
+            "value": "set",
+            "line": 3,
+            "offset": 178,
+            "end": 181
+        },
+        {
+            "type": "name",
+            "value": "label",
+            "line": 3,
+            "offset": 182,
+            "end": 187
+        },
+        {
+            "type": "operator",
+            "value": "=",
+            "line": 3,
+            "offset": 188,
+            "end": 189
+        },
+        {
+            "type": "string",
+            "value": "{% endset %}",
+            "line": 3,
+            "offset": 190
+        },
+        {
+            "type": "end of statement block",
+            "value": "",
+            "line": 3,
+            "offset": 205
+        },
+        {
+            "type": "text",
+            "value": "<p data-note=\"",
+            "line": 4,
+            "offset": 208
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 222
+        },
+        {
+            "type": "string",
+            "value": "x }} y",
+            "line": 4,
+            "offset": 225
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 234
+        },
+        {
+            "type": "text",
+            "value": "\">",
+            "line": 4,
+            "offset": 236
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 238
+        },
+        {
+            "type": "string",
+            "value": "-}}",
+            "line": 4,
+            "offset": 241
+        },
+        {
+            "type": "operator",
+            "value": "~",
+            "line": 4,
+            "offset": 247,
+            "end": 248
+        },
+        {
+            "type": "string",
+            "value": "~%}",
+            "line": 4,
+            "offset": 249
+        },
+        {
+            "type": "operator",
+            "value": "~",
+            "line": 4,
+            "offset": 255,
+            "end": 256
+        },
+        {
+            "type": "string",
+            "value": "-#}",
+            "line": 4,
+            "offset": 257
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 4,
+            "offset": 263
+        },
+        {
+            "type": "text",
+            "value": "</p>\n",
+            "line": 4,
+            "offset": 265
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 5,
+            "offset": 270
+        },
+        {
+            "type": "string",
+            "value": "spans\ntwo {{ lines }}",
+            "line": 5,
+            "offset": 273
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 297
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 6,
+            "offset": 299
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 6,
+            "offset": 300
+        },
+        {
+            "type": "string",
+            "value": "also\ntwo {% lines %}",
+            "line": 6,
+            "offset": 303
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 7,
+            "offset": 326
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 7,
+            "offset": 328
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 329
+        },
+        {
+            "type": "string",
+            "value": "it's",
+            "line": 8,
+            "offset": 332
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 340
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 8,
+            "offset": 342
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 343
+        },
+        {
+            "type": "string",
+            "value": "a 'quoted' word",
+            "line": 8,
+            "offset": 346
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 366
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 8,
+            "offset": 368
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 369
+        },
+        {
+            "type": "string",
+            "value": "say \"hi\"",
+            "line": 8,
+            "offset": 372
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 8,
+            "offset": 385
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 8,
+            "offset": 387
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 388
+        },
+        {
+            "type": "string",
+            "value": "double \"inside\" single",
+            "line": 9,
+            "offset": 391
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 416
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 9,
+            "offset": 418
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 419
+        },
+        {
+            "type": "string",
+            "value": "single 'inside' double",
+            "line": 9,
+            "offset": 422
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 9,
+            "offset": 447
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 9,
+            "offset": 449
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 450
+        },
+        {
+            "type": "string",
+            "value": "ends in a backslash \\",
+            "line": 10,
+            "offset": 453
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 478
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 10,
+            "offset": 480
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 481
+        },
+        {
+            "type": "string",
+            "value": "ends in a backslash \\",
+            "line": 10,
+            "offset": 484
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 509
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 10,
+            "offset": 511
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 512
+        },
+        {
+            "type": "string",
+            "value": "backslash then quote \\'",
+            "line": 10,
+            "offset": 515
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 10,
+            "offset": 543
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 10,
+            "offset": 545
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 546
+        },
+        {
+            "type": "string",
+            "value": "escaped #{not interpolated}",
+            "line": 11,
+            "offset": 549
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 580
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 11,
+            "offset": 582
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 583
+        },
+        {
+            "type": "string",
+            "value": "hex AJ",
+            "line": 11,
+            "offset": 586
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 601
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 11,
+            "offset": 603
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 604
+        },
+        {
+            "type": "string",
+            "value": "tab\there",
+            "line": 11,
+            "offset": 607
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 11,
+            "offset": 619
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 11,
+            "offset": 621
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 622
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 12,
+            "offset": 626
+        },
+        {
+            "type": "string",
+            "value": "}}",
+            "line": 12,
+            "offset": 629
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 12,
+            "offset": 634
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 637
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 12,
+            "offset": 639
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 640
+        },
+        {
+            "type": "begin of string interpolation",
+            "value": "",
+            "line": 12,
+            "offset": 644
+        },
+        {
+            "type": "string",
+            "value": "#}",
+            "line": 12,
+            "offset": 648
+        },
+        {
+            "type": "end of string interpolation",
+            "value": "",
+            "line": 12,
+            "offset": 652
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 655
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 12,
+            "offset": 657
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 658
+        },
+        {
+            "type": "string",
+            "value": "a#b",
+            "line": 12,
+            "offset": 662
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 667
+        },
+        {
+            "type": "text",
+            "value": " ",
+            "line": 12,
+            "offset": 669
+        },
+        {
+            "type": "begin of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 670
+        },
+        {
+            "type": "string",
+            "value": "#",
+            "line": 12,
+            "offset": 674
+        },
+        {
+            "type": "end of print statement",
+            "value": "",
+            "line": 12,
+            "offset": 677
+        },
+        {
+            "type": "text",
+            "value": "\n",
+            "line": 12,
+            "offset": 679
+        },
+        {
+            "type": "end of template",
+            "value": "",
+            "line": 13,
+            "offset": 680
+        }
+    ]
+}
