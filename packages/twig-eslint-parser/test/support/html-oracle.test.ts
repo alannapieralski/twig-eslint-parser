@@ -213,6 +213,7 @@ describe('compareWithHtmlOracle', () => {
       body: [{
         type: 'Tag',
         name: 'a',
+        range: [0, 22],
         openStart: { value: '<a', range: [0, 2] },
         openEnd: { value: '>', range: [16, 17] },
         close: { value: '</a>', range: [18, 22] },
@@ -223,6 +224,27 @@ describe('compareWithHtmlOracle', () => {
     };
 
     expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual(['html-oracle: attribute values', 'html-oracle: attributes']);
+  });
+
+  it('reports an element the parser nests differently from the oracle', () => {
+    const source = '<div><p>a</p><span>b</span></div>';
+    const ast = parseForESLint(source).ast;
+    const [div] = (ast.body[0] as unknown as { children: { children: { name: string }[] }[] }).children;
+    const [paragraph, span] = div?.children ?? [];
+
+    expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual([]);
+    Object.assign(paragraph ?? {}, { children: [...((paragraph as { children?: unknown[] }).children ?? []), span] });
+    div?.children.pop();
+    expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual(['html-oracle: parents']);
+  });
+
+  it('gives each issue the range it covers and can lift the issue limit', () => {
+    const source = `<textarea>${'\n<b></b>'.repeat(30)}</textarea>`;
+    const ranges = twigRangesFromOracle(source, golden(plainHtml(source)));
+    const ast = parseHtmlProgram(source, { templateInfos: [], rawContentTags: [] }, { branchSegments: [], branchControlRanges: [] });
+
+    expect(compareWithHtmlOracle(source, ranges, ast).every((issue) => issue.range !== undefined)).toBe(true);
+    expect(compareWithHtmlOracle(source, ranges, ast, Infinity).length).toBeGreaterThan(compareWithHtmlOracle(source, ranges, ast).length);
   });
 
   it('de-duplicates identical issues', () => {

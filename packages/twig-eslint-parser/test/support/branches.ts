@@ -1,12 +1,12 @@
 type Segment = { readonly start: number; readonly end: number };
 type MaybeClosedTag = { readonly name: string; readonly openStart: number; readonly isClosed: boolean };
 
-function branchSegmentsOf(ast: unknown): readonly Segment[] {
+export function branchSegmentsOf(ast: unknown): readonly Segment[] {
   const segments = (ast as { branchSegments?: unknown } | undefined)?.branchSegments;
   return Array.isArray(segments) ? (segments as Segment[]) : [];
 }
 
-function isInsideABranch(offset: number, segments: readonly Segment[]): boolean {
+export function isInsideABranch(offset: number, segments: readonly Segment[]): boolean {
   return segments.some((segment) => segment.start <= offset && offset < segment.end);
 }
 

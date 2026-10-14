@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { findingKey } from './baseline.js';
 import { isCanary } from './canaries.js';
+import { coverageNdjson, renderCoverage, summariseCoverage, type CoverageTotals } from './coverage.js';
 import { hashText } from './history.js';
 import { unifiedDiff } from './diff.js';
 import type { Check, CheckOutcome, Finding, FixChange } from './types.js';
@@ -20,6 +21,7 @@ export type CheckReport = {
   readonly skipped?: string;
   readonly reports: number;
   readonly hasCorpusCoverage: boolean;
+  readonly coverage?: CoverageTotals;
   readonly failures: number;
   readonly knownFailures: number;
   readonly newFailures: readonly Finding[];
@@ -40,6 +42,7 @@ export function buildCheckReport({ package: packageName, check, outcome, seconds
     stats: outcome.stats,
     ...(outcome.skipped !== undefined && { skipped: outcome.skipped }),
     reports: outcome.findings.filter((finding) => finding.severity === 'report').length,
+    ...(outcome.lineCoverage && { coverage: summariseCoverage(outcome.lineCoverage) }),
     hasCorpusCoverage: check.rule === undefined || outcome.findings.some((finding) => finding.severity === 'report' && !isCanary(finding.template)),
     failures: failures.length,
     knownFailures: failures.length - newFailures.length,
@@ -87,6 +90,15 @@ export function renderSummary(reports: readonly CheckReport[], templateCount: nu
     if (unlisted > 0) lines.push(`- ... and ${unlisted} more in findings.ndjson`);
   }
   return `${lines.join('\n')}\n`;
+}
+
+function renderCoverageSections(results: readonly CheckResult[]): string {
+  return results.flatMap(({ check, outcome }) => (outcome.lineCoverage ? [renderCoverage(check.id, outcome.lineCoverage)] : [])).join('');
+}
+
+function writeCoverage(directory: string, results: readonly CheckResult[]): void {
+  const lines = results.flatMap(({ check, outcome }) => (outcome.lineCoverage ? coverageNdjson(check.id, outcome.lineCoverage) : []));
+  if (lines.length > 0) writeFileSync(join(directory, 'coverage.ndjson'), `${lines.join('\n')}\n`);
 }
 
 function renderStaleBaseline(staleKeys: readonly string[]): string {
@@ -190,10 +202,11 @@ export function writeReport(directory: string, input: {
 }): string {
   rmSync(directory, { recursive: true, force: true });
   mkdirSync(directory, { recursive: true });
-  const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
+  const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderCoverageSections(input.results) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
   writeFileSync(join(directory, 'summary.md'), summary);
   writeFileSync(join(directory, 'summary.json'), `${JSON.stringify(input.reports.map(({ newFailures, ...rest }) => ({ ...rest, newFailures: newFailures.length })), null, 2)}\n`);
   writeFindings(directory, input.results, input.baseline, input.isExpectedFailure);
+  writeCoverage(directory, input.results);
   writeFailureFiles(directory, input.results);
   writeSamples(directory, input.results, input.sampleSize);
   return summary;

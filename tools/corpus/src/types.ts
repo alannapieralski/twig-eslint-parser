@@ -27,6 +27,22 @@ export type FixChange = {
   readonly after: string;
 };
 
+export type CoverageSpan = {
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly label: string;
+  readonly detail: string;
+  readonly isExcused: boolean;
+};
+
+export type TemplateCoverage = {
+  readonly template: Template;
+  readonly lines: number;
+  readonly uncovered: number;
+  readonly excused: number;
+  readonly spans: readonly CoverageSpan[];
+};
+
 export type CheckContext = {
   readonly sampleSize: number;
   readonly roots: ReadonlyMap<string, CorpusRoot>;
@@ -38,6 +54,7 @@ export type CheckOutcome = {
   readonly stats: Readonly<Record<string, number>>;
   readonly skipped?: string;
   readonly changes?: readonly FixChange[];
+  readonly lineCoverage?: readonly TemplateCoverage[];
 };
 
 export type Check = {

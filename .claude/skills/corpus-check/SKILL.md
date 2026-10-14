@@ -20,12 +20,19 @@ folders to list. Never write real project names or paths into a committed file.
 1. Read `corpus-report/summary.md`. A check with new failures is a regression to fix. Also read
    "Changes since the last run": a rule whose reports or fixes swing, or drop to zero, needs an
    explanation even when nothing fails, and "Canaries" for pending ones that now pass.
-2. For failed fixes, open `corpus-report/failures/<check>/` for the before and after diff.
-3. For a new or changed rule, open `corpus-report/samples/<rule>/` and judge whether the fixes are
+2. Read "Line coverage: parser/line-coverage": the share of template lines the parser reads
+   correctly, with 100% as the goal. A fall is a regression to explain. It names the templates with
+   the most lines not read, with the span and cause (`unparseable`, `twig-unconverted`, `unread`,
+   `misread`, `misplaced`, `malformed-node`), and `corpus-report/coverage.ndjson` has every template.
+   Lines marked "not scored" are branch splits (markup opened and closed in different Twig branches)
+   and template defects (stray or missing tags a browser reads the same way). They are listed and
+   counted but are not parser faults, so sample them now and then to check the buckets are honest.
+3. For failed fixes, open `corpus-report/failures/<check>/` for the before and after diff.
+4. For a new or changed rule, open `corpus-report/samples/<rule>/` and judge whether the fixes are
    right, not only whether they are safe. Passing checks do not prove a fix is correct.
-4. To go through every report, read or grep `corpus-report/findings.ndjson`. Status is `report`
+5. To go through every report, read or grep `corpus-report/findings.ndjson`. Status is `report`
    (the rule fired), `new` (an unaccepted failure) or `known` (in the baseline).
-5. Only record failures with `npm run corpus -- --update-baseline` when the user has agreed they are
+6. Only record failures with `npm run corpus -- --update-baseline` when the user has agreed they are
    accepted, such as a template that is not valid HTML. Otherwise fix the cause.
 
 ### Keep it public-safe

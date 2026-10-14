@@ -19,7 +19,8 @@
     { "check": "twig-tailwind/no-interpolated-classes", "reports": [1] },
     { "check": "twig-tailwind/no-interpolated-attributes", "reports": [2] },
     { "check": "twig-tailwind/no-unparsed-twig", "reports": [3] },
-    { "check": "parser/converts-every-block", "failures": [3] }
+    { "check": "parser/converts-every-block", "failures": [3] },
+    { "check": "parser/line-coverage", "reports": [3], "clean": [1, 2] }
   ],
   "twig-syntax.html.twig": [
     { "check": "parser/lexer-parity", "clean": "all" },
@@ -27,12 +28,14 @@
     { "check": "parser/output-matches-source", "clean": "all" },
     { "check": "parser/metamorphic", "clean": "all" },
     { "check": "parser/html-oracle", "clean": "all" },
-    { "check": "twig-tailwind/no-unparsed-twig", "clean": "all" }
+    { "check": "twig-tailwind/no-unparsed-twig", "clean": "all" },
+    { "check": "parser/line-coverage", "clean": "all" }
   ],
   "html-seams.html.twig": [
     { "check": "parser/output-matches-source", "noFailures": "all", "reports": [6] },
     { "check": "parser/metamorphic", "clean": "all" },
-    { "check": "parser/html-oracle", "noFailures": "all", "reports": [6] }
+    { "check": "parser/html-oracle", "noFailures": "all", "reports": [6] },
+    { "check": "parser/line-coverage", "reports": [6], "clean": [1, 2, 3, 4, 5] }
   ],
   "drupal-html.html.twig": [
     { "check": "parser/output-matches-source", "noFailures": "all" },
@@ -44,7 +47,8 @@
     { "check": "parser/converts-every-block", "clean": "all" },
     { "check": "parser/output-matches-source", "clean": "all" },
     { "check": "parser/metamorphic", "clean": "all" },
-    { "check": "parser/html-oracle", "clean": "all" }
+    { "check": "parser/html-oracle", "clean": "all" },
+    { "check": "parser/line-coverage", "clean": "all" }
   ],
   "cube-classes.html.twig": [
     { "check": "twig-tailwind/config:recommended", "reports": [1] },
