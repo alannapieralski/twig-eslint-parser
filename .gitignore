@@ -7,3 +7,4 @@ packages/twig-eslint-parser/tools/twig-oracle/vendor/
 corpus.config.json
 corpus.baseline.json
 corpus-report/
+corpus.previous-run.json

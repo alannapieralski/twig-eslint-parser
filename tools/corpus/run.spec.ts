@@ -1,15 +1,18 @@
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { checkOfKey, findingKey, loadBaseline, writeBaseline } from './src/baseline.js';
+import { findingKey, findStaleBaselineKeys, keepBaselineKeysOutsideTheRun, loadBaseline, writeBaseline } from './src/baseline.js';
+import { canaryRoot, discoverCanaries, evaluateCanaries, isExpectedCanaryFailure, loadCanaryExpectations } from './src/canaries.js';
 import { discoverTemplates, loadConfig } from './src/config.js';
+import { compareRuns, describeStrictViolations, hashText, loadHistory, mergeHistory, recordRun, renderComparison, writeHistory } from './src/history.js';
 import { createProgressReporter, stderrOutput } from './src/progress.js';
-import { buildCheckReport, buildCheckReports, writeReport, type CheckResult } from './src/report.js';
+import { buildCheckReport, buildCheckReports, renderCanaries, writeReport, type CheckResult } from './src/report.js';
 import { selectChecks } from './src/select.js';
-import type { CorpusOptions, PackageCorpus, Template } from './src/types.js';
+import type { CorpusOptions, CorpusRoot, PackageCorpus, Template } from './src/types.js';
 
 const repositoryRoot = resolve(import.meta.dirname, '../..');
 const reportDirectory = resolve(repositoryRoot, 'corpus-report');
 const baselinePath = resolve(repositoryRoot, 'corpus.baseline.json');
+const historyPath = resolve(repositoryRoot, 'corpus.previous-run.json');
 
 function readOptions(): CorpusOptions {
   const raw = process.env['CORPUS_OPTIONS'];
@@ -30,11 +33,16 @@ describe.skipIf(!options.list)('corpus checks', () => {
 
 describe.skipIf(options.list)('corpus', () => {
   const baseline = loadBaseline(baselinePath);
+  const canaryExpectations = loadCanaryExpectations();
+  const canaryNotes: string[] = [];
   const results: CheckResult[] = [];
   let templates: Template[] = [];
+  let roots = new Map<string, CorpusRoot>();
 
   beforeAll(() => {
-    templates = discoverTemplates(loadConfig(repositoryRoot, process.env), options);
+    const config = loadConfig(repositoryRoot, process.env);
+    roots = new Map([...config.roots, { path: canaryRoot, quick: true }].map((root) => [root.path, root]));
+    templates = [...discoverTemplates(config, options), ...discoverCanaries()];
     expect(templates.length, 'no templates found in the corpus roots').toBeGreaterThan(0);
     const countsByRoot = Map.groupBy(templates, (template) => template.root);
     reporter.phase(`config: ${countsByRoot.size} roots, ${templates.length} templates, ${selectedChecks.length} checks`);
@@ -47,26 +55,45 @@ describe.skipIf(options.list)('corpus', () => {
     const label = `${position} ${check.id}`;
     reporter.phase(`${label}: starting`);
     const started = performance.now();
-    const outcome = await check.run(templates, { sampleSize: options.sample, progress: reporter.track(label, templates.length) });
+    const outcome = await check.run(templates, { sampleSize: options.sample, roots, progress: reporter.track(label, templates.length) });
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
-    const report = buildCheckReport(result, baseline);
+    const report = buildCheckReport(result, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
+    const canaries = evaluateCanaries(canaryExpectations, check.id, outcome.findings);
+    canaryNotes.push(...canaries.missed.map((note) => `- missed: ${note}`), ...canaries.nowPassing.map((note) => `- now passing, remove "pending": ${note}`), ...canaries.stillPending.map((note) => `- pending: ${note}`));
     reporter.phase(report.skipped === undefined
       ? `${label}: done in ${report.seconds.toFixed(1)}s, ${report.reports} reports, ${report.failures} failures (${report.newFailures.length} new)`
       : `${label}: skipped, ${report.skipped}`);
-    if (options.updateBaseline || report.newFailures.length === 0) return;
-    throw new Error(`${report.newFailures.length} failures are not in the baseline. See corpus-report/summary.md.`);
+    const problems = [
+      ...(options.updateBaseline || report.newFailures.length === 0 ? [] : [`${report.newFailures.length} failures are not in the baseline.`]),
+      ...canaries.missed,
+    ];
+    if (problems.length > 0) throw new Error(`${problems.join('\n')}\nSee corpus-report/summary.md.`);
   });
 
   afterAll(() => {
     const rootCount = new Set(templates.map((template) => template.root)).size;
-    const reports = buildCheckReports(results, baseline);
-    console.info(writeReport(reportDirectory, { results, reports, baseline, templateCount: templates.length, rootCount, sampleSize: options.sample }));
-    if (!options.updateBaseline) return;
+    const reports = buildCheckReports(results, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
     const checksRun = new Set(results.map(({ check }) => check.id));
-    const kept = [...baseline].filter((key) => !checksRun.has(checkOfKey(key)));
-    const recorded = results.flatMap(({ outcome }) => outcome.findings.filter((finding) => finding.severity === 'failure').map(findingKey));
-    writeBaseline(baselinePath, [...kept, ...recorded]);
-    console.info(`Baseline updated: corpus.baseline.json`);
+    const templateHashesRun = new Set(templates.map((template) => hashText(template.source)));
+    const recordedKeys = results.flatMap(({ outcome }) => outcome.findings.filter((finding) => finding.severity === 'failure').map(findingKey));
+    const isFullRun = !options.quick && options.roots === undefined;
+    const staleBaselineKeys = options.updateBaseline ? [] : findStaleBaselineKeys(baseline, checksRun, new Set(recordedKeys), templateHashesRun, isFullRun);
+
+    const previousRun = loadHistory(historyPath);
+    const currentRun = recordRun(templates, results.map(({ check, outcome }) => ({ id: check.id, outcome })));
+    const comparisons = compareRuns(previousRun, currentRun);
+    const strictViolations = options.strict ? describeStrictViolations(comparisons) : undefined;
+    const comparison = renderCanaries(canaryNotes) + renderComparison(comparisons, strictViolations);
+
+    console.info(writeReport(reportDirectory, { results, reports, baseline, templateCount: templates.length, rootCount, sampleSize: options.sample, staleBaselineKeys, comparison }));
+    if (options.updateBaseline) {
+      writeBaseline(baselinePath, [...keepBaselineKeysOutsideTheRun(baseline, checksRun, templateHashesRun), ...recordedKeys]);
+      console.info('Baseline updated: corpus.baseline.json');
+    }
+    if (strictViolations && strictViolations.length > 0) {
+      throw new Error(`The strict check failed:\n${strictViolations.join('\n')}\nSee corpus-report/summary.md.`);
+    }
+    writeHistory(historyPath, mergeHistory(previousRun, currentRun));
   });
 });

@@ -8,5 +8,5 @@
     "allowImportingTsExtensions": false,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "*.ts"]
+  "include": ["src", "test", "*.ts"]
 }

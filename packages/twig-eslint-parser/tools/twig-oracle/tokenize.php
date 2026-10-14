@@ -6,6 +6,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Twig\Environment;
 use Twig\Error\SyntaxError;
+use Twig\Lexer;
 use Twig\Loader\ArrayLoader;
 use Twig\Source;
 use Twig\Token;
@@ -22,14 +23,35 @@ if ($argc !== 2 || ($argv[1] !== '--stdin' && !is_dir($argv[1]))) {
 $environment = new Environment(new ArrayLoader([]));
 $twigVersion = Environment::VERSION;
 
-function describeToken(Token $token): array
+function sourceLengthAt(Token $token, string $code): ?int
 {
-    return [
+    $pattern = match ($token->getType()) {
+        Token::NAME_TYPE, Token::PUNCTUATION_TYPE => '/' . preg_quote((string) $token->getValue(), '/') . '/A',
+        Token::OPERATOR_TYPE => '/' . str_replace(' ', '\s+', preg_quote((string) $token->getValue(), '/')) . '/A',
+        Token::NUMBER_TYPE => Lexer::REGEX_NUMBER,
+        default => null,
+    };
+    if ($pattern === null) {
+        return null;
+    }
+    if (preg_match($pattern, $code, $match, 0, $token->getOffset()) !== 1) {
+        throw new LogicException(sprintf('Twig emitted %s at offset %d, but its source does not match there.', $token, $token->getOffset()));
+    }
+
+    return strlen($match[0]);
+}
+
+function describeToken(Token $token, string $code): array
+{
+    $description = [
         'type' => Token::typeToEnglish($token->getType()),
         'value' => $token->getValue(),
         'line' => $token->getLine(),
         'offset' => $token->getOffset(),
     ];
+    $length = sourceLengthAt($token, $code);
+
+    return $length === null ? $description : $description + ['end' => $token->getOffset() + $length];
 }
 
 function tokenizeTemplate(Environment $environment, string $name, string $code): array
@@ -43,7 +65,7 @@ function tokenizeTemplate(Environment $environment, string $name, string $code):
     $tokens = [];
     while (true) {
         $token = $stream->getCurrent();
-        $tokens[] = describeToken($token);
+        $tokens[] = describeToken($token, $code);
         if ($token->test(Token::EOF_TYPE)) {
             return ['tokens' => $tokens];
         }

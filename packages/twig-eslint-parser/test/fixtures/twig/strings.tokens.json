@@ -263,7 +263,8 @@
             "type": "name",
             "value": "b",
             "line": 6,
-            "offset": 184
+            "offset": 184,
+            "end": 185
         },
         {
             "type": "end of string interpolation",
@@ -305,13 +306,15 @@
             "type": "name",
             "value": "a",
             "line": 6,
-            "offset": 200
+            "offset": 200,
+            "end": 201
         },
         {
             "type": "operator",
             "value": "~",
             "line": 6,
-            "offset": 202
+            "offset": 202,
+            "end": 203
         },
         {
             "type": "string",
@@ -329,7 +332,8 @@
             "type": "name",
             "value": "b",
             "line": 6,
-            "offset": 214
+            "offset": 214,
+            "end": 215
         },
         {
             "type": "end of string interpolation",
@@ -395,7 +399,8 @@
             "type": "name",
             "value": "a",
             "line": 6,
-            "offset": 259
+            "offset": 259,
+            "end": 260
         },
         {
             "type": "end of string interpolation",
@@ -413,7 +418,8 @@
             "type": "name",
             "value": "b",
             "line": 6,
-            "offset": 263
+            "offset": 263,
+            "end": 264
         },
         {
             "type": "end of string interpolation",

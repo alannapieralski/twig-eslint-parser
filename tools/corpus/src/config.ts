@@ -1,19 +1,35 @@
 import { existsSync, globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { CorpusOptions, Template } from './types.js';
+import type { CorpusOptions, CorpusRoot, TailwindSettings, Template } from './types.js';
 
-export type CorpusRoot = { readonly path: string; readonly quick: boolean };
 export type CorpusConfig = { readonly roots: readonly CorpusRoot[]; readonly exclude: readonly string[] };
 
 const defaultExcludedDirectories = ['node_modules', 'vendor', '.git'];
 
+const tailwindSettingNames = ['cwd', 'entryPoint', 'tsconfig'] as const;
+
+function parseTailwindSettings(rootPath: string, value: unknown): TailwindSettings {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`"tailwind" for ${rootPath} must be an object with ${tailwindSettingNames.join(', ')}.`);
+  const unknownNames = Object.keys(value).filter((name) => !(tailwindSettingNames as readonly string[]).includes(name));
+  if (unknownNames.length > 0) throw new Error(`"tailwind" for ${rootPath} has unknown settings: ${unknownNames.join(', ')}.`);
+  const settings: Record<string, string> = {};
+  for (const name of tailwindSettingNames) {
+    const setting = (value as Record<string, unknown>)[name];
+    if (setting === undefined) continue;
+    if (typeof setting !== 'string' || setting === '') throw new Error(`"tailwind.${name}" for ${rootPath} must be a path.`);
+    settings[name] = resolve(rootPath, setting);
+  }
+  return settings;
+}
+
 function parseRoot(entry: unknown): CorpusRoot {
   if (typeof entry === 'string') return { path: resolve(entry), quick: false };
   if (typeof entry === 'object' && entry !== null && typeof (entry as { path?: unknown }).path === 'string') {
-    const { path, quick } = entry as { path: string; quick?: unknown };
-    return { path: resolve(path), quick: quick === true };
+    const { path, quick, tailwind } = entry as { path: string; quick?: unknown; tailwind?: unknown };
+    const rootPath = resolve(path);
+    return { path: rootPath, quick: quick === true, ...(tailwind !== undefined && { tailwind: parseTailwindSettings(rootPath, tailwind) }) };
   }
-  throw new Error(`Each corpus root must be a path string or { "path": "...", "quick": true }, got ${JSON.stringify(entry)}.`);
+  throw new Error(`Each corpus root must be a path string or { "path": "...", "quick": true, "tailwind": { ... } }, got ${JSON.stringify(entry)}.`);
 }
 
 function parseConfigFile(configPath: string): CorpusConfig {

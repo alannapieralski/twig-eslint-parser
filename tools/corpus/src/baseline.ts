@@ -4,7 +4,19 @@ import type { Finding } from './types.js';
 
 export function findingKey(finding: Finding): string {
   const templateHash = createHash('sha256').update(finding.template.source).digest('hex').slice(0, 12);
-  return `${finding.check}|${templateHash}|${finding.message}`;
+  return `${finding.check}|${templateHash}|${finding.message.replace(/\d+/g, '#')}`;
+}
+
+export function templateHashOfKey(key: string): string {
+  return key.split('|', 2)[1] ?? '';
+}
+
+export function findStaleBaselineKeys(baseline: ReadonlySet<string>, checksRun: ReadonlySet<string>, recordedKeys: ReadonlySet<string>, templateHashesRun: ReadonlySet<string>, isFullRun: boolean): string[] {
+  return [...baseline].filter((key) => checksRun.has(checkOfKey(key)) && !recordedKeys.has(key) && (isFullRun || templateHashesRun.has(templateHashOfKey(key))));
+}
+
+export function keepBaselineKeysOutsideTheRun(baseline: ReadonlySet<string>, checksRun: ReadonlySet<string>, templateHashesRun: ReadonlySet<string>): string[] {
+  return [...baseline].filter((key) => !checksRun.has(checkOfKey(key)) || !templateHashesRun.has(templateHashOfKey(key)));
 }
 
 export function loadBaseline(baselinePath: string): Set<string> {

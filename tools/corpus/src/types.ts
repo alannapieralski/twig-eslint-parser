@@ -1,3 +1,6 @@
+export type TailwindSettings = { readonly cwd?: string; readonly entryPoint?: string; readonly tsconfig?: string };
+export type CorpusRoot = { readonly path: string; readonly quick: boolean; readonly tailwind?: TailwindSettings };
+
 export type Template = {
   readonly root: string;
   readonly path: string;
@@ -11,6 +14,9 @@ export type Finding = {
   readonly template: Template;
   readonly message: string;
   readonly line?: number;
+  readonly column?: number;
+  readonly endLine?: number;
+  readonly endColumn?: number;
   readonly before?: string;
   readonly after?: string;
 };
@@ -23,6 +29,7 @@ export type FixChange = {
 
 export type CheckContext = {
   readonly sampleSize: number;
+  readonly roots: ReadonlyMap<string, CorpusRoot>;
   readonly progress: (done: number, counts?: Readonly<Record<string, number>>) => void;
 };
 
@@ -36,6 +43,7 @@ export type CheckOutcome = {
 export type Check = {
   readonly id: string;
   readonly rule?: string;
+  readonly isSlow?: boolean;
   readonly run: (templates: readonly Template[], context: CheckContext) => Promise<CheckOutcome> | CheckOutcome;
 };
 
@@ -52,5 +60,7 @@ export type CorpusOptions = {
   readonly quick: boolean;
   readonly sample: number;
   readonly updateBaseline: boolean;
+  readonly strict: boolean;
+  readonly slow: boolean;
   readonly list: boolean;
 };

@@ -7,7 +7,9 @@ description: Run the parser and every rule against the real Twig templates liste
 
 - After adding or changing a rule: `npm run corpus -- --rule <name> --sample 20`.
 - After changing one package: `npm run corpus -w <package>`.
-- After changing the lexer or parser, and before a release: `npm run corpus` (about 3 minutes).
+- After changing the lexer or parser: `npm run corpus` (about 3 minutes).
+- Before a release: `npm run corpus -- --slow --strict` (adds the whole-config checks, about 15
+  minutes, and fails on large swings against the last run).
 - For a fast pass while iterating: `npm run corpus -- --quick`.
 
 If `corpus.config.json` is missing, copy `corpus.config.example.json` and ask the user which project
@@ -15,7 +17,9 @@ folders to list. Never write real project names or paths into a committed file.
 
 ### Reading the result
 
-1. Read `corpus-report/summary.md`. A check with new failures is a regression to fix.
+1. Read `corpus-report/summary.md`. A check with new failures is a regression to fix. Also read
+   "Changes since the last run": a rule whose reports or fixes swing, or drop to zero, needs an
+   explanation even when nothing fails, and "Canaries" for pending ones that now pass.
 2. For failed fixes, open `corpus-report/failures/<check>/` for the before and after diff.
 3. For a new or changed rule, open `corpus-report/samples/<rule>/` and judge whether the fixes are
    right, not only whether they are safe. Passing checks do not prove a fix is correct.

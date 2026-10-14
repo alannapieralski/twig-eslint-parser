@@ -1,0 +1,12 @@
+{{ '{{' }} {{ '}}' }} {{ '{%' }} {{ '%}' }} {{ '{#' }} {{ '#}' }}
+{{ "{{" }} {{ "}}" }} {{ "{%" }} {{ "%}" }} {{ "{#" }} {{ "#}" }}
+{{ "open #} close #{ name ~ '#}' } end" }} {% set label = '{% endset %}' %}
+<p data-note="{{ 'x }} y' }}">{{ "-}}" ~ '~%}' ~ '-#}' }}</p>
+{{ 'spans
+two {{ lines }}' }} {{ "also
+two {% lines %}" }}
+{{ 'it\'s' }} {{ 'a \'quoted\' word' }} {{ "say \"hi\"" }}
+{{ 'double "inside" single' }} {{ "single 'inside' double" }}
+{{ 'ends in a backslash \\' }} {{ "ends in a backslash \\" }} {{ 'backslash then quote \\\'' }}
+{{ "escaped \#{not interpolated}" }} {{ "hex \x41\x4a" }} {{ 'tab\there' }}
+{{ "#{ '}}' }" }} {{ "#{ "#}" }" }} {{ "a#b" }} {{ "#" }}

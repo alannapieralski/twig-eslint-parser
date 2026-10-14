@@ -11,7 +11,8 @@
             "type": "name",
             "value": "foo",
             "line": 1,
-            "offset": 3
+            "offset": 3,
+            "end": 6
         },
         {
             "type": "end of print statement",
@@ -35,7 +36,8 @@
             "type": "name",
             "value": "_foo",
             "line": 1,
-            "offset": 13
+            "offset": 13,
+            "end": 17
         },
         {
             "type": "end of print statement",
@@ -59,7 +61,8 @@
             "type": "name",
             "value": "foo_bar",
             "line": 1,
-            "offset": 24
+            "offset": 24,
+            "end": 31
         },
         {
             "type": "end of print statement",
@@ -83,7 +86,8 @@
             "type": "name",
             "value": "foo123",
             "line": 1,
-            "offset": 38
+            "offset": 38,
+            "end": 44
         },
         {
             "type": "end of print statement",
@@ -107,7 +111,8 @@
             "type": "name",
             "value": "café",
             "line": 1,
-            "offset": 51
+            "offset": 51,
+            "end": 56
         },
         {
             "type": "end of print statement",
@@ -131,19 +136,22 @@
             "type": "name",
             "value": "naïve",
             "line": 1,
-            "offset": 63
+            "offset": 63,
+            "end": 69
         },
         {
             "type": "operator",
             "value": ".",
             "line": 1,
-            "offset": 69
+            "offset": 69,
+            "end": 70
         },
         {
             "type": "name",
             "value": "über",
             "line": 1,
-            "offset": 70
+            "offset": 70,
+            "end": 75
         },
         {
             "type": "end of print statement",
@@ -167,7 +175,8 @@
             "type": "name",
             "value": "名前",
             "line": 1,
-            "offset": 82
+            "offset": 82,
+            "end": 88
         },
         {
             "type": "end of print statement",
@@ -191,19 +200,22 @@
             "type": "name",
             "value": "données",
             "line": 1,
-            "offset": 95
+            "offset": 95,
+            "end": 103
         },
         {
             "type": "operator",
             "value": "|",
             "line": 1,
-            "offset": 103
+            "offset": 103,
+            "end": 104
         },
         {
             "type": "name",
             "value": "length",
             "line": 1,
-            "offset": 104
+            "offset": 104,
+            "end": 110
         },
         {
             "type": "end of print statement",
