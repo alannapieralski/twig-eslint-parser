@@ -86,20 +86,28 @@ function meetsExpectation(expectation: Expectation, line: number | 'all', outcom
   }
 }
 
+function provesTheCheckWorks(expectation: Expectation): boolean {
+  return expectation.pending === undefined && (expectation.kind === 'reports' || expectation.kind === 'failures' || expectation.kind === 'output');
+}
+
 export function evaluateCanaries(expectations: readonly Expectation[], check: string, outcome: CheckOutcome): CanaryResult {
   const missed: string[] = [];
   const stillPending: string[] = [];
   const nowPassing: string[] = [];
-  for (const expectation of expectations.filter((candidate) => candidate.check === check)) {
+  const checkExpectations = expectations.filter((candidate) => candidate.check === check);
+  const isCheckWorking = checkExpectations.filter(provesTheCheckWorks).every((expectation) =>
+    (expectation.lines === 'all' ? ['all' as const] : expectation.lines).every((line) => meetsExpectation(expectation, line, outcome)));
+  for (const expectation of checkExpectations) {
     for (const line of expectation.lines === 'all' ? ['all' as const] : expectation.lines) {
       const isMet = meetsExpectation(expectation, line, outcome);
       const description = describeExpectation(expectation, line);
       if (expectation.pending === undefined) {
         if (!isMet) missed.push(description);
-      } else if (isMet) {
+      } else if (isMet && isCheckWorking) {
         nowPassing.push(`${description} (marked pending: ${expectation.pending})`);
       } else {
-        stillPending.push(`${description} (pending: ${expectation.pending})`);
+        const unproven = isMet ? '; the check\'s own canaries are not firing, so this cannot be trusted' : '';
+        stillPending.push(`${description} (pending: ${expectation.pending}${unproven})`);
       }
     }
   }

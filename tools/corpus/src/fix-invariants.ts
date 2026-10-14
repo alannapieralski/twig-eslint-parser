@@ -2,7 +2,10 @@ import { parseForESLint, type TwigParseResult } from 'twig-eslint-parser';
 import type { AppliedFix } from './fixing.js';
 
 export type FixKeeps = 'layout' | 'class-tokens' | 'code';
-export type FixReview = { readonly problems: readonly string[]; readonly notes: readonly string[] };
+export type FixProblem = { readonly message: string; readonly offset?: number };
+export type FixReview = { readonly problems: readonly FixProblem[]; readonly notes: readonly FixProblem[] };
+type ClassListReview = { readonly problems: readonly string[]; readonly notes: readonly string[] };
+type Token = { readonly text: string; readonly start: number };
 export type ClassRuleRoles = { readonly rewritesClasses?: ReadonlySet<string>; readonly removesDuplicateClasses?: ReadonlySet<string> };
 type ClassList = { readonly delimiters: string; readonly groups: readonly (readonly string[])[]; readonly twig: readonly string[] };
 
@@ -37,28 +40,34 @@ function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<objec
   return leaves;
 }
 
-function layoutTokens(code: string, result: TwigParseResult): string[] {
+function layoutTokens(code: string, result: TwigParseResult): Token[] {
   return collectLeaves(result.ast.body)
     .sort((first, second) => first.range[0] - second.range[0])
-    .map((leaf) => {
+    .map((leaf): Token => {
       const text = code.slice(...leaf.range);
-      return leaf.type === 'Text' ? text.trim() : text;
+      return { text: leaf.type === 'Text' ? text.trim() : text, start: leaf.range[0] };
     })
-    .filter((text) => text !== '');
+    .filter((token) => token.text !== '');
 }
 
-function twigBlockShapes(result: TwigParseResult): string[] {
-  return result.services.twig.blocks.map((block) => `${block.kind}:${block.tagName ?? ''}`);
+function twigBlockShapes(result: TwigParseResult): Token[] {
+  return result.services.twig.blocks.map((block) => ({ text: `${block.kind}:${block.tagName ?? ''}`, start: block.range[0] }));
 }
 
-function describeFirstDifference(before: readonly string[], after: readonly string[]): string | undefined {
+function describeFirstDifference(before: readonly Token[], after: readonly Token[]): FixProblem | undefined {
   const length = Math.max(before.length, after.length);
   for (let index = 0; index < length; index += 1) {
-    if (before[index] === after[index]) continue;
-    const show = (text: string | undefined) => (text === undefined ? 'nothing' : JSON.stringify(text.slice(0, 50)));
-    return `${show(before[index])} became ${show(after[index])}`;
+    if (before[index]?.text === after[index]?.text) continue;
+    const show = (token: Token | undefined) => (token === undefined ? 'nothing' : JSON.stringify(token.text.slice(0, 50)));
+    const offset = before[index]?.start ?? before.at(-1)?.start;
+    return { message: `${show(before[index])} became ${show(after[index])}`, ...(offset !== undefined && { offset }) };
   }
   return undefined;
+}
+
+function offsetOfAppliedFix(source: string, fix: AppliedFix): number | undefined {
+  const offset = fix.replaced === '' ? -1 : source.indexOf(fix.replaced);
+  return offset === -1 ? undefined : offset;
 }
 
 function withoutSurroundingQuotes(text: string): string {
@@ -98,7 +107,7 @@ function occursMoreThanOnce(source: string, className: string): boolean {
   return (source.match(pattern) ?? []).length > 1;
 }
 
-function reviewClassListFix(fix: AppliedFix, source: string, roles: ClassRuleRoles): FixReview {
+function reviewClassListFix(fix: AppliedFix, source: string, roles: ClassRuleRoles): ClassListReview {
   const before = readClassList(fix.replaced);
   const after = readClassList(fix.replacement);
   const rule = fix.ruleId ?? 'a rule';
@@ -130,27 +139,35 @@ function usesOnlyWindowsLineEndings(code: string): boolean {
 export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, applied: readonly AppliedFix[] = [], roles: ClassRuleRoles = {}): FixReview {
   const before = parse(source);
   const after = parse(fixed);
-  if ('error' in after) return { problems: [`the fixed template no longer parses: ${after.error}`], notes: [] };
+  if ('error' in after) return { problems: [{ message: `the fixed template no longer parses: ${after.error}` }], notes: [] };
   if ('error' in before) return { problems: [], notes: [] };
 
-  const problems: string[] = [];
-  if (usesOnlyWindowsLineEndings(source) && !usesOnlyWindowsLineEndings(fixed)) problems.push('the fix mixes bare \\n line breaks into a template that uses \\r\\n');
+  const problems: FixProblem[] = [];
+  if (usesOnlyWindowsLineEndings(source) && !usesOnlyWindowsLineEndings(fixed)) problems.push({ message: 'the fix mixes bare \\n line breaks into a template that uses \\r\\n' });
   if (after.result.services.twig.unconvertedBlocks.length !== before.result.services.twig.unconvertedBlocks.length) {
-    problems.push('the fix changes how many Twig blocks the parser can read');
+    problems.push({ message: 'the fix changes how many Twig blocks the parser can read' });
   }
   const blockChange = describeFirstDifference(twigBlockShapes(before.result), twigBlockShapes(after.result));
-  if (blockChange) problems.push(`the fix changes the Twig blocks: ${blockChange}`);
+  if (blockChange) problems.push({ ...blockChange, message: `the fix changes the Twig blocks: ${blockChange.message}` });
 
   if (fixKeeps === 'layout') {
     const layoutChange = describeFirstDifference(layoutTokens(source, before.result), layoutTokens(fixed, after.result));
-    if (layoutChange) problems.push(`the fix changes more than the whitespace between tokens: ${layoutChange}`);
+    if (layoutChange) problems.push({ ...layoutChange, message: `the fix changes more than the whitespace between tokens: ${layoutChange.message}` });
   }
   if (fixKeeps !== 'class-tokens') return { problems, notes: [] };
 
-  const reviews = applied.map((fix) => reviewClassListFix(fix, source, roles));
-  return { problems: [...problems, ...new Set(reviews.flatMap((review) => review.problems))], notes: [...new Set(reviews.flatMap((review) => review.notes))] };
+  const located = (fix: AppliedFix, message: string): FixProblem => {
+    const offset = offsetOfAppliedFix(source, fix);
+    return { message, ...(offset !== undefined && { offset }) };
+  };
+  const firstOfEachMessage = (found: readonly FixProblem[]) => [...new Map(found.map((problem) => [problem.message, problem])).values()];
+  const reviews = applied.map((fix) => ({ fix, review: reviewClassListFix(fix, source, roles) }));
+  return {
+    problems: [...problems, ...firstOfEachMessage(reviews.flatMap(({ fix, review }) => review.problems.map((message) => located(fix, message))))],
+    notes: firstOfEachMessage(reviews.flatMap(({ fix, review }) => review.notes.map((message) => located(fix, message)))),
+  };
 }
 
 export function describeFixProblems(source: string, fixed: string, fixKeeps: FixKeeps, applied?: readonly AppliedFix[]): string[] {
-  return [...reviewFix(source, fixed, fixKeeps, applied).problems];
+  return reviewFix(source, fixed, fixKeeps, applied).problems.map((problem) => problem.message);
 }

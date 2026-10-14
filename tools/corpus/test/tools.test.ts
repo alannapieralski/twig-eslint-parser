@@ -415,6 +415,17 @@ describe('canaries', () => {
     expect(evaluateCanaries(pending, 'c', outcomeOf([finding('report', 1)]))).toMatchObject({ missed: [], nowPassing: [expect.stringContaining('marked pending')] });
   });
 
+  it('does not call a pending canary passing while the check\'s own canaries are silent', () => {
+    const entries = [
+      { file: 'a.twig', check: 'c', kind: 'reports', lines: [1] },
+      { file: 'a.twig', check: 'c', kind: 'clean', lines: [2], pending: 'later' },
+    ] as unknown as Parameters<typeof evaluateCanaries>[0];
+    const silent = evaluateCanaries(entries, 'c', outcomeOf([]));
+    expect(silent.nowPassing).toEqual([]);
+    expect(silent.stillPending).toEqual([expect.stringContaining('cannot be trusted')]);
+    expect(evaluateCanaries(entries, 'c', outcomeOf([finding('report', 1)])).nowPassing).toHaveLength(1);
+  });
+
   it('treats failures on a pending or deliberately failing canary as expected', () => {
     expect(isExpectedCanaryFailure(expect_({ kind: 'noFailures', lines: 'all', pending: 'later' }), finding('failure', 2))).toBe(true);
     expect(isExpectedCanaryFailure(expect_({ kind: 'failures', lines: [1] }), finding('failure', 2))).toBe(false);
@@ -423,10 +434,13 @@ describe('canaries', () => {
 });
 
 describe('reviewFix with class-tokens', () => {
-  const review = (source: string, fixed: string, applied: AppliedFix[]) => reviewFix(source, fixed, 'class-tokens', applied, {
-    rewritesClasses: new Set(['canonical']),
-    removesDuplicateClasses: new Set(['dedupe']),
-  });
+  const review = (source: string, fixed: string, applied: AppliedFix[]) => {
+    const result = reviewFix(source, fixed, 'class-tokens', applied, {
+      rewritesClasses: new Set(['canonical']),
+      removesDuplicateClasses: new Set(['dedupe']),
+    });
+    return { problems: result.problems.map((problem) => problem.message), notes: result.notes.map((note) => note.message) };
+  };
   const fix = (ruleId: string, replaced: string, replacement: string): AppliedFix => ({ ruleId, replaced, replacement });
 
   it('accepts reordering and rewrapping classes inside a group', () => {
@@ -453,6 +467,18 @@ describe('reviewFix with class-tokens', () => {
 
   it('notes class rewrites from a rule whose job is to rewrite them', () => {
     expect(review('<p class="w-6 h-6">x</p>', '<p class="size-6">x</p>', [fix('canonical', 'w-6 h-6', 'size-6')])).toEqual({ problems: [], notes: ['canonical rewrites classes: w-6 h-6 became size-6'] });
+  });
+
+  it('places a problem at the class list the failing fix changed', () => {
+    const source = '<p class="a b">x</p>\n<p class="c [ d ]">y</p>';
+    const [problem] = reviewFix(source, source.replace('c [ d ]', '[ ] c d'), 'class-tokens', [fix('order', 'c [ d ]', '[ ] c d')]).problems;
+    expect(problem?.offset).toBe(source.indexOf('c [ d ]'));
+  });
+
+  it('places a layout problem at the token that changed', () => {
+    const source = '<p>a</p>\n<a  href="x"  id="y">t</a>';
+    const [problem] = reviewFix(source, source.replace('t</a>', 'u</a>'), 'layout').problems;
+    expect(problem?.offset).toBe(source.indexOf('t</a>'));
   });
 
   it('fails a fix that changes Twig inside a class list', () => {

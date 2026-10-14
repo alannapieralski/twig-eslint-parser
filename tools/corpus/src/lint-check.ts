@@ -1,5 +1,5 @@
 import type { ESLint, Linter } from 'eslint';
-import { reviewFix, type ClassRuleRoles, type FixKeeps } from './fix-invariants.js';
+import { reviewFix, type ClassRuleRoles, type FixKeeps, type FixProblem } from './fix-invariants.js';
 import { describeFixOutcome, fixUntilSettled } from './fixing.js';
 import type { CheckContext, CheckOutcome, Finding, FixChange, Template } from './types.js';
 
@@ -46,6 +46,10 @@ function reportOf(target: LintTarget, template: Template, message: Linter.LintMe
   };
 }
 
+function lineAtOffset(source: string, offset: number): number {
+  return source.slice(0, offset).split('\n').length;
+}
+
 function firstChangedLine(before: string, after: string): number | undefined {
   const beforeLines = before.split('\n');
   const afterLines = after.split('\n');
@@ -71,16 +75,20 @@ async function inspectTemplate(template: Template, target: LintTarget, linter: E
   const fixed = run.output;
   const outcomeProblem = describeFixOutcome(run);
   const review = reviewFix(template.source, fixed, target.fixKeeps, run.applied, target.classRuleRoles);
-  const problems = [
-    ...(outcomeProblem ? [outcomeProblem] : []),
-    ...(fixed === template.source && !outcomeProblem ? ['the rule offers fixes but fixing leaves the template unchanged'] : []),
+  const problems: FixProblem[] = [
+    ...(outcomeProblem ? [{ message: outcomeProblem }] : []),
+    ...(fixed === template.source && !outcomeProblem ? [{ message: 'the rule offers fixes but fixing leaves the template unchanged' }] : []),
     ...review.problems,
   ];
 
-  const line = firstChangedLine(template.source, fixed);
-  const located = line === undefined ? {} : { line };
-  const failures = problems.map((message): Finding => ({ check: target.check, severity: 'failure', template, message, before: template.source, after: fixed, ...located }));
-  const notes = review.notes.map((message): Finding => ({ check: target.check, severity: 'report', template, message: `fix: ${message}`, ...located }));
+  const changedLine = firstChangedLine(template.source, fixed);
+  const lineOf = (problem: FixProblem) => (problem.offset === undefined ? changedLine : lineAtOffset(template.source, problem.offset));
+  const located = (problem: FixProblem) => {
+    const line = lineOf(problem);
+    return line === undefined ? {} : { line };
+  };
+  const failures = problems.map((problem): Finding => ({ check: target.check, severity: 'failure', template, message: problem.message, before: template.source, after: fixed, ...located(problem) }));
+  const notes = review.notes.map((note): Finding => ({ check: target.check, severity: 'report', template, message: `fix: ${note.message}`, ...located(note) }));
   const change = fixed === template.source ? undefined : { template, before: template.source, after: fixed };
   return { isParseable: true, reports, failures, notes, passes: run.passes, ...(change && { change }) };
 }
