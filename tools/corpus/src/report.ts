@@ -1,6 +1,8 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { findingKey } from './baseline.js';
+import { isCanary } from './canaries.js';
+import { hashText } from './history.js';
 import { unifiedDiff } from './diff.js';
 import type { Check, CheckOutcome, Finding, FixChange } from './types.js';
 
@@ -17,6 +19,7 @@ export type CheckReport = {
   readonly stats: Readonly<Record<string, number>>;
   readonly skipped?: string;
   readonly reports: number;
+  readonly hasCorpusCoverage: boolean;
   readonly failures: number;
   readonly knownFailures: number;
   readonly newFailures: readonly Finding[];
@@ -25,16 +28,19 @@ export type CheckReport = {
 
 const maxFailureFilesPerCheck = 25;
 const maxListedFailuresPerCheck = 10;
+const vendorPath = /(^|\/)(core|contrib|dist)\//;
+const excerptContextLines = 2;
 
-export function buildCheckReport({ package: packageName, check, outcome, seconds }: CheckResult, baseline: ReadonlySet<string>): CheckReport {
+export function buildCheckReport({ package: packageName, check, outcome, seconds }: CheckResult, baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean = () => false): CheckReport {
   const failures = outcome.findings.filter((finding) => finding.severity === 'failure');
-  const newFailures = failures.filter((finding) => !baseline.has(findingKey(finding)));
+  const newFailures = failures.filter((finding) => !baseline.has(findingKey(finding)) && !isExpectedFailure(finding));
   return {
     package: packageName,
     id: check.id,
     stats: outcome.stats,
     ...(outcome.skipped !== undefined && { skipped: outcome.skipped }),
     reports: outcome.findings.filter((finding) => finding.severity === 'report').length,
+    hasCorpusCoverage: check.rule === undefined || outcome.findings.some((finding) => finding.severity === 'report' && !isCanary(finding.template)),
     failures: failures.length,
     knownFailures: failures.length - newFailures.length,
     newFailures,
@@ -42,8 +48,13 @@ export function buildCheckReport({ package: packageName, check, outcome, seconds
   };
 }
 
-export function buildCheckReports(results: readonly CheckResult[], baseline: ReadonlySet<string>): CheckReport[] {
-  return results.map((result) => buildCheckReport(result, baseline));
+export function buildCheckReports(results: readonly CheckResult[], baseline: ReadonlySet<string>, isExpectedFailure?: (finding: Finding) => boolean): CheckReport[] {
+  return results.map((result) => buildCheckReport(result, baseline, isExpectedFailure));
+}
+
+export function renderCanaries(notes: readonly string[]): string {
+  if (notes.length === 0) return '';
+  return `${['', '## Canaries', '', ...notes].join('\n')}\n`;
 }
 
 function checkDirectoryName(id: string): string {
@@ -65,7 +76,8 @@ export function renderSummary(reports: readonly CheckReport[], templateCount: nu
   ];
   for (const report of reports) {
     const { templates = '', ...otherStats } = report.stats;
-    const notes = report.skipped ?? Object.entries(otherStats).map(([name, value]) => `${name} ${value}`).join(', ');
+    const coverage = report.hasCorpusCoverage ? [] : ['**no reports outside the canaries**'];
+    const notes = report.skipped ?? [...coverage, ...Object.entries(otherStats).map(([name, value]) => `${name} ${value}`)].join(', ');
     lines.push(`| ${report.id} | ${templates} | ${report.reports} | ${report.failures} | ${report.newFailures.length} | ${report.knownFailures} | ${report.seconds.toFixed(1)} | ${notes} |`);
   }
   for (const report of reports.filter((candidate) => candidate.newFailures.length > 0)) {
@@ -77,9 +89,21 @@ export function renderSummary(reports: readonly CheckReport[], templateCount: nu
   return `${lines.join('\n')}\n`;
 }
 
+function renderStaleBaseline(staleKeys: readonly string[]): string {
+  if (staleKeys.length === 0) return '';
+  const listed = staleKeys.slice(0, maxListedFailuresPerCheck).map((key) => `- ${key}`);
+  const unlisted = staleKeys.length > maxListedFailuresPerCheck ? [`- ... and ${staleKeys.length - maxListedFailuresPerCheck} more`] : [];
+  return `${['', `## Stale baseline entries: ${staleKeys.length}`, '', 'These known failures no longer happen. Run with --update-baseline to drop them.', '', ...listed, ...unlisted].join('\n')}\n`;
+}
+
 function statusOf(finding: Finding, baseline: ReadonlySet<string>): 'report' | 'skipped' | 'known' | 'new' {
   if (finding.severity !== 'failure') return finding.severity;
   return baseline.has(findingKey(finding)) ? 'known' : 'new';
+}
+
+function excerptOf(finding: Finding): string | undefined {
+  if (finding.line === undefined) return undefined;
+  return finding.template.source.split(/\r?\n/)[finding.line - 1]?.trim().slice(0, 160);
 }
 
 function writeFindings(directory: string, results: readonly CheckResult[], baseline: ReadonlySet<string>): void {
@@ -89,7 +113,13 @@ function writeFindings(directory: string, results: readonly CheckResult[], basel
     root: finding.template.root,
     file: finding.template.relativePath,
     line: finding.line,
+    column: finding.column,
+    endLine: finding.endLine,
+    endColumn: finding.endColumn,
     message: finding.message,
+    excerpt: excerptOf(finding),
+    vendor: vendorPath.test(finding.template.relativePath),
+    templateHash: hashText(finding.template.source),
   })));
   writeFileSync(join(directory, 'findings.ndjson'), lines.length === 0 ? '' : `${lines.join('\n')}\n`);
 }
@@ -113,10 +143,30 @@ function evenlySpaced<T>(items: readonly T[], count: number): T[] {
   return Array.from({ length: count }, (_, index) => items[Math.floor(index * step)] as T);
 }
 
+function describeReportInContext(finding: Finding): string {
+  const lines = finding.template.source.split(/\r?\n/);
+  const line = finding.line ?? 1;
+  const first = Math.max(1, line - excerptContextLines);
+  const context = lines.slice(first - 1, line + excerptContextLines).map((text, index) => `${String(first + index).padStart(5)}${first + index === line ? ' >' : '  '} ${text}`);
+  return [`${describeLocation(finding)}${finding.column === undefined ? '' : `:${finding.column}`}`, finding.message, '', '```twig', ...context, '```', ''].join('\n');
+}
+
+function writeReportSamples(directory: string, check: Check, reports: readonly Finding[], sampleSize: number): void {
+  const byMessage = Map.groupBy(reports.filter((finding) => !vendorPath.test(finding.template.relativePath)), (finding) => finding.message.replace(/\d+/g, '#').split(': ').slice(0, 2).join(': '));
+  const perMessage = Math.max(1, Math.ceil(sampleSize / Math.max(byMessage.size, 1)));
+  const sections = [...byMessage].flatMap(([message, findings]) => [`## ${message} (${findings.length})`, '', ...evenlySpaced(findings, perMessage).map(describeReportInContext)]);
+  const checkDirectory = join(directory, 'samples', checkDirectoryName(check.id));
+  mkdirSync(checkDirectory, { recursive: true });
+  writeFileSync(join(checkDirectory, 'reports.md'), `# ${check.id}: sampled reports outside core, contrib and dist\n\n${sections.join('\n')}`);
+}
+
 function writeSamples(directory: string, results: readonly CheckResult[], sampleSize: number): void {
   for (const { check, outcome } of results) {
+    if (sampleSize === 0) continue;
+    const reports = outcome.findings.filter((finding) => finding.severity === 'report');
+    if (reports.length > 0) writeReportSamples(directory, check, reports, sampleSize);
     const changes: readonly FixChange[] = outcome.changes ?? [];
-    if (changes.length === 0 || sampleSize === 0) continue;
+    if (changes.length === 0) continue;
     const checkDirectory = join(directory, 'samples', checkDirectoryName(check.id));
     mkdirSync(checkDirectory, { recursive: true });
     evenlySpaced(changes, sampleSize).forEach((change, index) => {
@@ -133,10 +183,12 @@ export function writeReport(directory: string, input: {
   readonly templateCount: number;
   readonly rootCount: number;
   readonly sampleSize: number;
+  readonly staleBaselineKeys: readonly string[];
+  readonly comparison: string;
 }): string {
   rmSync(directory, { recursive: true, force: true });
   mkdirSync(directory, { recursive: true });
-  const summary = renderSummary(input.reports, input.templateCount, input.rootCount);
+  const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
   writeFileSync(join(directory, 'summary.md'), summary);
   writeFileSync(join(directory, 'summary.json'), `${JSON.stringify(input.reports.map(({ newFailures, ...rest }) => ({ ...rest, newFailures: newFailures.length })), null, 2)}\n`);
   writeFindings(directory, input.results, input.baseline);

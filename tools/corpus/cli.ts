@@ -13,6 +13,8 @@ const usage = `Usage: npm run corpus -- [options]
   --quick              Only roots marked "quick" in corpus.config.json
   --sample <n>         Write n before/after diffs per fixable rule to corpus-report/samples
   --update-baseline    Record the current failures as known
+  --slow               Also run slow checks (whole plugin configs) when no package, rule or check is named
+  --strict             Fail when reports or fixes swing against the last run, a check is skipped, or more templates are skipped
   --list               Print the checks that match and stop
 `;
 
@@ -25,6 +27,8 @@ const { values } = parseArgs({
     quick: { type: 'boolean', default: false },
     sample: { type: 'string', default: '0' },
     'update-baseline': { type: 'boolean', default: false },
+    strict: { type: 'boolean', default: false },
+    slow: { type: 'boolean', default: false },
     list: { type: 'boolean', default: false },
     help: { type: 'boolean', default: false },
   },
@@ -50,6 +54,8 @@ const options = {
   quick: values.quick,
   sample,
   updateBaseline: values['update-baseline'],
+  strict: values.strict,
+  slow: values.slow,
   list: values.list,
 };
 

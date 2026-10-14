@@ -1,0 +1,6 @@
+{# Two comments {{ on }} one line #}<b class="between">kept</b>{# second #}
+<p title="{{ 'a {{ b }} %} #}' }}" data-number="{{ 1_000 + 0.5 + 1e3 }}">{{ 'it\'s' ~ "say \"hi\"" }}</p>
+{{ value is not defined ? 'none' : value|join(', ') }}
+{% if items is iterable and items|length > 0 %}{{- items|first -}}{% endif %}
+{% for key, item in items %}{{ loop.index }}: {{ item.name ?? key }}{% endfor %}
+<p>{{ (a ?: b) ~ ' ' ~ (c b-and d) }}</p>

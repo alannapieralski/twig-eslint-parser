@@ -1,0 +1,46 @@
+{
+  "attrs-newline.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [1, 9, 10], "clean": [2, 3, 4, 5, 6] }
+  ],
+  "attrs-newline-crlf.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [1, 2] },
+    { "check": "twig-html/attrs-newline", "noFailures": "all", "pending": "Phase 3: attrs-newline keeps CRLF line endings" }
+  ],
+  "inline-svg.html.twig": [
+    { "check": "twig-html/attrs-newline", "clean": "all", "pending": "Phase 3: attrs-newline skips inline SVG" }
+  ],
+  "raw-text.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [2], "clean": [8] },
+    { "check": "twig-html/attrs-newline", "clean": [3, 6], "pending": "Phase 2: textarea and title content is raw text" },
+    { "check": "parser/html-oracle", "clean": "all", "pending": "Phase 2: textarea and title content is raw text" },
+    { "check": "parser/output-matches-source", "noFailures": "all" }
+  ],
+  "twig-tailwind.html.twig": [
+    { "check": "twig-tailwind/no-interpolated-classes", "reports": [1] },
+    { "check": "twig-tailwind/no-interpolated-attributes", "reports": [2] },
+    { "check": "twig-tailwind/no-unparsed-twig", "reports": [3] },
+    { "check": "parser/converts-every-block", "failures": [3] }
+  ],
+  "twig-syntax.html.twig": [
+    { "check": "parser/lexer-parity", "clean": "all" },
+    { "check": "parser/converts-every-block", "clean": "all" },
+    { "check": "parser/output-matches-source", "clean": "all" },
+    { "check": "parser/metamorphic", "clean": "all" },
+    { "check": "parser/html-oracle", "clean": "all" },
+    { "check": "twig-tailwind/no-unparsed-twig", "clean": "all" }
+  ],
+  "html-seams.html.twig": [
+    { "check": "parser/output-matches-source", "noFailures": "all", "pending": "Phase 2: Twig is structural in the HTML layer" },
+    { "check": "parser/metamorphic", "clean": "all", "pending": "Phase 2: Twig is structural in the HTML layer" },
+    { "check": "parser/html-oracle", "noFailures": "all", "pending": "Phase 2: Twig is structural in the HTML layer" }
+  ],
+  "drupal-html.html.twig": [
+    { "check": "parser/output-matches-source", "noFailures": "all", "pending": "Phase 2: a close tag closes back to its open element" },
+    { "check": "parser/html-oracle", "noFailures": "all", "pending": "Phase 2: a close tag closes back to its open element" }
+  ],
+  "cube-classes.html.twig": [
+    { "check": "twig-tailwind/config:recommended", "reports": [1] },
+    { "check": "twig-tailwind/config:recommended", "noFailures": "all", "pending": "Phase 3: class fixes keep CUBE [ ] and | groups" },
+    { "check": "twig-tailwind/config:drupal", "noFailures": "all", "pending": "Phase 3: class fixes keep CUBE [ ] and | groups" }
+  ]
+}
