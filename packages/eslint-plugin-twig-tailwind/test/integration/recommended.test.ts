@@ -7,15 +7,16 @@ import twigTailwind, { twigSelectors } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
-type LintSetup = { parserOptions?: ParserOptions; selectors?: readonly unknown[]; rules?: Linter.RulesRecord; fix?: boolean };
+type LintSetup = { parserOptions?: ParserOptions; selectors?: readonly unknown[]; rules?: Linter.RulesRecord; fix?: boolean; withDrupal?: boolean };
 
-function linterOptions({ parserOptions, selectors, rules = {}, fix = false }: LintSetup): ESLint.Options {
+function linterOptions({ parserOptions, selectors, rules = {}, fix = false, withDrupal = true }: LintSetup): ESLint.Options {
   return {
     cwd: fixturesDirectory,
     fix,
     overrideConfigFile: true,
     overrideConfig: [
       twigTailwind.configs.recommended,
+      ...(withDrupal ? [twigTailwind.configs.drupal] : []),
       {
         files: ['**/*.twig'],
         ...(parserOptions && { languageOptions: { parserOptions } }),
@@ -44,7 +45,7 @@ function describeMessages(messages: { ruleId: string | null; line: number; colum
   return messages.map((message) => `${message.line}:${message.column} ${message.ruleId} ${message.message.split('\n')[0]}`);
 }
 
-describe('configs.recommended on Twig and Drupal templates', () => {
+describe('configs.recommended with configs.drupal', () => {
   it.each([
     ['{% set classes %} arrays', "{% set classes = ['gap-fl-sm', 'nope'] %}"],
     ['{% set grid_classes %} arrays', "{% set grid_classes = ['gap-fl-sm', 'nope'] %}"],
@@ -70,6 +71,20 @@ describe('configs.recommended on Twig and Drupal templates', () => {
       'better-tailwindcss/no-conflicting-classes',
       'better-tailwindcss/no-conflicting-classes',
     ]);
+  });
+
+  it('lints plain Twig class variables and includes with configs.recommended alone', async () => {
+    const code = "{% set classes = ['nope'] %}";
+    const result = await lint(code, { withDrupal: false });
+    expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope')]);
+  });
+
+  it.each([
+    ['addClass()', "<div{{ attributes.addClass('nope') }}>x</div>"],
+    ['create_attribute()', "{% set image = create_attribute({'class': ['nope']}) %}"],
+  ])('leaves %s alone until configs.drupal is added', async (_, code) => {
+    const result = await lint(code, { withDrupal: false });
+    expect(result.messages).toEqual([]);
   });
 
   it('lets a later selectors setting replace the Drupal selectors', async () => {

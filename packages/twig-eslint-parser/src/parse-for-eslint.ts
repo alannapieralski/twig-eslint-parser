@@ -5,7 +5,7 @@ import { parseJavaScriptAt, type EstreeNode } from './estree.js';
 import { parseMarkup, type MarkupParserOptions } from './markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
-import { groupTwigBlocks, type TwigBlock, type TwigBlockKind } from './twig/blocks.js';
+import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockKind, type TwigBlockSummary } from './twig/blocks.js';
 import { toSameLengthJavaScript } from './twig/javascript.js';
 import { tokenizeTwig } from './twig/tokens.js';
 
@@ -23,6 +23,7 @@ export type TwigParserServices = {
   readonly ignoredBlockCount: number;
   readonly unconvertedBlocks: readonly UnconvertedTwigBlock[];
   readonly omittedAttributes: readonly OmittedAttribute[];
+  readonly blocks: readonly TwigBlockSummary[];
 };
 
 export type TwigParseResult = Omit<Linter.ESLintParseResult, 'ast' | 'services'> & {
@@ -30,7 +31,7 @@ export type TwigParseResult = Omit<Linter.ESLintParseResult, 'ast' | 'services'>
   readonly services: Record<string, unknown> & { readonly twig: TwigParserServices };
 };
 
-type TwigExpressions = Omit<TwigParserServices, 'omittedAttributes'> & { readonly statements: EstreeNode[] };
+type TwigExpressions = Omit<TwigParserServices, 'omittedAttributes' | 'blocks'> & { readonly statements: EstreeNode[] };
 
 function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number) => SourcePosition): TwigExpressions {
   const statements: EstreeNode[] = [];
@@ -70,6 +71,6 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
     ...markup,
     ast: { ...markup.ast, twigBody: statements },
     visitorKeys: { ...visitorKeys, Program: [...(visitorKeys['Program'] ?? []), 'twigBody'] },
-    services: { ...markup.services, twig: { ...twigServices, omittedAttributes } },
+    services: { ...markup.services, twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
   };
 }

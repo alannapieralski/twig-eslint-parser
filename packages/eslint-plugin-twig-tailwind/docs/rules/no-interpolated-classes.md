@@ -12,9 +12,9 @@ produces. better-tailwindcss also misreads the string, because it only recognise
 this rule reports each one instead, pointing to an array.
 
 A string counts as a class string when the `selectors` setting would lint it: by default, a
-variable named `classes` or ending in `_classes`, the `classes` value passed to `include` or
-`embed`, the arguments of `addClass()` and `removeClass()`, and the `class` value passed to
-`create_attribute()`. Strings used only as a condition, such as the test of a ternary, are ignored.
+variable named `classes` or ending in `_classes` and the `classes` value passed to `include` or
+`embed`. With `configs.drupal` it also covers the arguments of `addClass()` and `removeClass()`
+and the `class` value passed to `create_attribute()`. Strings used only as a condition, such as the test of a ternary, are ignored.
 
 Examples of **incorrect** code:
 

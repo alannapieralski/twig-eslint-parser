@@ -1,6 +1,6 @@
 # eslint-plugin-twig-html
 
-ESLint rules for the HTML in Twig and Drupal templates. The rules read the markup through
+ESLint rules for the HTML layout in Twig templates. The rules read the markup through
 [`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser)
 and understand Twig blocks, so their fixes keep Twig nesting and Twig inside tags intact.
 
@@ -30,7 +30,7 @@ import twigHtml from 'eslint-plugin-twig-html';
 export default [twigHtml.configs.recommended];
 ```
 
-`configs.recommended` applies to `**/*.twig`, sets `twig-eslint-parser` as the parser and turns on
+`configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
 `twig-html/attrs-newline` as a warning. It works next to `eslint-plugin-twig-tailwind`'s recommended
 config, which uses the same parser.
 
@@ -38,7 +38,7 @@ config, which uses the same parser.
 
 | Rule | Description | Recommended | Fixable |
 |---|---|---|---|
-| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 2 attributes on its own line, indented one step from the tag | warn | yes |
+| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
 
 ## Why not @html-eslint's rules
 

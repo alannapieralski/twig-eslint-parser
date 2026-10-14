@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-twig-html",
   "version": "0.0.0",
-  "description": "ESLint rules for the HTML in Twig and Drupal templates, built on twig-eslint-parser.",
+  "description": "ESLint rules for the HTML layout in Twig templates, built on twig-eslint-parser.",
   "license": "Apache-2.0",
   "author": "Numiko",
   "repository": {
@@ -31,14 +31,14 @@
     "eslintplugin",
     "eslint-plugin",
     "twig",
-    "drupal",
     "html"
   ],
   "scripts": {
     "build": "tsc -b tsconfig.build.json",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "corpus": "node ../../tools/corpus/cli.ts --package eslint-plugin-twig-html"
   },
   "dependencies": {
     "twig-eslint-parser": "0.0.0"

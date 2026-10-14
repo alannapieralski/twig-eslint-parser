@@ -1,5 +1,5 @@
 import type { Rule } from 'eslint';
-import { readTwigServices } from './twig-services.js';
+import { readTwigServices } from 'twig-eslint-parser';
 
 export const noUnparsedTwig: Rule.RuleModule = {
   meta: {
@@ -17,7 +17,7 @@ export const noUnparsedTwig: Rule.RuleModule = {
   create(context) {
     return {
       Program() {
-        for (const block of readTwigServices(context).unconvertedBlocks) {
+        for (const block of readTwigServices(context.sourceCode, context.id).unconvertedBlocks) {
           context.report({
             loc: { start: context.sourceCode.getLocFromIndex(block.range[0]), end: context.sourceCode.getLocFromIndex(block.range[1]) },
             messageId: 'unparsedTwig',

@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-twig-tailwind",
   "version": "0.0.0",
-  "description": "Lint Tailwind CSS classes in Twig and Drupal templates with eslint-plugin-better-tailwindcss and twig-eslint-parser.",
+  "description": "Lint Tailwind CSS classes in Twig and Drupal templates. Needs eslint-plugin-better-tailwindcss as a peer dependency.",
   "license": "Apache-2.0",
   "author": "Numiko",
   "repository": {
@@ -38,7 +38,8 @@
     "build": "tsc -b tsconfig.build.json",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "corpus": "node ../../tools/corpus/cli.ts --package eslint-plugin-twig-tailwind"
   },
   "dependencies": {
     "twig-eslint-parser": "0.0.0"

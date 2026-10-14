@@ -21,9 +21,13 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
-  it('leaves tags with two attributes alone', async () => {
-    const code = '<a href="{{ url }}" class="flex w-full items-center justify-center gap-4 overflow-hidden">x</a>';
+  it('leaves tags with one attribute alone', async () => {
+    const code = '<a class="flex w-full items-center justify-center gap-4 overflow-hidden">x</a>';
     expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it('lays out a tag with two attributes', async () => {
+    expect(await fixed('<a href="{{ url }}" class="flex">x</a>')).toBe('<a\n  href="{{ url }}"\n  class="flex"\n>x</a>');
   });
 
   it('indents from the line the tag starts on, inside Twig blocks', async () => {
@@ -41,12 +45,12 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe(expected);
   });
 
-  it('does not report Drupal attributes plus one more attribute', async () => {
-    expect((await lint('<div{{ attributes }} id="a">x</div>')).messages).toEqual([]);
+  it('does not report Drupal attributes on their own', async () => {
+    expect((await lint('<div{{ attributes }}>x</div>')).messages).toEqual([]);
   });
 
   it('treats Twig inside a tag name as part of the name, never as an attribute', async () => {
-    expect((await lint('<h{{ level }} class="a" id="b">x</h{{ level }}>')).messages).toEqual([]);
+    expect((await lint('<h{{ level }} class="a">x</h{{ level }}>')).messages).toEqual([]);
     expect(await fixed('<h{{ level }} class="a" id="b" role="c">x</h{{ level }}>')).toBe('<h{{ level }}\n  class="a"\n  id="b"\n  role="c"\n>x</h{{ level }}>');
   });
 
@@ -66,7 +70,7 @@ describe('twig-html/attrs-newline', () => {
   });
 
   it('does not count a Twig block spanning attributes as more than one', async () => {
-    expect((await lint('<input {% if checked %}checked disabled{% endif %} type="checkbox">')).messages).toEqual([]);
+    expect((await lint('<input {% if checked %}checked disabled{% endif %}>')).messages).toEqual([]);
   });
 
   it('keeps multi-line attribute values as they are', async () => {
@@ -92,6 +96,24 @@ describe('twig-html/attrs-newline', () => {
 
   it('checks <script> and <style> tags too', async () => {
     expect(await fixed('<script src="a.js" type="module" defer></script>')).toBe('<script\n  src="a.js"\n  type="module"\n  defer\n></script>');
+  });
+
+  it('is not applied to .svg.twig templates by the recommended config', async () => {
+    const eslint = new ESLint({ overrideConfigFile: true, overrideConfig: [twigHtml.configs.recommended] });
+    const code = '<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>';
+    const [sprite] = await eslint.lintText(code, { filePath: 'sprite.svg.twig' });
+    const [template] = await eslint.lintText(code, { filePath: 'template.html.twig' });
+    expect(template?.messages.map((message) => message.ruleId)).toContain('twig-html/attrs-newline');
+    expect(sprite?.messages.map((message) => message.ruleId)).not.toContain('twig-html/attrs-newline');
+  });
+
+  it('lints .svg.twig templates when the recommended config is reused for them', async () => {
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: [twigHtml.configs.recommended, { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [] }],
+    });
+    const [sprite] = await eslint.lintText('<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>', { filePath: 'sprite.svg.twig' });
+    expect(sprite?.messages.map((message) => message.ruleId)).toContain('twig-html/attrs-newline');
   });
 
   it('can keep > on the line of the last attribute', async () => {

@@ -14,6 +14,7 @@ const plugin = {
 const recommended: Linter.Config = {
   name: 'twig-html/recommended',
   files: ['**/*.twig'],
+  ignores: ['**/*.svg.twig'],
   plugins: { 'twig-html': plugin },
   languageOptions: { parser: twigParser },
   rules: { 'twig-html/attrs-newline': 'warn' },

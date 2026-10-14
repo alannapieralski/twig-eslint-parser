@@ -1,11 +1,13 @@
 # eslint-plugin-twig-tailwind
 
-Lint Tailwind CSS classes in Twig and Drupal templates. This plugin is the glue between
+Lint Tailwind CSS classes in Twig and Drupal templates. This plugin does nothing without
+[`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
+which it needs as a peer dependency: it is the glue between
 [`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser),
 which reads Twig, and
 [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
-which checks the classes. It adds the selectors that find classes inside Twig and Drupal
-expressions, and two rules that keep Twig out of class values.
+which checks the classes. It adds the selectors that find classes inside Twig expressions (and, with an
+extra config, Drupal's), and rules that keep Twig out of class values.
 
 ```twig
 {% set classes = ['gap-fl-sm', 'grid-cols-1'] %}
@@ -31,6 +33,7 @@ import twigTailwind from 'eslint-plugin-twig-tailwind';
 
 export default [
   twigTailwind.configs.recommended,
+  twigTailwind.configs.drupal, // only for Drupal themes
   {
     files: ['**/*.twig'],
     settings: {
@@ -40,11 +43,16 @@ export default [
 ];
 ```
 
+If better-tailwindcss is not installed, loading the plugin fails with an error that names it.
+
+`configs.drupal` adds Drupal's selectors (see [What gets linted](#what-gets-linted)) on top of
+`configs.recommended`, so put it after it. Plain Twig projects leave it out.
+
 `configs.recommended` applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
 - the `twig-tailwind/twig` processor (see [Interpolated strings](#interpolated-strings));
-- better-tailwindcss's selectors plus `drupalSelectors`;
+- better-tailwindcss's selectors plus `twigSelectors`;
 - better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
@@ -78,15 +86,16 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | `class="..."` without Twig inside | better-tailwindcss defaults |
 | `{% set classes = [...] %}`, `{% set grid_classes = '...' %}` | `twigSelectors`: variables named `classes` or ending in `_classes` |
 | `{% include 'x' with { classes: [...] } %}`, `{% embed %}`, `include('x', { classes })` | `twigSelectors`: the `classes` value of the hash |
-| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors`: matched by method name, since Drupal's Attribute is the only Twig object with these methods |
-| `create_attribute({ 'class': [...] })` | `drupalSelectors` |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`configs.drupal`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
+| `create_attribute({ 'class': [...] })` | `drupalSelectors` (`configs.drupal`) |
 
-`drupalSelectors` includes `twigSelectors`. Both are exported as plain better-tailwindcss selector
-objects, so a config for plain Twig (outside Drupal) can use `twigSelectors` instead:
+`configs.recommended` uses `twigSelectors` and `configs.drupal` adds `drupalSelectors`. Both are
+exported as plain better-tailwindcss selector objects. ESLint replaces arrays in `settings`
+instead of merging them, so a `selectors` setting of your own replaces the list from both configs:
 
 ```js
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
-import twigTailwind, { twigSelectors } from 'eslint-plugin-twig-tailwind';
+import twigTailwind, { drupalSelectors, twigSelectors } from 'eslint-plugin-twig-tailwind';
 
 export default [
   twigTailwind.configs.recommended,
@@ -95,7 +104,7 @@ export default [
     settings: {
       'better-tailwindcss': {
         entryPoint: 'src/css/style.css',
-        selectors: [...getDefaultSelectors(), ...twigSelectors],
+        selectors: [...getDefaultSelectors(), ...twigSelectors, ...drupalSelectors, myOwnSelector],
       },
     },
   },

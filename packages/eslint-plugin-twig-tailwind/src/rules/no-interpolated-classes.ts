@@ -1,6 +1,7 @@
 import type { Rule } from 'eslint';
 import type { Node } from 'estree';
-import { drupalSelectors, type ClassSelector } from '../selectors.js';
+import type { ClassSelector } from '../selectors/class-selector.js';
+import { twigSelectors } from '../selectors/twig.js';
 
 type ParentedNode = Node & { readonly parent?: ParentedNode };
 
@@ -105,7 +106,7 @@ function isClassSelector(value: unknown): value is ClassSelector {
 
 function readSelectors(context: Rule.RuleContext): readonly ClassSelector[] {
   const settings = context.settings['better-tailwindcss'] as { selectors?: readonly unknown[] } | undefined;
-  return (settings?.selectors ?? drupalSelectors).filter(isClassSelector);
+  return (settings?.selectors ?? twigSelectors).filter(isClassSelector);
 }
 
 export const noInterpolatedClasses: Rule.RuleModule = {

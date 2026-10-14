@@ -1,4 +1,5 @@
 import type { AST, Rule } from 'eslint';
+import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
 
 type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
@@ -10,24 +11,26 @@ type TagNode = {
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number };
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
-const twigBlockOpeners = new Set(['if', 'for', 'block', 'with', 'apply', 'autoescape', 'spaceless', 'embed', 'macro', 'filter', 'sandbox', 'cache', 'verbatim']);
-
-function twigBlockDepthChange(text: string): number {
-  let change = 0;
-  for (const [, tagName = ''] of text.matchAll(/\{%[-~]?\s*(\w+)/g)) {
-    if (tagName.startsWith('end')) change -= 1;
-    else if (twigBlockOpeners.has(tagName)) change += 1;
+function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
+  let low = searchFrom;
+  let high = blocks.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((blocks[middle]?.range[0] ?? Infinity) < offset) low = middle + 1;
+    else high = middle;
   }
-  return change;
+  return low;
 }
 
-function groupAttributes(attributes: TagNode['attributes'], text: string): Range[] {
+function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];
+  let blockIndex = 0;
   let groupStart: number | undefined;
   let depth = 0;
   for (const attribute of attributes) {
     groupStart ??= attribute.range[0];
-    depth += twigBlockDepthChange(text.slice(...attribute.range));
+    blockIndex = firstBlockIndexFrom(attribute.range[0], blocks, blockIndex);
+    for (let block = blocks[blockIndex]; block && block.range[1] <= attribute.range[1]; block = blocks[++blockIndex]) depth += block.depthChange;
     if (depth <= 0) {
       groups.push([groupStart, attribute.range[1]]);
       groupStart = undefined;
@@ -78,18 +81,19 @@ export const attrsNewline: Rule.RuleModule = {
       additionalProperties: false,
     }],
     messages: {
-      attributeLine: 'Put each attribute on its own line, indented one step from the tag, when a tag has more than {{max}} attributes.',
+      attributeLine: 'Put each attribute on its own line, indented one step from the tag.',
       closeOnOwnLine: 'Put "{{close}}" on its own line, in line with the tag.',
       closeAfterLastAttribute: 'Put "{{close}}" straight after the last attribute.',
     },
   },
 
   create(context) {
-    const options: Required<Options> = { ifAttrsMoreThan: 2, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
+    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
+    const { blocks } = readTwigServices(context.sourceCode, context.id);
 
     const check = (node: TagNode) => {
-      const groups = groupAttributes(node.attributes, text);
+      const groups = groupAttributes(node.attributes, blocks);
       if (groups.length <= options.ifAttrsMoreThan) return;
 
       const gaps = describeGaps(node, groups, text, options);
@@ -105,7 +109,7 @@ export const attrsNewline: Rule.RuleModule = {
       context.report({
         loc,
         messageId,
-        data: { max: String(options.ifAttrsMoreThan), close: node.openEnd.value },
+        data: { close: node.openEnd.value },
         ...(isFixable && { fix: (fixer) => wrongGaps.map((gap) => fixer.replaceTextRange([...gap.range], gap.expected)) }),
       });
     };
