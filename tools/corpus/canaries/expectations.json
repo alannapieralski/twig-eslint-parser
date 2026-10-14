@@ -4,10 +4,10 @@
   ],
   "attrs-newline-crlf.html.twig": [
     { "check": "twig-html/attrs-newline", "reports": [1, 2] },
-    { "check": "twig-html/attrs-newline", "noFailures": "all", "pending": "Phase 3: attrs-newline keeps CRLF line endings" }
+    { "check": "twig-html/attrs-newline", "noFailures": "all" }
   ],
   "inline-svg.html.twig": [
-    { "check": "twig-html/attrs-newline", "clean": "all", "pending": "Phase 3: attrs-newline skips inline SVG" }
+    { "check": "twig-html/attrs-newline", "clean": "all" }
   ],
   "raw-text.html.twig": [
     { "check": "twig-html/attrs-newline", "reports": [2], "clean": [8] },
@@ -52,7 +52,10 @@
   ],
   "cube-classes.html.twig": [
     { "check": "twig-tailwind/config:recommended", "reports": [1] },
-    { "check": "twig-tailwind/config:recommended", "noFailures": "all", "pending": "Phase 3: class fixes keep CUBE [ ] and | groups" },
-    { "check": "twig-tailwind/config:drupal", "noFailures": "all", "pending": "Phase 3: class fixes keep CUBE [ ] and | groups" }
+    { "check": "twig-tailwind/config:recommended", "noFailures": "all" },
+    { "check": "twig-tailwind/config:drupal", "noFailures": "all" }
+  ],
+  "attrs-newline-fix-output.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [2, 3], "output": "attrs-newline-fix-output.expected" }
   ]
 }

@@ -398,20 +398,21 @@ describe('baseline hygiene', () => {
 describe('canaries', () => {
   const canary: Template = { root: canaryRoot, path: `${canaryRoot}/a.twig`, relativePath: 'a.twig', source: '<p>x</p>\n<p>y</p>' };
   const finding = (severity: Finding['severity'], line: number): Finding => ({ check: 'c', severity, template: canary, message: 'm', line });
+  const outcomeOf = (findings: readonly Finding[]): CheckOutcome => ({ findings, stats: {} });
   const expect_ = (entry: Record<string, unknown>) => [{ file: 'a.twig', check: 'c', ...entry }] as unknown as Parameters<typeof evaluateCanaries>[0];
 
   it('misses an expected report that did not happen', () => {
-    expect(evaluateCanaries(expect_({ kind: 'reports', lines: [1, 2] }), 'c', [finding('report', 1)]).missed).toEqual(['canary a.twig:2 expected a report from c']);
+    expect(evaluateCanaries(expect_({ kind: 'reports', lines: [1, 2] }), 'c', outcomeOf([finding('report', 1)])).missed).toEqual(['canary a.twig:2 expected a report from c']);
   });
 
   it('misses a clean line that got a finding', () => {
-    expect(evaluateCanaries(expect_({ kind: 'clean', lines: 'all' }), 'c', [finding('report', 2)]).missed).toEqual(['canary a.twig expected nothing from c']);
+    expect(evaluateCanaries(expect_({ kind: 'clean', lines: 'all' }), 'c', outcomeOf([finding('report', 2)])).missed).toEqual(['canary a.twig expected nothing from c']);
   });
 
   it('lists a pending expectation instead of failing, and says when it starts passing', () => {
     const pending = expect_({ kind: 'noFailures', lines: 'all', pending: 'later' });
-    expect(evaluateCanaries(pending, 'c', [finding('failure', 1)])).toMatchObject({ missed: [], stillPending: [expect.stringContaining('later')] });
-    expect(evaluateCanaries(pending, 'c', [finding('report', 1)])).toMatchObject({ missed: [], nowPassing: [expect.stringContaining('marked pending')] });
+    expect(evaluateCanaries(pending, 'c', outcomeOf([finding('failure', 1)]))).toMatchObject({ missed: [], stillPending: [expect.stringContaining('later')] });
+    expect(evaluateCanaries(pending, 'c', outcomeOf([finding('report', 1)]))).toMatchObject({ missed: [], nowPassing: [expect.stringContaining('marked pending')] });
   });
 
   it('treats failures on a pending or deliberately failing canary as expected', () => {

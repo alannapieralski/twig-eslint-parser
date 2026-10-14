@@ -1,13 +1,14 @@
 import { existsSync, globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Finding, Template } from './types.js';
+import type { CheckOutcome, Finding, Template } from './types.js';
 
 type Kind = 'reports' | 'failures' | 'clean' | 'noFailures';
 type Expectation = {
   readonly file: string;
   readonly check: string;
-  readonly kind: Kind;
+  readonly kind: Kind | 'output';
   readonly lines: readonly number[] | 'all';
+  readonly expectedOutputFile?: string;
   readonly pending?: string;
 };
 export type CanaryResult = { readonly missed: readonly string[]; readonly stillPending: readonly string[]; readonly nowPassing: readonly string[] };
@@ -24,16 +25,20 @@ function parseEntry(file: string, entry: unknown): Expectation[] {
   if (typeof entry !== 'object' || entry === null || typeof (entry as { check?: unknown }).check !== 'string') {
     throw new Error(`${expectationsPath}: each entry for ${file} needs a "check".`);
   }
-  const { check, pending, ...rest } = entry as { check: string; pending?: unknown } & Record<string, unknown>;
+  const { check, pending, output, ...rest } = entry as { check: string; pending?: unknown; output?: unknown } & Record<string, unknown>;
   if (pending !== undefined && typeof pending !== 'string') throw new Error(`${expectationsPath}: "pending" for ${file} must say why, as a string.`);
   const unknownKeys = Object.keys(rest).filter((key) => !kinds.includes(key as Kind));
   if (unknownKeys.length > 0) throw new Error(`${expectationsPath}: ${file} has unknown keys ${unknownKeys.join(', ')}.`);
-  return kinds.flatMap((kind): Expectation[] => {
+  if (output !== undefined && (typeof output !== 'string' || output.endsWith('.twig') || !existsSync(join(canaryRoot, output)))) {
+    throw new Error(`${expectationsPath}: "output" for ${file} must name a file in ${canaryRoot} that does not end in .twig.`);
+  }
+  const outputExpectation: Expectation[] = output === undefined ? [] : [{ file, check, kind: 'output', lines: 'all', expectedOutputFile: output, ...(pending !== undefined && { pending }) }];
+  return [...outputExpectation, ...kinds.flatMap((kind): Expectation[] => {
     const lines = rest[kind];
     if (lines === undefined) return [];
     if (lines !== 'all' && !isLineList(lines)) throw new Error(`${expectationsPath}: "${kind}" for ${file} must be "all" or a list of line numbers.`);
     return [{ file, check, kind, lines, ...(pending !== undefined && { pending }) }];
-  });
+  })];
 }
 
 export function loadCanaryExpectations(): Expectation[] {
@@ -56,11 +61,18 @@ export function isCanary(template: Template): boolean {
 }
 
 function describeExpectation(expectation: Expectation, line: number | 'all'): string {
-  const wanted = { reports: 'a report', failures: 'a failure', clean: 'nothing', noFailures: 'no failure' }[expectation.kind];
+  const wanted = { reports: 'a report', failures: 'a failure', clean: 'nothing', noFailures: 'no failure', output: `its fix to match ${expectation.expectedOutputFile ?? ''}` }[expectation.kind];
   return `canary ${expectation.file}${line === 'all' ? '' : `:${line}`} expected ${wanted} from ${expectation.check}`;
 }
 
-function meetsExpectation(expectation: Expectation, line: number | 'all', findings: readonly Finding[]): boolean {
+function fixedOutputOf(file: string, outcome: CheckOutcome): string {
+  const change = (outcome.changes ?? []).find((candidate) => isCanary(candidate.template) && candidate.template.relativePath === file);
+  return change?.after ?? readFileSync(join(canaryRoot, file), 'utf8');
+}
+
+function meetsExpectation(expectation: Expectation, line: number | 'all', outcome: CheckOutcome): boolean {
+  if (expectation.kind === 'output') return fixedOutputOf(expectation.file, outcome) === readFileSync(join(canaryRoot, expectation.expectedOutputFile ?? ''), 'utf8');
+  const findings = outcome.findings.filter((finding) => isCanary(finding.template));
   const relevant = findings.filter((finding) => finding.template.relativePath === expectation.file && finding.severity !== 'skipped' && (line === 'all' || finding.line === line));
   switch (expectation.kind) {
     case 'clean':
@@ -74,14 +86,13 @@ function meetsExpectation(expectation: Expectation, line: number | 'all', findin
   }
 }
 
-export function evaluateCanaries(expectations: readonly Expectation[], check: string, findings: readonly Finding[]): CanaryResult {
-  const canaryFindings = findings.filter((finding) => isCanary(finding.template));
+export function evaluateCanaries(expectations: readonly Expectation[], check: string, outcome: CheckOutcome): CanaryResult {
   const missed: string[] = [];
   const stillPending: string[] = [];
   const nowPassing: string[] = [];
   for (const expectation of expectations.filter((candidate) => candidate.check === check)) {
     for (const line of expectation.lines === 'all' ? ['all' as const] : expectation.lines) {
-      const isMet = meetsExpectation(expectation, line, canaryFindings);
+      const isMet = meetsExpectation(expectation, line, outcome);
       const description = describeExpectation(expectation, line);
       if (expectation.pending === undefined) {
         if (!isMet) missed.push(description);

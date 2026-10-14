@@ -59,7 +59,7 @@ describe.skipIf(options.list)('corpus', () => {
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
     const report = buildCheckReport(result, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
-    const canaries = evaluateCanaries(canaryExpectations, check.id, outcome.findings);
+    const canaries = evaluateCanaries(canaryExpectations, check.id, outcome);
     canaryNotes.push(...canaries.missed.map((note) => `- missed: ${note}`), ...canaries.nowPassing.map((note) => `- now passing, remove "pending": ${note}`), ...canaries.stillPending.map((note) => `- pending: ${note}`));
     reporter.phase(report.skipped === undefined
       ? `${label}: done in ${report.seconds.toFixed(1)}s, ${report.reports} reports, ${report.failures} failures (${report.newFailures.length} new)`
