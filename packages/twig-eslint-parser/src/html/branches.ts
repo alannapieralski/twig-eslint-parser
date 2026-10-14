@@ -1,12 +1,11 @@
 import type { TwigBlockSummary } from '../twig/blocks.js';
+import { tagsThatScopeBranches } from '../twig/syntax.js';
 
 export type BranchSegment = { readonly groupId: number; readonly branchIndex: number; readonly start: number; readonly end: number };
 export type BranchAnnotations = { readonly branchSegments: BranchSegment[]; readonly branchControlRanges: [number, number][] };
 
 type Role = 'start' | 'continue' | 'end' | 'blockOpen' | 'blockClose';
 type Frame = { readonly kind: 'if'; readonly groupId: number; branchIndex: number; segmentStart: number } | { readonly kind: 'block' };
-
-const tagsThatScopeBranches = new Set(['for', 'block', 'macro', 'embed', 'autoescape', 'sandbox', 'with']);
 
 function roleOf(block: TwigBlockSummary): Role | undefined {
   const { tagName } = block;

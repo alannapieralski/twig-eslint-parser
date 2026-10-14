@@ -1,0 +1,5 @@
+{% set markup = '<div{{ attributes }} class="a" id="b" title="c">' %}
+{% set closing = '</script>' %}
+<p class="kept" id="as" title="typed">{{ '<b class="x" id="y" title="z">' }}</p>
+<script>var s = "{{ '</script>' }}"; var h = '<b class="x" id="y" title="z">';</script>
+<span class="after" id="b" title="t">after</span>

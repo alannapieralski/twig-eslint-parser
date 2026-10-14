@@ -2,7 +2,7 @@ import type { Linter } from 'eslint';
 import { unionWith } from 'eslint-visitor-keys';
 import { omitInterpolatedAttributes, type OmittedAttribute } from './attributes.js';
 import { parseJavaScriptAt, type EstreeNode } from './estree.js';
-import { parseMarkup, type MarkupParserOptions } from './markup.js';
+import { parseMarkup, type MarkupParserOptions } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
 import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockKind, type TwigBlockSummary } from './twig/blocks.js';

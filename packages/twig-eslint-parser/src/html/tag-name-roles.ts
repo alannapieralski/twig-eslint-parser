@@ -1,4 +1,4 @@
-import type { TwigBlock } from './twig/blocks.js';
+import type { TwigBlock } from '../twig/blocks.js';
 
 export type TagNamePrintRole = 'starts-attributes' | 'continues-name';
 

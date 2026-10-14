@@ -38,6 +38,14 @@
     { "check": "parser/output-matches-source", "noFailures": "all" },
     { "check": "parser/html-oracle", "noFailures": "all" }
   ],
+  "twig-string-markup.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [3, 5], "clean": [1, 2, 4] },
+    { "check": "parser/lexer-parity", "clean": "all" },
+    { "check": "parser/converts-every-block", "clean": "all" },
+    { "check": "parser/output-matches-source", "clean": "all" },
+    { "check": "parser/metamorphic", "clean": "all" },
+    { "check": "parser/html-oracle", "clean": "all" }
+  ],
   "cube-classes.html.twig": [
     { "check": "twig-tailwind/config:recommended", "reports": [1] },
     { "check": "twig-tailwind/config:recommended", "noFailures": "all", "pending": "Phase 3: class fixes keep CUBE [ ] and | groups" },

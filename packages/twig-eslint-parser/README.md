@@ -138,6 +138,11 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
   as one document, so the element appears unclosed. The branches are recorded in
   `Program.branchSegments` for rules that compare markup across them.
+- **Branch annotations are experimental.** `Program.branchSegments` and `Program.branchControlRanges`
+  split each `{% if %}` group (and the `for`, `block`, `macro`, `embed`, `autoescape`, `sandbox` and
+  `with` blocks that scope one) into its branches. No rule uses them yet: only the parser's own
+  output checks read them. Similar open source projects may have a better way to represent Twig
+  branches, so review how they do it before building a rule on this shape, which may change.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
