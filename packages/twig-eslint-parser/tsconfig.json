@@ -7,6 +7,6 @@
     "noEmit": true
   },
   "include": ["src", "test", "scripts"],
-  "exclude": ["src/lexer"],
-  "references": [{ "path": "./tsconfig.lexer.json" }]
+  "exclude": ["src/lexer", "src/es-html-parser"],
+  "references": [{ "path": "./tsconfig.lexer.json" }, { "path": "./tsconfig.es-html-parser.json" }]
 }

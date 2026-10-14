@@ -1,0 +1,16 @@
+import { constructTree } from "../tree-constructor/index.js";
+import { tokenize } from "../tokenizer/index.js";
+import { ParseResult } from "../types/index.js";
+import { clearParent } from "../utils/index.js";
+import { defaultTokenAdapter } from "../token-adapter/index.js";
+import { Options } from "../types/parse.js";
+
+export function parse(html: string, options?: Options): ParseResult {
+  const tokenAdapter = (options && options.tokenAdapter) || defaultTokenAdapter;
+  const { tokens } = tokenize(html, tokenAdapter, options);
+  const { ast } = constructTree(tokens);
+  return {
+    ast: clearParent(ast),
+    tokens,
+  };
+}

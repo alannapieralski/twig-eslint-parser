@@ -1,0 +1,20 @@
+import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
+import { calculateTokenPosition } from "../../utils/index.js";
+import type { TokenizerState } from "../../types/index.js";
+import { CharsBuffer } from "../chars-buffer.js";
+
+export function parse(chars: CharsBuffer, state: TokenizerState) {
+  const position = calculateTokenPosition(state, { keepBuffer: true });
+
+  state.tokens.push({
+    type: TokenTypes.DoctypeClose,
+    value: state.decisionBuffer.value(),
+    range: position.range,
+    loc: position.loc,
+  });
+
+  state.accumulatedContent.clear();
+  state.decisionBuffer.clear();
+  state.currentContext = TokenizerContextTypes.Data;
+  state.sourceCode.next();
+}
