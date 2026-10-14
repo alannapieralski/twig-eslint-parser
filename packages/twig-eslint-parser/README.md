@@ -18,10 +18,13 @@ expressions:
 
 ## How it works
 
-1. **Markup** is parsed by [`@html-eslint/parser`](https://html-eslint.org) with its Twig preset,
-   so `class="..."` attributes work as they do in plain HTML.
-2. **Twig** is tokenised by a fork of [twig-lexer](https://gitlab.com/nightlycommit/twig-lexer)
-   brought up to Twig 3.28 (see [the fork](#the-twig-lexer-fork)).
+1. **Twig** is tokenised by a fork of [twig-lexer](https://gitlab.com/nightlycommit/twig-lexer)
+   brought up to Twig 3.28 (see [the vendored code](#vendored-code)).
+2. **Markup** is read by a fork of [es-html-parser](https://github.com/yeonjuan/es-html-parser), the
+   parser behind [html-eslint](https://html-eslint.org), so the tree has the shape html-eslint
+   rules and better-tailwindcss expect. The lexer's Twig blocks are handed to it as template
+   ranges, and the markup reader treats each one according to where it sits (see
+   [Markup](#markup)).
 3. Every `{{ }}` and `{% %}` block is rewritten as **JavaScript of exactly the same length**
    (`set` becomes `var`, `~` becomes `+`, `|filter` becomes `.filter`, `and` becomes `&&`, and so
    on) and parsed with [espree](https://github.com/eslint/js/tree/main/packages/espree), ESLint's
@@ -64,7 +67,7 @@ Add rules that read HTML nodes, string literals or call expressions. For Tailwin
 | Option | Default | Description |
 |---|---|---|
 | `ignoreInterpolatedAttributes` | `[]` | Attribute names (case-insensitive) to leave out of the HTML AST when their value contains Twig, such as `class="figure {{ classes }}"`. The recommended config of `eslint-plugin-twig-tailwind` sets `['class']`. |
-| `templateEngineSyntax` | Twig preset | Passed to `@html-eslint/parser`. |
+| `rawContentTags` | `[]` | Extra element names whose content is read as raw text, added to `textarea` and `title`. |
 
 `ignoreInterpolatedAttributes` exists because linters such as better-tailwindcss read HTML
 attribute values as plain strings, so they would report `{{`, variable names and BEM fragments
@@ -88,22 +91,27 @@ parsing error with its position.
 
 ## Markup
 
-`@html-eslint/parser` reads the markup with its Twig preset, but on its own it cannot tell where a
-tag name ends and Twig begins. The parser adjusts the text it hands over so the tree matches the
-template:
+The markup reader knows where every Twig block is, and what kind it is, so a block means what its
+position in the markup says:
 
-- Drupal attributes printed straight after a tag name (`<div{{ attributes }}>`,
-  `<legend{{ legend.attributes }}>`, `<div{{ create_attribute(...) }}>`) and Twig tags written there
-  (`<div{% if id %} id="{{ id }}"{% endif %}>`) are read as attributes, so the element closes where
-  the template closes it.
-- Twig that builds a tag name (`<h{{ level }}>`, `<{{ html_element }}>`) is read as part of the
-  name, so the opening and closing tags pair up. The tag's `name` is the Twig as written.
-- Twig delimiters inside Twig strings and inside `{% verbatim %}` are hidden from the HTML parser,
-  which would otherwise take `'{{'` for the start of a Twig block.
-- Twig comments are blanked, since they output nothing.
+- A Twig tag or comment, or a print that outputs a whole attribute list (`{{ attributes }}`,
+  `{{ x.addClass(...) }}`, `{{ create_attribute(...) }}`), ends a tag name or an attribute name.
+  Tags and attribute prints become attributes of their own (`<span {% if x %}class="a"{% endif %}>`
+  has the attributes `{% if x %}`, `class` and `{% endif %}`); comments between attributes are
+  skipped.
+- Any other print continues the name it touches: `<h{{ level }}>`, `<{{ html_element }}>` and
+  `data-{{ name }}="x"`. The tag's `name` is the Twig as written.
+- Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
+  `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
+  as a browser does, so one element that is never closed, such as Drupal's
+  `<head-placeholder token="...">`, is reported on its own instead of swallowing the rest of the
+  document.
+- `textarea` and `title` content is raw text, as in HTML, and Twig inside `script`, `style` and raw
+  text never ends the element early.
+- Twig delimiters inside `{% verbatim %}` are printed as text, so they are hidden from the markup
+  reader.
 
-Every node's range and location still point at the original template, and every node's text is the
-original text, except that Twig comments read as blank space.
+Every node's range, location and text are the original template's.
 
 ## Strings
 
@@ -124,8 +132,10 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   so rules see each fixed fragment on its own.
 - **Elements opened or closed in different Twig branches**, such as
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
-  as one document, so the element and its parents appear unclosed. `@html-eslint/parser` records the
-  branches in `Program.branchSegments`.
+  as one document, so the element appears unclosed. The branches are recorded in
+  `Program.branchSegments` for rules that compare markup across them.
+- **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
+  the tag is read as `h` with the Twig blocks and the digits as attributes.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig
@@ -160,15 +170,21 @@ Twig 3.x syntax up to 3.28, verified against real Twig:
      deliberately left unconverted.
 5. Run `npm run corpus` on real templates before releasing.
 
-## The twig-lexer fork
+## Vendored code
 
-The lexer in `src/lexer` is a fork of twig-lexer 1.0.0, a TypeScript port of Twig's lexer that has
-not been released since April 2024. The upstream files are kept byte for byte in
-`third_party/twig-lexer/pristine`, and every change is a separate patch with a
-[DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header in `third_party/twig-lexer/patches`.
-[`third_party/twig-lexer/UPSTREAM.md`](third_party/twig-lexer/UPSTREAM.md) lists each change, the
-Twig release it reproduces and the test that proves it. `npm run vendor:check` fails if `src/lexer`
-ever differs from pristine plus patches; run it in CI.
+Two upstream projects are kept as forks, each the same way: the upstream files byte for byte in
+`third_party/<name>/pristine`, every change a separate patch with a
+[DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header in `third_party/<name>/patches`, and
+`third_party/<name>/UPSTREAM.md` listing each change and the test that proves it.
+`npm run vendor:check` fails if the shipped copy ever differs from pristine plus patches; run it in
+CI.
+
+- **twig-lexer 1.0.0** (`src/lexer`), a TypeScript port of Twig's lexer that has not been released
+  since April 2024, brought up to Twig 3.28. See
+  [`third_party/twig-lexer/UPSTREAM.md`](third_party/twig-lexer/UPSTREAM.md).
+- **es-html-parser 0.3.2** (`src/es-html-parser`), the HTML parser behind html-eslint, taught to
+  treat Twig blocks by kind and position and to close back to an open element as browsers do. See
+  [`third_party/es-html-parser/UPSTREAM.md`](third_party/es-html-parser/UPSTREAM.md).
 
 ## Development
 
@@ -177,10 +193,10 @@ Run these from the repository root; see the [root README](https://github.com/ala
 | Command | What it does |
 |---|---|
 | `npm test -w twig-eslint-parser` | Unit, parity and ESLint tests. |
-| `npm run typecheck -w twig-eslint-parser` | Type-checks the lexer (with upstream's settings) and everything else (strict). |
+| `npm run typecheck -w twig-eslint-parser` | Type-checks the vendored code (with upstream's settings) and everything else (strict). |
 | `npm run build -w twig-eslint-parser` | Compiles to `dist`. |
-| `npm run test:upstream -w twig-eslint-parser` | Runs twig-lexer's own test suite against the patched lexer. |
-| `npm run vendor:check -w twig-eslint-parser` / `vendor:write` | Checks or regenerates `src/lexer` from pristine plus patches. |
+| `npm run test:upstream -w twig-eslint-parser` | Runs twig-lexer's and es-html-parser's own test suites against the patched code. |
+| `npm run vendor:check -w twig-eslint-parser` / `vendor:write` | Checks or regenerates `src/lexer` and `src/es-html-parser` from pristine plus patches. |
 | `npm run golden:twig -w twig-eslint-parser` | Regenerates the fixture golden files with real Twig (needs PHP and `composer install` in `tools/twig-oracle`). |
 | `npm run syntax:twig -w twig-eslint-parser` | Regenerates `twig-syntax.json` from the installed Twig (same requirements). |
 | `npm run corpus -w twig-eslint-parser` | Checks the lexer against real Twig, and the parser's output node by node, on every template in your corpus (needs PHP). See the root README. |
@@ -188,4 +204,5 @@ Run these from the repository root; see the [root README](https://github.com/ala
 ## Licence
 
 Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). The lexer is derived from
-twig-lexer by Eric MORAND, also Apache-2.0.
+twig-lexer by Eric MORAND, also Apache-2.0. The markup reader is derived from es-html-parser by
+YeonJuan, and the HTML visitor keys from html-eslint, both MIT.

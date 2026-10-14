@@ -11,8 +11,8 @@
   ],
   "raw-text.html.twig": [
     { "check": "twig-html/attrs-newline", "reports": [2], "clean": [8] },
-    { "check": "twig-html/attrs-newline", "clean": [3, 6], "pending": "Phase 2: textarea and title content is raw text" },
-    { "check": "parser/html-oracle", "clean": "all", "pending": "Phase 2: textarea and title content is raw text" },
+    { "check": "twig-html/attrs-newline", "clean": [3, 6] },
+    { "check": "parser/html-oracle", "clean": "all" },
     { "check": "parser/output-matches-source", "noFailures": "all" }
   ],
   "twig-tailwind.html.twig": [
@@ -30,13 +30,13 @@
     { "check": "twig-tailwind/no-unparsed-twig", "clean": "all" }
   ],
   "html-seams.html.twig": [
-    { "check": "parser/output-matches-source", "noFailures": "all", "pending": "Phase 2: Twig is structural in the HTML layer" },
-    { "check": "parser/metamorphic", "clean": "all", "pending": "Phase 2: Twig is structural in the HTML layer" },
-    { "check": "parser/html-oracle", "noFailures": "all", "pending": "Phase 2: Twig is structural in the HTML layer" }
+    { "check": "parser/output-matches-source", "noFailures": "all", "reports": [6] },
+    { "check": "parser/metamorphic", "clean": "all" },
+    { "check": "parser/html-oracle", "noFailures": "all", "reports": [6] }
   ],
   "drupal-html.html.twig": [
-    { "check": "parser/output-matches-source", "noFailures": "all", "pending": "Phase 2: a close tag closes back to its open element" },
-    { "check": "parser/html-oracle", "noFailures": "all", "pending": "Phase 2: a close tag closes back to its open element" }
+    { "check": "parser/output-matches-source", "noFailures": "all" },
+    { "check": "parser/html-oracle", "noFailures": "all" }
   ],
   "cube-classes.html.twig": [
     { "check": "twig-tailwind/config:recommended", "reports": [1] },

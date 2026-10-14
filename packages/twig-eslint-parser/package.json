@@ -26,7 +26,9 @@
     "LICENSE",
     "NOTICE",
     "third_party/twig-lexer/LICENSE",
-    "third_party/twig-lexer/UPSTREAM.md"
+    "third_party/twig-lexer/UPSTREAM.md",
+    "third_party/es-html-parser/LICENSE.md",
+    "third_party/es-html-parser/UPSTREAM.md"
   ],
   "keywords": [
     "eslint",
@@ -38,17 +40,17 @@
   "scripts": {
     "build": "tsc -b tsconfig.build.json",
     "prepack": "npm run build",
-    "typecheck": "tsc -b tsconfig.lexer.json && tsc -p tsconfig.json",
+    "typecheck": "tsc -b tsconfig.lexer.json tsconfig.es-html-parser.json && tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:upstream": "node scripts/vendor-twig-lexer.ts --test",
+    "test:upstream": "node scripts/vendor.ts --test",
     "golden:twig": "php tools/twig-oracle/tokenize.php test/fixtures/twig",
     "syntax:twig": "php tools/twig-oracle/syntax.php test/fixtures/twig/twig-syntax.json",
-    "vendor:check": "node scripts/vendor-twig-lexer.ts --check",
-    "vendor:write": "node scripts/vendor-twig-lexer.ts --write",
+    "vendor:check": "node scripts/vendor.ts --check",
+    "vendor:write": "node scripts/vendor.ts --write",
     "corpus": "node ../../tools/corpus/cli.ts --package twig-eslint-parser"
   },
   "dependencies": {
-    "@html-eslint/parser": "0.66.0",
+    "css-tree": "3.2.1",
     "eslint-visitor-keys": "5.0.1",
     "espree": "11.2.0"
   },
@@ -56,6 +58,7 @@
     "eslint": "^9.0.0 || ^10.0.0"
   },
   "devDependencies": {
+    "@types/css-tree": "2.3.11",
     "@types/tape": "5.8.1",
     "parse5": "8.0.1",
     "parse5-sax-parser": "8.0.0",

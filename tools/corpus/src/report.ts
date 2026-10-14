@@ -96,8 +96,9 @@ function renderStaleBaseline(staleKeys: readonly string[]): string {
   return `${['', `## Stale baseline entries: ${staleKeys.length}`, '', 'These known failures no longer happen. Run with --update-baseline to drop them.', '', ...listed, ...unlisted].join('\n')}\n`;
 }
 
-function statusOf(finding: Finding, baseline: ReadonlySet<string>): 'report' | 'skipped' | 'known' | 'new' {
+function statusOf(finding: Finding, baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean): 'report' | 'skipped' | 'expected' | 'known' | 'new' {
   if (finding.severity !== 'failure') return finding.severity;
+  if (isExpectedFailure(finding)) return 'expected';
   return baseline.has(findingKey(finding)) ? 'known' : 'new';
 }
 
@@ -106,10 +107,10 @@ function excerptOf(finding: Finding): string | undefined {
   return finding.template.source.split(/\r?\n/)[finding.line - 1]?.trim().slice(0, 160);
 }
 
-function writeFindings(directory: string, results: readonly CheckResult[], baseline: ReadonlySet<string>): void {
+function writeFindings(directory: string, results: readonly CheckResult[], baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean): void {
   const lines = results.flatMap(({ outcome }) => outcome.findings.map((finding) => JSON.stringify({
     check: finding.check,
-    status: statusOf(finding, baseline),
+    status: statusOf(finding, baseline, isExpectedFailure),
     root: finding.template.root,
     file: finding.template.relativePath,
     line: finding.line,
@@ -185,13 +186,14 @@ export function writeReport(directory: string, input: {
   readonly sampleSize: number;
   readonly staleBaselineKeys: readonly string[];
   readonly comparison: string;
+  readonly isExpectedFailure: (finding: Finding) => boolean;
 }): string {
   rmSync(directory, { recursive: true, force: true });
   mkdirSync(directory, { recursive: true });
   const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
   writeFileSync(join(directory, 'summary.md'), summary);
   writeFileSync(join(directory, 'summary.json'), `${JSON.stringify(input.reports.map(({ newFailures, ...rest }) => ({ ...rest, newFailures: newFailures.length })), null, 2)}\n`);
-  writeFindings(directory, input.results, input.baseline);
+  writeFindings(directory, input.results, input.baseline, input.isExpectedFailure);
   writeFailureFiles(directory, input.results);
   writeSamples(directory, input.results, input.sampleSize);
   return summary;

@@ -5,7 +5,7 @@ import type { Check, CheckOutcome, Finding, PackageCorpus, Template } from '../.
 import { parseForESLint, type UnconvertedTwigBlock } from '../src/index.js';
 import { createOffsetLocator } from '../src/source-text.js';
 import { findParityMismatches, type Golden } from './lexer/parity.js';
-import { compareWithHtmlOracle, twigRangesFromOracle } from './support/html-oracle.js';
+import { branchPairedEndTagCheck, compareWithHtmlOracle, twigRangesFromOracle } from './support/html-oracle.js';
 import { checkRewritesKeepTheTree } from './support/metamorphic.js';
 import { checkParserOutput, templateDefectChecks, type OutputIssue } from './support/output-checks.js';
 
@@ -133,7 +133,7 @@ const outputMatchesSource: Check = {
   },
 };
 
-const templateDefectsInTheHtmlOracle: ReadonlySet<string> = new Set(['html-oracle: unmatched end tags']);
+const templateDefectsInTheHtmlOracle: ReadonlySet<string> = new Set(['html-oracle: unmatched end tags', branchPairedEndTagCheck]);
 
 function htmlOracleIssues(template: Template, golden: Golden): readonly OutputIssue[] | undefined {
   let ast: unknown;

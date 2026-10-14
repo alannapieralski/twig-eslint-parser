@@ -1,26 +1,17 @@
-import { TEMPLATE_ENGINE_SYNTAX, parseForESLint as parseHtmlForESLint, type ParserOptions as HtmlParserOptions } from '@html-eslint/parser';
-import { blankPreservingLineBreaks, createOffsetLocator, type SourcePosition } from './source-text.js';
-import type { TwigBlock } from './twig/blocks.js';
+import type { TemplateWrapper } from './es-html-parser/types/index.js';
+import { annotateBranches } from './html/branches.js';
+import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './html/program.js';
+import { createOffsetLocator } from './source-text.js';
+import { summariseTwigBlocks, type TwigBlock } from './twig/blocks.js';
 
-export type MarkupParserOptions = HtmlParserOptions;
+export type MarkupParserOptions = { readonly rawContentTags?: readonly string[] };
 
-type HtmlParseResult = ReturnType<typeof parseHtmlForESLint>;
+type HtmlParseResult = { readonly ast: HtmlProgram; readonly visitorKeys: typeof visitorKeys };
 type Range = readonly [number, number];
-type BranchInfo = {
-  readonly branchSegments?: { start: number; end: number }[];
-  readonly branchControlRanges?: [number, number][];
-};
-type MarkupText = {
-  readonly text: string;
-  readonly rewrittenRanges: readonly Range[];
-  readonly tagNameRanges: readonly Range[];
-  readonly insertedOffsets: readonly number[];
-};
+type MarkupText = { readonly text: string; readonly blankedRanges: readonly Range[] };
 
-const drupalAttributesPrint = /^\{\{[-~]?\s*(?:[\w.]*attributes\b|create_attribute\s*\()/;
-const openTagNameAtEnd = /<[A-Za-z][\w:-]*$/;
-const tagNameStartAtEnd = /<\/?(?:[A-Za-z][\w:-]*)?$/;
-const attributeFollows = /^[\s>/{]/;
+const attributesPrint = /^\{\{[-~]?\s*(?:[\w.]*attributes\b|create_attribute\s*\(|[\w.]+\.(?:addClass|removeClass|setAttribute|removeAttribute)\s*\()/;
+const rawTextElements: readonly string[] = ['textarea', 'title'];
 const twigDelimiters = /\{\{|\}\}|\{%|%\}|\{#|#\}/g;
 
 function isRange(value: unknown): value is [number, number] {
@@ -44,80 +35,51 @@ function findVerbatimBodies(blocks: readonly TwigBlock[]): Range[] {
   return bodies;
 }
 
-function letterFor(character: string): string {
-  return String.fromCharCode(97 + ((character.codePointAt(0) ?? 0) % 26));
-}
-
-function prepareMarkup(source: string, blocks: readonly TwigBlock[]): MarkupText {
-  const characters = source.split('');
-  const rewrittenRanges: Range[] = [];
-  const tagNameRanges: Range[] = [];
-  const insertedOffsets: number[] = [];
-  const rewrite = ([start, end]: Range, replacement: string) => {
-    characters.splice(start, end - start, ...replacement.split(''));
-  };
-  const blankDelimiters = (range: Range) => {
-    const text = source.slice(...range);
-    const blanked = text.replace(twigDelimiters, '  ');
-    if (blanked === text) return;
-    rewrite(range, blanked);
-    rewrittenRanges.push(range);
-  };
-
-  let markupStart = 0;
-  let tagNameEnd: number | undefined;
-  for (const block of blocks) {
-    const blockRange: Range = [block.start, block.end];
-    const blockText = source.slice(...blockRange);
-    const markupBefore = source.slice(markupStart, block.start);
-    const followsTagName = openTagNameAtEnd.test(markupBefore) || block.start === tagNameEnd;
-    markupStart = block.end;
-
-    if (block.kind === 'comment') {
-      rewrite(blockRange, blankPreservingLineBreaks(blockText));
-      continue;
-    }
-    for (const token of block.tokens) {
-      if (token.type === 'STRING') blankDelimiters([token.start, token.end]);
-    }
-
-    const isDrupalAttributes = block.kind === 'print' && drupalAttributesPrint.test(blockText);
-    const isAttributeTag = block.kind === 'tag' && attributeFollows.test(source.slice(block.end, block.end + 1));
-    if (followsTagName && (isDrupalAttributes || isAttributeTag)) {
-      insertedOffsets.push(block.start);
-    } else if (block.kind === 'print' && tagNameStartAtEnd.test(markupBefore)) {
-      rewrite(blockRange, blockText.split('').map(letterFor).join(''));
-      rewrittenRanges.push(blockRange);
-      tagNameRanges.push(blockRange);
-      tagNameEnd = block.end;
-    }
+// Blanks Twig delimiters that {% verbatim %} prints as text, so the markup reader does not take them for Twig.
+function blankVerbatimDelimiters(source: string, blocks: readonly TwigBlock[]): MarkupText {
+  let text = source;
+  const blankedRanges: Range[] = [];
+  for (const [start, end] of findVerbatimBodies(blocks)) {
+    const body = source.slice(start, end);
+    const blanked = body.replace(twigDelimiters, '  ');
+    if (blanked === body) continue;
+    text = text.slice(0, start) + blanked + text.slice(end);
+    blankedRanges.push([start, end]);
   }
-  for (const body of findVerbatimBodies(blocks)) blankDelimiters(body);
-
-  let text = characters.join('');
-  insertedOffsets.forEach((offset, index) => {
-    const position = offset + index;
-    text = `${text.slice(0, position)} ${text.slice(position)}`;
-  });
-  return { text, rewrittenRanges, tagNameRanges, insertedOffsets };
+  return { text, blankedRanges };
 }
 
-function visitNodes(root: unknown, visit: (node: Record<string, unknown>) => void): void {
+function delimiterEnd(block: TwigBlock): number {
+  const closing = block.tokens.at(-1);
+  const lineBreak = /\r?\n$/.exec(closing?.value ?? '')?.[0] ?? '';
+  return block.end - lineBreak.length;
+}
+
+function templateInfoOf(source: string, block: TwigBlock): TemplateWrapper {
+  const end = delimiterEnd(block);
+  const isAttributesPrint = block.kind === 'print' && attributesPrint.test(source.slice(block.start, end));
+  return { open: [block.start, block.start + 2], close: [end - 2, end], kind: block.kind, ...(isAttributesPrint && { role: 'attributes' as const }) };
+}
+
+function restoreBlankedText(result: HtmlParseResult, source: string, blankedRanges: readonly Range[]): void {
   const visited = new Set<object>();
-  const walk = (value: unknown): void => {
+  const visit = (value: unknown): void => {
     if (typeof value !== 'object' || value === null || visited.has(value)) return;
     visited.add(value);
     if (Array.isArray(value)) {
-      value.forEach(walk);
+      value.forEach(visit);
       return;
     }
     const node = value as Record<string, unknown>;
-    visit(node);
+    const range = node['range'];
+    if (isRange(range) && typeof node['value'] === 'string' && overlaps(range, blankedRanges) && node['value'].length === range[1] - range[0]) {
+      node['value'] = source.slice(...range);
+    }
     for (const [key, child] of Object.entries(node)) {
-      if (key !== 'range' && key !== 'loc' && key !== 'parent') walk(child);
+      if (key !== 'range' && key !== 'loc' && key !== 'parent') visit(child);
     }
   };
-  walk(root);
+  visit(result.ast);
 }
 
 export class HtmlSyntaxError extends Error {
@@ -132,63 +94,24 @@ export class HtmlSyntaxError extends Error {
   }
 }
 
-function createSourceOffsetMapper(insertedOffsets: readonly number[]): (offset: number) => number {
-  const spacePositions = insertedOffsets.map((offset, index) => offset + index);
-  return (offset) => offset - spacePositions.filter((position) => position < offset).length;
-}
-
-function mapPositionsToSource(result: HtmlParseResult, insertedOffsets: readonly number[], locate: (offset: number) => SourcePosition): void {
-  const toSource = createSourceOffsetMapper(insertedOffsets);
-
-  visitNodes(result.ast, (node) => {
-    if (!isRange(node['range'])) return;
-    const range: [number, number] = [toSource(node['range'][0]), toSource(node['range'][1])];
-    node['range'] = range;
-    node['loc'] = { start: locate(range[0]), end: locate(range[1]) };
-  });
-
-  const branches = result.ast as unknown as BranchInfo;
-  for (const segment of branches.branchSegments ?? []) {
-    segment.start = toSource(segment.start);
-    segment.end = toSource(segment.end);
-  }
-  for (const range of branches.branchControlRanges ?? []) {
-    range[0] = toSource(range[0]);
-    range[1] = toSource(range[1]);
-  }
-}
-
-function restoreSourceText(result: HtmlParseResult, source: string, markup: MarkupText): void {
-  visitNodes(result.ast, (node) => {
-    const range = node['range'];
-    if (!isRange(range) || !overlaps(range, markup.rewrittenRanges)) return;
-    const sourceText = source.slice(...range);
-    if (typeof node['value'] === 'string' && node['value'].length === sourceText.length) node['value'] = sourceText;
-    const openStart = node['openStart'] as { range?: unknown } | undefined;
-    if (node['type'] === 'Tag' && isRange(openStart?.range) && overlaps(openStart.range, markup.tagNameRanges)) {
-      node['name'] = source.slice(openStart.range[0] + 1, openStart.range[1]);
-    }
-  });
-}
-
 function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: number } {
   return error instanceof SyntaxError && typeof (error as { pos?: unknown }).pos === 'number';
 }
 
-function parseHtml(source: string, markup: MarkupText, options: MarkupParserOptions): HtmlParseResult {
+export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
+  const markup = blankVerbatimDelimiters(source, blocks);
+  const parseOptions = {
+    templateInfos: blocks.map((block) => templateInfoOf(source, block)),
+    rawContentTags: [...rawTextElements, ...(options.rawContentTags ?? [])],
+  };
+  let result: HtmlParseResult;
   try {
-    return parseHtmlForESLint(markup.text, { templateEngineSyntax: TEMPLATE_ENGINE_SYNTAX.TWIG, ...options });
+    result = { ast: parseHtmlProgram(markup.text, parseOptions, annotateBranches(summariseTwigBlocks(blocks))), visitorKeys };
   } catch (error) {
     if (!isPositionedSyntaxError(error)) throw error;
-    const position = createOffsetLocator(source)(createSourceOffsetMapper(markup.insertedOffsets)(error.pos));
+    const position = createOffsetLocator(source)(error.pos);
     throw new HtmlSyntaxError(error.message.replace(/ \(\d+:\d+\)$/, ''), position.line, position.column + 1);
   }
-}
-
-export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
-  const markup = prepareMarkup(source, blocks);
-  const result = parseHtml(source, markup, options);
-  if (markup.insertedOffsets.length > 0) mapPositionsToSource(result, markup.insertedOffsets, createOffsetLocator(source));
-  if (markup.rewrittenRanges.length > 0) restoreSourceText(result, source, markup);
+  if (markup.blankedRanges.length > 0) restoreBlankedText(result, source, markup.blankedRanges);
   return result;
 }

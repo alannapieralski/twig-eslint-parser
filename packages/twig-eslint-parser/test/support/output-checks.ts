@@ -3,10 +3,11 @@ import { createOffsetLocator } from '../../src/source-text.js';
 import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
 import { toSameLengthJavaScript } from '../../src/twig/javascript.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import { isClosedInAnotherBranch } from './branches.js';
 
 export type OutputIssue = { readonly check: string; readonly detail: string; readonly line?: number };
 
-export const templateDefectChecks: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: stray close tag']);
+export const templateDefectChecks: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: stray close tag', 'html: element opened and closed in different Twig branches']);
 
 type Node = {
   readonly type: string;
@@ -151,14 +152,19 @@ function checkLeavesDoNotOverlap(leaves: readonly Node[], code: string, report: 
   });
 }
 
-function describeUncoveredSource(code: string, [start, end]: Range, tags: readonly TagNode[]): OutputIssue[] {
+function describeUncoveredSource(code: string, [start, end]: Range, tags: readonly TagNode[], ast: unknown): OutputIssue[] {
   const text = code.slice(start, end);
   const issues: OutputIssue[] = [];
   let remainder = text;
   for (const match of text.matchAll(closeTagPattern)) {
     const [closeTag, name = ''] = match;
-    const isDroppedClose = hasUnclosedElementNamed(name, start + match.index, tags);
-    issues.push({ check: isDroppedClose ? 'html: close tag is read' : 'html: stray close tag', detail: closeTag.slice(0, 60) });
+    const closeStart = start + match.index;
+    const isDroppedClose = hasUnclosedElementNamed(name, closeStart, tags);
+    const branchTags = tags.map((tag) => ({ name: tag.name, openStart: tag.range[0], isClosed: Boolean(tag.close || tag.selfClosing) }));
+    const check = !isDroppedClose
+      ? 'html: stray close tag'
+      : isClosedInAnotherBranch(ast, closeStart, name, branchTags) ? 'html: element opened and closed in different Twig branches' : 'html: close tag is read';
+    issues.push({ check, detail: closeTag.slice(0, 60) });
     remainder = remainder.replace(closeTag, '');
   }
   if (/\S/.test(remainder)) issues.push({ check: 'html: source is covered', detail: JSON.stringify(remainder.trim()).slice(0, 60) });
@@ -194,19 +200,21 @@ function countClassAttributesInMarkup(code: string, blocks: readonly TwigBlock[]
   }
   masked = masked
     .replace(/<!--[\s\S]*?-->/g, (comment) => ' '.repeat(comment.length))
-    .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, (element) => element.replace(/>[\s\S]*</, (inner) => ' '.repeat(inner.length)));
+    .replace(/<(script|style|textarea|title)\b[\s\S]*?<\/\1>/gi, (element) => element.replace(/>[\s\S]*</, (inner) => ' '.repeat(inner.length)));
   let count = 0;
   for (const [, , head = ''] of masked.matchAll(/<([A-Za-z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g)) count += (head.match(/(?:^|\s)class\s*=/gi) ?? []).length;
   return count;
 }
 
-export function checkParserOutput(code: string): OutputIssue[] {
+export type ParseForOutputChecks = (code: string, options: { readonly ignoreInterpolatedAttributes: readonly string[] }) => ReturnType<typeof parseForESLint>;
+
+export function checkParserOutput(code: string, parse: ParseForOutputChecks = parseForESLint): OutputIssue[] {
   const issues: OutputIssue[] = [];
   const report = (check: string, detail: string, line?: number) => issues.push({ check, detail, ...(line !== undefined && { line }) });
 
   let result: ReturnType<typeof parseForESLint>;
   try {
-    result = parseForESLint(code, { ignoreInterpolatedAttributes: ['class'] });
+    result = parse(code, { ignoreInterpolatedAttributes: ['class'] });
   } catch (error) {
     return [describeParseFailure(error)];
   }
@@ -295,7 +303,7 @@ export function checkParserOutput(code: string): OutputIssue[] {
   checkLeavesDoNotOverlap(leaves, code, report, lineOf);
   const coveredRanges = [...leaves.map((leaf) => leaf.range), ...equalsSignRanges(tags), ...services.omittedAttributes.map((attribute) => attribute.range), ...commentRanges, ...verbatimDelimiterRanges(code, allBlocks)];
   for (const range of findUncoveredSource(code, coveredRanges)) {
-    for (const issue of describeUncoveredSource(code, range, tags)) report(issue.check, issue.detail, lineOf(range[0]));
+    for (const issue of describeUncoveredSource(code, range, tags, result.ast)) report(issue.check, issue.detail, lineOf(range[0]));
   }
 
   return issues;

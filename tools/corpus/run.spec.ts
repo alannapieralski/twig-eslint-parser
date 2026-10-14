@@ -86,7 +86,7 @@ describe.skipIf(options.list)('corpus', () => {
     const strictViolations = options.strict ? describeStrictViolations(comparisons) : undefined;
     const comparison = renderCanaries(canaryNotes) + renderComparison(comparisons, strictViolations);
 
-    console.info(writeReport(reportDirectory, { results, reports, baseline, templateCount: templates.length, rootCount, sampleSize: options.sample, staleBaselineKeys, comparison }));
+    console.info(writeReport(reportDirectory, { results, reports, baseline, templateCount: templates.length, rootCount, sampleSize: options.sample, staleBaselineKeys, comparison, isExpectedFailure: (finding) => isExpectedCanaryFailure(canaryExpectations, finding) }));
     if (options.updateBaseline) {
       writeBaseline(baselinePath, [...keepBaselineKeysOutsideTheRun(baseline, checksRun, templateHashesRun), ...recordedKeys]);
       console.info('Baseline updated: corpus.baseline.json');

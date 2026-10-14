@@ -65,12 +65,12 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
   const markup = parseMarkup(code, blocks, options);
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, ...twigServices } = convertTwigBlocks(blocks, createOffsetLocator(code));
-  const visitorKeys = unionWith(markup.visitorKeys ?? {});
+  const visitorKeys = unionWith(markup.visitorKeys);
+  const ast = { ...markup.ast, twigBody: statements } as unknown as TwigParseResult['ast'];
 
   return {
-    ...markup,
-    ast: { ...markup.ast, twigBody: statements },
+    ast,
     visitorKeys: { ...visitorKeys, Program: [...(visitorKeys['Program'] ?? []), 'twigBody'] },
-    services: { ...markup.services, twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
+    services: { twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
   };
 }

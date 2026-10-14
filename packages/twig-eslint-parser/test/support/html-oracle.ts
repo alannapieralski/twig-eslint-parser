@@ -1,3 +1,4 @@
+import { isClosedInAnotherBranch } from './branches.js';
 import { TokenizerMode, type Token } from 'parse5';
 import { SAXParser, type EndTag, type StartTag } from 'parse5-sax-parser';
 import type { Golden } from '../lexer/parity.js';
@@ -52,6 +53,7 @@ const specialElements = new Set(`address applet area article aside base basefont
   keygen li link listing main marquee menu meta nav noembed noframes noscript object ol p param plaintext pre script search section select source
   style summary table tbody td template textarea tfoot th thead title tr track ul wbr xmp`.split(/\s+/));
 const endTagChecks: Record<EndTagKind, string> = { 'closes-current': 'end tags', 'closes-after-implied-ends': 'implied end tags', 'unmatched': 'unmatched end tags' };
+export const branchPairedEndTagCheck = 'html-oracle: element opened and closed in different Twig branches';
 const foreignRoots = new Set(['svg', 'math']);
 const knownElements = new Set(`a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup
   data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr
@@ -196,6 +198,10 @@ function isKnownElementName(name: string): boolean {
   return knownElements.has(name) || customElementName.test(name);
 }
 
+function isAttributesPrint(printText: string): boolean {
+  return attributesObjectPrint.test(printText);
+}
+
 function isAttributesAfterTagName(state: ScanState, printText: string): boolean {
   return !state.isEndTag && (isKnownElementName(state.tagName) || attributesObjectPrint.test(printText));
 }
@@ -207,9 +213,10 @@ function startsAttributeName(character: string | undefined): boolean {
 function fillerFor(state: ScanState, range: TwigRange, source: string): Filler {
   if (range.kind !== 'print') return 'blank';
   switch (state.mode) {
+    case 'attribute-name':
+      return isAttributesPrint(source.slice(range.start, range.end)) ? 'blank' : 'name';
     case 'tag-open':
     case 'end-tag-open':
-    case 'attribute-name':
     case 'before-attribute-value':
     case 'attribute-value-double':
     case 'attribute-value-single':
@@ -221,7 +228,7 @@ function fillerFor(state: ScanState, range: TwigRange, source: string): Filler {
     case 'after-attribute-name':
     case 'after-attribute-value':
     case 'self-closing':
-      return startsAttributeName(source[range.end]) ? 'name' : 'blank';
+      return startsAttributeName(source[range.end]) && !isAttributesPrint(source.slice(range.start, range.end)) ? 'name' : 'blank';
     default:
       return 'blank';
   }
@@ -631,7 +638,9 @@ export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigR
   const ourCloseStarts = new Set(ours.flatMap((tag) => (tag.close ? [tag.close[0]] : [])));
   for (const endTag of oracle.endTags) {
     if (ourCloseStarts.has(endTag.range[0])) continue;
-    const check = endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
+    const branchTags = ours.map((tag) => ({ name: tag.name, openStart: tag.openStart[0], isClosed: tag.close !== undefined }));
+    const isBranchPaired = isClosedInAnotherBranch(ast, endTag.range[0], endTag.name, branchTags);
+    const check = isBranchPaired ? branchPairedEndTagCheck.replace('html-oracle: ', '') : endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
     report(check, endTag.range, 'end tag is not the close of any element');
   }
 
