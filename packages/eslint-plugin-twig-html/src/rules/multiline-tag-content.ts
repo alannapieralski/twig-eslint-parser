@@ -1,7 +1,6 @@
 import type { AST, Rule } from 'eslint';
-import { countLeadingHtmlWhitespace, countTrailingHtmlWhitespace, createIgnoredInsideCheck, hasSignificantContentWhitespace, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
+import { countLeadingHtmlWhitespace, countTrailingHtmlWhitespace, createContentWhitespaceCheck, createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, layoutOptionDefaults, layoutOptionProperties, lineBreakUsedIn, lineIndentation, tagListeners, type LayoutOptions, type Range, type TagNode } from '../tag-layout.js';
 
-type Options = { indent?: number; ignoreInside?: string[] };
 type ContentEdge = { readonly range: Range; readonly messageId: 'contentOnOwnLine' | 'closeOnOwnLine'; readonly anchor: Range; readonly isOpeningSide: boolean };
 
 function findCrowdedContentEdges(node: TagNode, close: NonNullable<TagNode['close']>, text: string): ContentEdge[] {
@@ -28,10 +27,7 @@ export const multilineTagContent: Rule.RuleModule = {
     fixable: 'whitespace',
     schema: [{
       type: 'object',
-      properties: {
-        indent: { type: 'integer', minimum: 1 },
-        ignoreInside: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
-      },
+      properties: layoutOptionProperties,
       additionalProperties: false,
     }],
     messages: {
@@ -41,17 +37,18 @@ export const multilineTagContent: Rule.RuleModule = {
   },
 
   create(context) {
-    const options: Required<Options> = { indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
+    const options: Required<LayoutOptions> = { ...layoutOptionDefaults, ...(context.options[0] as LayoutOptions | undefined) };
     const { sourceCode } = context;
     const text = sourceCode.text;
     const lineBreak = lineBreakUsedIn(text);
     const isIgnored = createIgnoredInsideCheck(sourceCode, options.ignoreInside);
+    const hasRenderedContentWhitespace = createContentWhitespaceCheck(sourceCode);
     const locate = ([start, end]: Range): AST.SourceLocation => ({ start: sourceCode.getLocFromIndex(start), end: sourceCode.getLocFromIndex(end) });
 
     const check = (node: TagNode) => {
       const { close } = node;
       if (!close) return;
-      if (hasSignificantContentWhitespace(node)) return;
+      if (hasRenderedContentWhitespace(node)) return;
       if (!text.slice(node.openStart.range[0], node.openEnd.range[1]).includes('\n')) return;
       if (isOpenTagSwallowingMarkup(node, text) || isIgnored(node)) return;
 
@@ -59,7 +56,7 @@ export const multilineTagContent: Rule.RuleModule = {
       if (edges.length === 0) return;
 
       const tagIndentation = lineIndentation(text, node.openStart.range[0]);
-      const contentBreak = `${lineBreak}${tagIndentation}${indentUnitFor(tagIndentation, options.indent)}`;
+      const contentBreak = `${lineBreak}${tagIndentation}${indentUnitFor(text, tagIndentation, options.indent)}`;
       const closeBreak = `${lineBreak}${tagIndentation}`;
       for (const edge of edges) {
         context.report({

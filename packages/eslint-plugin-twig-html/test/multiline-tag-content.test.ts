@@ -91,6 +91,16 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
+  it('never touches a tag inside <pre>, where whitespace is content', async () => {
+    const code = '<pre><div\n  class="a"\n  id="b"\n>text</div></pre>';
+    expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it.each(['my-element', 'ruby', 'video'])('never touches <%s>, which renders inline', async (name) => {
+    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
+    expect((await lint(code)).messages).toEqual([]);
+  });
+
   it('keeps non-breaking spaces at the edges of the content', async () => {
     expect(await fixed('<p\n  class="a"\n  id="b"\n>\u00A0text\u00A0</p>')).toBe('<p\n  class="a"\n  id="b"\n>\n  \u00A0text\u00A0\n</p>');
   });

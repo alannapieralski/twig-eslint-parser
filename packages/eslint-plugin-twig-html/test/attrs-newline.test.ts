@@ -21,6 +21,10 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
+  it('indents a top-level tag with tabs when the rest of the file is indented with tabs', async () => {
+    expect(await fixed('<div class="a" id="b"></div>\n<section>\n\t<p>x</p>\n</section>')).toBe('<div\n\tclass="a"\n\tid="b"\n></div>\n<section>\n\t<p>x</p>\n</section>');
+  });
+
   it('leaves tags with one attribute alone', async () => {
     const code = '<a class="flex w-full items-center justify-center gap-4 overflow-hidden">x</a>';
     expect((await lint(code)).messages).toEqual([]);

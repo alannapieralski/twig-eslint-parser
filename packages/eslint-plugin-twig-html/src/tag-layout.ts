@@ -7,6 +7,7 @@ const whitespaceSensitiveTags: ReadonlySet<string> = new Set(['pre', 'textarea']
 const inlineTags: ReadonlySet<string> = new Set([
   'a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'label',
   'mark', 'output', 'q', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var',
+  'audio', 'canvas', 'iframe', 'meter', 'object', 'progress', 'rp', 'rt', 'ruby', 'slot', 'video',
 ]);
 
 export type Range = readonly [number, number];
@@ -34,8 +35,18 @@ export function lineBreakUsedIn(text: string): string {
   return text.includes('\r\n') ? '\r\n' : '\n';
 }
 
-export function indentUnitFor(tagIndentation: string, indent: number): string {
-  return tagIndentation.includes('\t') ? '\t' : ' '.repeat(indent);
+export type LayoutOptions = { indent?: number; ignoreInside?: string[] };
+
+export const layoutOptionDefaults: Required<LayoutOptions> = { indent: 2, ignoreInside: ['svg'] };
+
+export const layoutOptionProperties = {
+  indent: { type: 'integer', minimum: 1 },
+  ignoreInside: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
+} as const;
+
+export function indentUnitFor(text: string, tagIndentation: string, indent: number): string {
+  const isTabIndented = tagIndentation === '' ? /^\t/m.test(text) && !/^ /m.test(text) : tagIndentation.includes('\t');
+  return isTabIndented ? '\t' : ' '.repeat(indent);
 }
 
 function endsWithClosingBracket(node: TagNode): boolean {
@@ -65,23 +76,19 @@ function normaliseElementName(name: string | undefined): string {
   return (name ?? '').toLowerCase();
 }
 
-export function hasSignificantContentWhitespace(node: TagNode): boolean {
-  const name = normaliseElementName(node.name);
-  return whitespaceSensitiveTags.has(name) || inlineTags.has(name);
+function isInlineElement(name: string): boolean {
+  return inlineTags.has(name) || name.includes('-');
 }
 
-const htmlWhitespace = ' \t\n\r\f';
+const leadingHtmlWhitespace = /^[ \t\n\r\f]*/;
+const trailingHtmlWhitespace = /[ \t\n\r\f]*$/;
 
 export function countLeadingHtmlWhitespace(text: string): number {
-  let count = 0;
-  while (count < text.length && htmlWhitespace.includes(text[count] as string)) count++;
-  return count;
+  return text.match(leadingHtmlWhitespace)?.[0].length ?? 0;
 }
 
 export function countTrailingHtmlWhitespace(text: string): number {
-  let count = 0;
-  while (count < text.length && htmlWhitespace.includes(text[text.length - 1 - count] as string)) count++;
-  return count;
+  return text.match(trailingHtmlWhitespace)?.[0].length ?? 0;
 }
 
 // Builds a check for whether a tag is, or sits inside, one of the ignored elements.
@@ -98,6 +105,12 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
       return ignoredElementNames.has(normaliseElementName(candidateName));
     });
   };
+}
+
+// Builds a check for whether whitespace inside a tag is rendered: an inline element, or anything inside <pre> or <textarea>.
+export function createContentWhitespaceCheck(sourceCode: SourceCode): (node: TagNode) => boolean {
+  const isInsideWhitespaceSensitiveTag = createIgnoredInsideCheck(sourceCode, [...whitespaceSensitiveTags]);
+  return (node) => isInlineElement(normaliseElementName(node.name)) || isInsideWhitespaceSensitiveTag(node);
 }
 
 type TagListener = (node: TagNode) => void;

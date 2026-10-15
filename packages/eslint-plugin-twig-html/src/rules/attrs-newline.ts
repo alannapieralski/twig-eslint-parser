@@ -1,8 +1,8 @@
 import type { AST, Rule } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
-import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
+import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, layoutOptionDefaults, layoutOptionProperties, lineIndentation, tagListeners, type LayoutOptions, type Range, type TagNode } from '../tag-layout.js';
 
-type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number; ignoreInside?: string[] };
+type Options = LayoutOptions & { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline' };
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
 function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
@@ -38,7 +38,7 @@ function groupAttributes(attributes: TagNode['attributes'], blocks: readonly Twi
 
 function describeGaps(node: TagNode, groups: readonly Range[], text: string, lineBreak: string, options: Required<Options>): Gap[] {
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
-  const indentUnit = indentUnitFor(tagIndentation, options.indent);
+  const indentUnit = indentUnitFor(text, tagIndentation, options.indent);
   const attributeBreak = `${lineBreak}${tagIndentation}${indentUnit}`;
   const selfClosingSpace = node.openEnd.value === '/>' ? ' ' : '';
   const closingBreak = options.closeStyle === 'newline' ? `${lineBreak}${tagIndentation}` : selfClosingSpace;
@@ -65,8 +65,7 @@ export const attrsNewline: Rule.RuleModule = {
       properties: {
         ifAttrsMoreThan: { type: 'integer', minimum: 0 },
         closeStyle: { enum: ['newline', 'sameline'] },
-        indent: { type: 'integer', minimum: 1 },
-        ignoreInside: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
+        ...layoutOptionProperties,
       },
       additionalProperties: false,
     }],
@@ -78,16 +77,15 @@ export const attrsNewline: Rule.RuleModule = {
   },
 
   create(context) {
-    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
+    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', ...layoutOptionDefaults, ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
     const lineBreak = lineBreakUsedIn(text);
     const { blocks } = readTwigServices(context.sourceCode, context.id);
     const isIgnored = createIgnoredInsideCheck(context.sourceCode, options.ignoreInside);
 
     const check = (node: TagNode) => {
-      if (isIgnored(node)) return;
       const groups = groupAttributes(node.attributes, blocks);
-      if (groups.length <= options.ifAttrsMoreThan) return;
+      if (groups.length <= options.ifAttrsMoreThan || isIgnored(node)) return;
 
       const gaps = describeGaps(node, groups, text, lineBreak, options);
       const wrongGaps = gaps.filter((gap) => text.slice(...gap.range) !== gap.expected);
