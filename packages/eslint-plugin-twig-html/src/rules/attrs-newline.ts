@@ -1,20 +1,10 @@
 import type { AST, Rule } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
+import { firstBlockIndexFrom } from '../twig-blocks.js';
 import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, layoutOptionDefaults, layoutOptionProperties, lineIndentation, tagListeners, type LayoutOptions, type Range, type TagNode } from '../tag-layout.js';
 
 type Options = LayoutOptions & { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline' };
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
-
-function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
-  let low = searchFrom;
-  let high = blocks.length;
-  while (low < high) {
-    const middle = (low + high) >> 1;
-    if ((blocks[middle]?.range[0] ?? Infinity) < offset) low = middle + 1;
-    else high = middle;
-  }
-  return low;
-}
 
 function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];

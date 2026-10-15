@@ -5,6 +5,7 @@ import twigHtml from '../src/index.js';
 async function lint(code: string, ruleOptions?: Record<string, unknown>) {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
+    'twig-html/quotes': 'off',
     'twig-html/multiline-tag-content': ruleOptions ? ['warn', ruleOptions] : 'warn',
   };
   const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });

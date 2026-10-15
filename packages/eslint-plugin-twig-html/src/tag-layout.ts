@@ -49,8 +49,8 @@ export function indentUnitFor(text: string, tagIndentation: string, indent: numb
   return isTabIndented ? '\t' : ' '.repeat(indent);
 }
 
-function endsWithClosingBracket(node: TagNode): boolean {
-  return tagEnds.has(node.openEnd.value);
+function endsWithClosingBracket(node: Pick<ParsedTag, 'openEnd'>): boolean {
+  return node.openEnd !== undefined && tagEnds.has(node.openEnd.value);
 }
 
 function withoutTwigAndQuotedText(attributeText: string): string {
@@ -63,7 +63,7 @@ function hasStrayOpeningBracket(attributeText: string): boolean {
 }
 
 // True when the parser read the markup after an unterminated open tag as part of that tag.
-export function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
+export function isOpenTagSwallowingMarkup(node: Pick<ParsedTag, 'openEnd' | 'attributes'>, text: string): boolean {
   if (!endsWithClosingBracket(node)) return true;
 
   return node.attributes.some((attribute) => {

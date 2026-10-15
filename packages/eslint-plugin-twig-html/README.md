@@ -1,6 +1,6 @@
 # eslint-plugin-twig-html
 
-ESLint rules for the HTML layout in Twig templates. The rules read the markup through
+ESLint rules for the HTML layout and quoting in Twig templates. The rules read the markup through
 [`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser)
 and understand Twig blocks, so their fixes keep Twig nesting and Twig inside tags intact.
 
@@ -31,7 +31,7 @@ export default [twigHtml.configs.recommended];
 ```
 
 `configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
-`twig-html/attrs-newline` and `twig-html/multiline-tag-content` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
+`twig-html/attrs-newline`, `twig-html/multiline-tag-content` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
 config, which uses the same parser.
 
 ## Rules
@@ -40,6 +40,7 @@ config, which uses the same parser.
 |---|---|---|---|
 | [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
 | [`multiline-tag-content`](docs/rules/multiline-tag-content.md) | Put the content of a tag on its own lines when the opening tag spans several lines | warn | yes |
+| [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
 ## Why not @html-eslint's rules
 
