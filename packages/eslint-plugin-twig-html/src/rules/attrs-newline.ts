@@ -1,19 +1,8 @@
-import type { AST, Rule, SourceCode } from 'eslint';
+import type { AST, Rule } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
+import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
 
-const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
-const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
-
-type Range = readonly [number, number];
-type Token = { readonly range: Range; readonly value: string };
-type TagNode = {
-  readonly name?: string;
-  readonly openStart: Token;
-  readonly openEnd: Token;
-  readonly attributes: readonly { readonly range: Range; readonly key?: { readonly range: Range } }[];
-};
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number; ignoreInside?: string[] };
-type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
 function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
@@ -47,25 +36,10 @@ function groupAttributes(attributes: TagNode['attributes'], blocks: readonly Twi
   return groups;
 }
 
-function lineIndentation(text: string, offset: number): string {
-  const lineStart = text.lastIndexOf('\n', offset - 1) + 1;
-  return /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
-}
-
-// Returns '\r\n' when the file uses Windows line endings, otherwise '\n'.
-function lineBreakUsedIn(text: string): string {
-  return text.includes('\r\n') ? '\r\n' : '\n';
-}
-
-function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
-  if (!tagEnds.has(node.openEnd.value)) return true;
-  return node.attributes.some((attribute) => attribute.key !== undefined && text.slice(...attribute.key.range).replace(twigSpan, '').includes('<'));
-}
-
 function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
   const lineBreak = lineBreakUsedIn(text);
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
-  const indentUnit = tagIndentation.includes('\t') ? '\t' : ' '.repeat(options.indent);
+  const indentUnit = indentUnitFor(tagIndentation, options.indent);
   const attributeBreak = `${lineBreak}${tagIndentation}${indentUnit}`;
   const selfClosingSpace = node.openEnd.value === '/>' ? ' ' : '';
   const closingBreak = options.closeStyle === 'newline' ? `${lineBreak}${tagIndentation}` : selfClosingSpace;
@@ -108,9 +82,7 @@ export const attrsNewline: Rule.RuleModule = {
     const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
     const { blocks } = readTwigServices(context.sourceCode, context.id);
-    const ignoredElements = new Set(options.ignoreInside.map((name) => name.toLowerCase()));
-    const isIgnored = (node: TagNode) => [...context.sourceCode.getAncestors(node as unknown as EslintNode), node as unknown as EslintNode]
-      .some((ancestor) => ignoredElements.has(String((ancestor as unknown as TagNode).name ?? '').toLowerCase()));
+    const isIgnored = createIgnoredInsideCheck(context.sourceCode, options.ignoreInside);
 
     const check = (node: TagNode) => {
       if (isIgnored(node)) return;
@@ -135,6 +107,6 @@ export const attrsNewline: Rule.RuleModule = {
       });
     };
 
-    return { Tag: check, ScriptTag: check, StyleTag: check } as unknown as Rule.RuleListener;
+    return tagListeners(check, ['Tag', 'ScriptTag', 'StyleTag']);
   },
 };
