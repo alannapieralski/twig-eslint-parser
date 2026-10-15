@@ -1,18 +1,18 @@
 import type { AST, Rule } from 'eslint';
-import { readTwigServices, type TwigQuote, type TwigStringSummary } from 'twig-eslint-parser';
-import { isOpenTagSwallowingMarkup, type TagNode as LayoutTagNode } from '../tag-layout.js';
+import { containsTwig, readTwigServices, type AttributeNode, type OmittedAttribute, type TwigQuote, type TwigStringSummary } from 'twig-eslint-parser';
+import { isOpenTagSwallowingMarkup, type Range } from '../tag-layout.js';
 import { depthChangeWithin } from '../twig-blocks.js';
 
-type Range = readonly [number, number];
 type QuoteStyle = 'single' | 'double';
 type Options = { html?: QuoteStyle; twig?: QuoteStyle };
-type Wrapper = { readonly value: string; readonly range: Range };
-type AttributeValue = { readonly value: string; readonly range: Range; readonly parts: readonly { readonly type: string; readonly value: string }[] };
-type AttributeNode = { readonly range: Range; readonly value?: AttributeValue; readonly startWrapper?: Wrapper; readonly endWrapper?: Wrapper };
+type Wrapper = NonNullable<AttributeNode['startWrapper']>;
+type AttributeValue = NonNullable<AttributeNode['value']>;
 type TagNode = { readonly openEnd?: Wrapper; readonly attributes: readonly AttributeNode[] };
 type Fix = Rule.ReportFixer | undefined;
 
+const tagTypes: ReadonlySet<string> = new Set(['Tag', 'ScriptTag', 'StyleTag']);
 const quoteByStyle: Record<QuoteStyle, TwigQuote> = { single: "'", double: '"' };
+const twigThatPrintsNothing = /^(?:\{#|\{%[-~]?\s*(?:if|elseif|else|endif|for|endfor)\b)/;
 
 function describeQuote(quote: TwigQuote): string {
   return quote === "'" ? "single (')" : 'double (")';
@@ -21,18 +21,12 @@ function describeQuote(quote: TwigQuote): string {
 // Returns the value's HTML text without its Twig blocks.
 function htmlTextOf(value: AttributeValue | undefined): string {
   if (!value) return '';
-  if (value.parts.length === 0) return value.value;
+  if (!value.parts?.length) return value.value;
   return value.parts.filter((part) => part.type === 'Part').map((part) => part.value).join('');
 }
 
-function printsUnescapedTwig(value: AttributeValue | undefined): boolean {
-  return value?.parts.some((part) => part.type === 'Template' && /\|\s*raw\b/.test(part.value)) ?? false;
-}
-
-function isPlainTextOrOnePrint(value: AttributeValue): boolean {
-  const [onlyPart, ...otherParts] = value.parts;
-  if (!onlyPart) return true;
-  return otherParts.length === 0 && onlyPart.type === 'Template' && onlyPart.value.startsWith('{{');
+function printsTwigOutput(value: AttributeValue | undefined): boolean {
+  return value?.parts?.some((part) => part.type === 'Template' && !twigThatPrintsNothing.test(part.value)) ?? false;
 }
 
 // Rewrites a Twig string body for another quote, or returns undefined when it cannot be rewritten as it is.
@@ -90,18 +84,18 @@ export const quotes: Rule.RuleModule = {
       if (startWrapper.value !== endWrapper.value || startWrapper.value === htmlQuote) return;
       if (htmlTextOf(attribute.value).includes(htmlQuote)) return;
 
-      const isSafeToSwap = isFixable && !printsUnescapedTwig(attribute.value);
+      const isSafeToSwap = isFixable && !printsTwigOutput(attribute.value);
       const fix: Fix = isSafeToSwap ? (fixer) => [fixer.replaceTextRange([...startWrapper.range], htmlQuote), fixer.replaceTextRange([...endWrapper.range], htmlQuote)] : undefined;
       report(attribute.range, 'wrongHtmlQuote', htmlQuote, fix);
     };
 
-    const isSafeToWrap = (value: AttributeValue, isFixable: boolean) => isFixable
-      && isPlainTextOrOnePrint(value)
+    const isSafeToWrap = (attribute: AttributeNode, value: AttributeValue, isFixable: boolean) => isFixable
+      && !containsTwig(attribute)
       && !/["'=<>`]/.test(htmlTextOf(value))
       && /^(\s|>|$)/.test(sourceCode.text.charAt(value.range[1]));
 
     const checkUnquotedAttribute = (attribute: AttributeNode, value: AttributeValue, isFixable: boolean) => {
-      const fix: Fix = isSafeToWrap(value, isFixable) ? (fixer) => [fixer.insertTextBeforeRange([...value.range], htmlQuote), fixer.insertTextAfterRange([...value.range], htmlQuote)] : undefined;
+      const fix: Fix = isSafeToWrap(attribute, value, isFixable) ? (fixer) => [fixer.insertTextBeforeRange([...value.range], htmlQuote), fixer.insertTextAfterRange([...value.range], htmlQuote)] : undefined;
       report(attribute.range, 'missingHtmlQuote', htmlQuote, fix);
     };
 
@@ -124,14 +118,23 @@ export const quotes: Rule.RuleModule = {
       report(string.range, 'wrongTwigQuote', twigQuote, (fixer) => fixer.replaceTextRange([...string.range], `${twigQuote}${requoted}${twigQuote}`));
     };
 
+    const omittedByTag = new Map<unknown, AttributeNode[]>();
+    const collectOmittedAttribute = (omitted: OmittedAttribute) => {
+      const owner = sourceCode.getNodeByRangeIndex(omitted.range[0]);
+      const isOwnedByTag = owner !== null && tagTypes.has(owner.type);
+      if (!isOwnedByTag) return checkAttribute(omitted.attribute, false);
+      omittedByTag.set(owner, [...(omittedByTag.get(owner) ?? []), omitted.attribute]);
+    };
+
     const checkTag = (node: TagNode) => {
-      const isInSoundTag = node.openEnd !== undefined && !isOpenTagSwallowingMarkup(node as unknown as LayoutTagNode, sourceCode.text);
-      for (const attribute of node.attributes) checkAttribute(attribute, isInSoundTag);
+      const attributes = [...node.attributes, ...(omittedByTag.get(node) ?? [])];
+      const isInSoundTag = !isOpenTagSwallowingMarkup({ ...node, attributes }, sourceCode.text);
+      for (const attribute of attributes) checkAttribute(attribute, isInSoundTag);
     };
 
     return {
       Program() {
-        for (const omitted of omittedAttributes) checkAttribute(omitted.attribute as unknown as AttributeNode, true);
+        for (const omitted of omittedAttributes) collectOmittedAttribute(omitted);
         for (const string of strings) checkTwigString(string);
       },
       Tag: checkTag,

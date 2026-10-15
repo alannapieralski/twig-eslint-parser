@@ -40,8 +40,8 @@ describe('twig-html/quotes', () => {
     });
 
     it('ignores quotes inside Twig blocks, which HTML never reads', async () => {
-      expect(await fixed(`<a class='{{ "a" }}'>x</a>`, { html: 'double', twig: 'double' })).toBe('<a class="{{ "a" }}">x</a>');
-      expect(await fixed(`<a class="{{ 'a' }}">x</a>`, { html: 'single', twig: 'single' })).toBe(`<a class='{{ 'a' }}'>x</a>`);
+      expect(await fixed(`<a class='{% if x == "a" %}b{% endif %}'>x</a>`, { html: 'double', twig: 'double' })).toBe('<a class="{% if x == "a" %}b{% endif %}">x</a>');
+      expect(await fixed(`<a class="{% if x == 'a' %}b{% endif %}">x</a>`, { html: 'single', twig: 'single' })).toBe(`<a class='{% if x == 'a' %}b{% endif %}'>x</a>`);
     });
 
     it.each([
@@ -51,8 +51,15 @@ describe('twig-html/quotes', () => {
       expect((await lint(code, { html, twig })).messages).toEqual([]);
     });
 
-    it('wraps unquoted values, with or without Twig', async () => {
-      expect(await fixed('<a class=flex data-id={{ id }}>x</a>')).toBe('<a class="flex" data-id="{{ id }}">x</a>');
+    it('wraps unquoted plain values', async () => {
+      expect(await fixed('<a class=flex>x</a>')).toBe('<a class="flex">x</a>');
+    });
+
+    it('reports but does not wrap an unquoted Twig print, whose output may hold quotes or spaces', async () => {
+      const code = '<p data-id={{ id }} title={{ x|raw }}>x</p>';
+      const { output, messages } = await lint(code);
+      expect(output).toBe(code);
+      expect(messages.map((message) => message.messageId)).toEqual(['missingHtmlQuote', 'missingHtmlQuote']);
     });
 
     it('reports an unquoted value holding quotes without fixing it', async () => {
@@ -62,7 +69,7 @@ describe('twig-html/quotes', () => {
       expect(messages.map((message) => message.messageId)).toEqual(['missingHtmlQuote']);
     });
 
-    it('wraps only plain text or a single Twig print, since other Twig may print attributes of its own', async () => {
+    it('wraps only plain text, since Twig may print attributes or quotes of its own', async () => {
       const code = '<p data-a=x-{{ id }} data-b={{ theme }}{{ extra_attributes }} data-c={% if a %}b{% endif %}>x</p>';
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
@@ -83,9 +90,8 @@ describe('twig-html/quotes', () => {
       expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote']);
     });
 
-    it('does not wrap an unquoted value the markup reader may have cut short at a slash', async () => {
-      const code = '<a href=a/b>x</a><input value=a/>';
-      expect(await fixed(code)).toBe(code);
+    it('wraps an unquoted value holding a slash whole, as HTML reads it', async () => {
+      expect(await fixed('<a href=a/b>x</a><input value=a/>')).toBe('<a href="a/b">x</a><input value="a/">');
     });
 
     it('reports but does not fix a value that opens a Twig block another attribute closes', async () => {
@@ -95,11 +101,11 @@ describe('twig-html/quotes', () => {
       expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'wrongHtmlQuote']);
     });
 
-    it('reports but does not swap the quotes of a value printing Twig through |raw, which is never escaped', async () => {
-      const code = "<p data-config='{{ config|json_encode|raw }}'>x</p>";
+    it('reports but does not swap the quotes of a value printing Twig, which may be markup that is never escaped', async () => {
+      const code = `<p data-config='{{ config|json_encode|raw }}' alt='{{ 'The "best" view'|t }}' title='{{ x }}' class='{% include 'a.twig' %}'>x</p>`;
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
-      expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote']);
+      expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'wrongHtmlQuote', 'wrongHtmlQuote', 'wrongHtmlQuote']);
     });
 
     it('fixes a value that holds a whole Twig block', async () => {
@@ -119,10 +125,20 @@ describe('twig-html/quotes', () => {
       expect((await lint(code)).messages).toEqual([]);
     });
 
-    it('still checks class attributes left out by ignoreInterpolatedAttributes', async () => {
+    describe('class attributes left out by ignoreInterpolatedAttributes', () => {
       const ignoreClass: Linter.Config = { files: ['**/*.twig'], languageOptions: { parserOptions: { ignoreInterpolatedAttributes: ['class'] } } };
-      const { output } = await lint("<p class='a {{ b }}'>x</p>", undefined, { extraConfig: [ignoreClass] });
-      expect(output).toBe('<p class="a {{ b }}">x</p>');
+
+      it('still checks them', async () => {
+        const { output } = await lint("<p class='a {% if b %}c{% endif %}'>x</p>", undefined, { extraConfig: [ignoreClass] });
+        expect(output).toBe('<p class="a {% if b %}c{% endif %}">x</p>');
+      });
+
+      it('does not fix them in an open tag that swallowed the markup after it', async () => {
+        const code = "<li class='a {% if b %}c{% endif %}' id=b<span>x</span></li>";
+        const { output, messages } = await lint(code, undefined, { extraConfig: [ignoreClass] });
+        expect(output).toBe(code);
+        expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'missingHtmlQuote']);
+      });
     });
   });
 

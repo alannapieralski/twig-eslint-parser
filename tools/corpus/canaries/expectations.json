@@ -317,9 +317,8 @@
     { "check": "twig-html/quotes", "noFailures": "all" }
   ],
   "quotes.html.twig": [
-    { "check": "twig-html/quotes", "reports": [1, 3, 4, 5, 6], "clean": [2], "output": "quotes.expected" },
-    { "check": "twig-html/quotes", "reports": [7], "pending": "es-html-parser ends an unquoted value at /, against the HTML spec, so href=/home loses its value and is never seen" },
-    { "check": "parser/html-oracle", "failures": [3, 6, 7] },
-    { "check": "parser/output-matches-source", "failures": [7] }
+    { "check": "twig-html/quotes", "reports": [1, 3, 4, 5, 6, 7], "clean": [2], "output": "quotes.expected" },
+    { "check": "parser/html-oracle", "failures": [3], "noFailures": [6, 7] },
+    { "check": "parser/output-matches-source", "noFailures": [6, 7] }
   ]
 }

@@ -39,7 +39,8 @@ Examples of **correct** code:
   `eslint-plugin-twig-tailwind`'s recommended config, are still checked.
 - Twig inside a value is opaque to HTML. In `class='{{ "a" }}'` only the outer quotes are HTML
   quotes, so the rule never reads quotes inside Twig as part of the value.
-- An unquoted value (`class=flex`, `data-id={{ id }}`) is reported and wrapped in the HTML quote.
+- An unquoted value (`class=flex`, `data-id={{ id }}`) is reported. Plain text is wrapped in the
+  HTML quote.
 - Quotes in text, comments, `<script>` and `<style>` content, and `<textarea>` and `<title>` text
   have no meaning to HTML, so they are left alone. So are DOCTYPE identifiers.
 
@@ -72,18 +73,14 @@ It reports but does not fix:
 - an attribute whose value opens a Twig block that another attribute closes, such as
   `class='a{% if x %}' data-x='{% endif %}'`, since fixing one half on its own would split the
   branch
-- a value printing Twig through `|raw`, since that output is not escaped and may rely on the
-  current quote
-- an unquoted value holding anything other than plain text or a single Twig print, such as
-  `data-a={{ theme }}{{ extra_attributes }}` or `class={% if a %}"a"{% else %}'b'{% endif %}`,
-  since that Twig may print attributes or quotes of its own
+- a quoted value holding Twig that prints, such as `{{ x }}`, `{{ 'Say "hi"'|t }}`, `|raw` or
+  `{% include %}`, since Drupal markup, `|raw` and included templates are not escaped and may
+  print the new quote. Only comments and `if` and `for` tags are allowed around the value's text
+- an unquoted value holding any Twig, such as `data-id={{ id }}` or
+  `class={% if a %}"a"{% else %}'b'{% endif %}`, since that Twig may print spaces, attributes or
+  quotes of its own
 - an attribute in an open tag that swallowed the markup after it, such as `<li id=b<span>` with no
   `>`, since the parser has misread where that tag ends
-- an unquoted value straight before a `/`, such as `href=a/b`, which the markup reader cuts short
-  at the `/`
-
-The markup reader also drops an unquoted value that starts with `/`, such as `href=/home`, so the
-rule cannot see it yet.
 
 ## Options
 
@@ -105,7 +102,7 @@ The HTML half follows [`@html-eslint/quotes`](https://html-eslint.org/docs/rules
 | Default HTML quote | Double | Double |
 | Value containing the wanted quote | Left alone | Left alone |
 | Unquoted value | Reported and wrapped | Reported, and wrapped when that cannot change the output |
-| Value containing a template | Skipped unless `enforceTemplatedAttrValue` | Checked, since Twig is opaque to HTML and autoescaped |
+| Value containing a template | Skipped unless `enforceTemplatedAttrValue` | Checked, since Twig is opaque to HTML, and fixed only when the Twig prints nothing |
 | Twig strings | Not read | Checked with their own style |
 
 ## Testing
@@ -113,8 +110,9 @@ The HTML half follows [`@html-eslint/quotes`](https://html-eslint.org/docs/rules
 - `test/quotes.test.ts` covers both options for each kind of quote, removing escapes, every case
   the rule leaves alone or reports without fixing, Twig in tags that never become JavaScript, raw
   text, comments, `verbatim` and attributes left out by `ignoreInterpolatedAttributes`.
-- `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only
-  whitespace and quoting, still parses, and has as many Twig strings and interpolations as before.
+- `test/fix-safety.test.ts` fixes every parser fixture with the default and the opposite options,
+  and checks the result changes only HTML quotes, Twig string delimiters and quote escapes, still
+  parses, and has as many Twig strings and interpolations as before.
 - `npm run corpus -- --rule twig-html/quotes` does the same for real templates. The
   `quotes.html.twig` canary checks the fixed output exactly.
 

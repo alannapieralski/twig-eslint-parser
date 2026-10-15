@@ -1,8 +1,12 @@
+type AttributeWrapper = { readonly value: string; readonly range: readonly [number, number] };
+
 export type AttributeNode = {
   readonly type: 'Attribute';
   readonly range: [number, number];
   readonly key: { readonly value: string };
-  readonly value?: { readonly parts?: readonly { readonly type: string }[] };
+  readonly value?: { readonly value: string; readonly range: readonly [number, number]; readonly parts?: readonly { readonly type: string; readonly value: string }[] };
+  readonly startWrapper?: AttributeWrapper;
+  readonly endWrapper?: AttributeWrapper;
 };
 
 export type OmittedAttribute = { readonly name: string; readonly range: readonly [number, number]; readonly attribute: AttributeNode };
