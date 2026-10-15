@@ -599,6 +599,43 @@ describe('Twig as part of the markup structure', () => {
   });
 });
 
+describe('unquoted attribute values', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const valuesOf = (code: string, name: string) =>
+    (namedTag(code, name)['attributes'] as Node[]).map((attribute) => (attribute['value'] as Node | undefined)?.['value']);
+
+  it.each([
+    ['<a href=/home>t</a>', '/home'],
+    ['<a href=a/b>t</a>', 'a/b'],
+    ['<a href=//cdn/x id=y>t</a>', '//cdn/x'],
+    ['<a href={{ path }}/x>t</a>', '{{ path }}/x'],
+  ])('keeps the slashes in %s', (code, value) => {
+    expect(valuesOf(code, 'a')[0]).toBe(value);
+  });
+
+  it('reads a trailing slash on a void element as part of the value', () => {
+    const code = '<input value=a/><p>x</p>';
+    const input = namedTag(code, 'input');
+    expect(valuesOf(code, 'input')).toEqual(['a/']);
+    expect(sourceOf(code, input['openEnd'] as Node)).toBe('>');
+    expect(input['selfClosing']).toBe(true);
+  });
+
+  it('leaves a non-void element open when its last unquoted value ends in a slash', () => {
+    const code = '<div class=a/><p>x</p></div>';
+    const div = namedTag(code, 'div');
+    expect(valuesOf(code, 'div')).toEqual(['a/']);
+    expect(div['selfClosing']).toBe(false);
+    expect((div['children'] as Node[]).map((child) => child['name'])).toEqual(['p']);
+  });
+
+  it('still self-closes after a quoted value or a space', () => {
+    expect(namedTag('<div class="a"/><p>x</p>', 'div')['selfClosing']).toBe(true);
+    expect(namedTag('<div class=a /><p>x</p>', 'div')['selfClosing']).toBe(true);
+  });
+});
+
 describe('tags without optional whitespace', () => {
   it('still parses {%include%} written without a space after the tag name', () => {
     expect(expressionOf("{%include'card'with{classes:['a']}%}")).toMatchObject({

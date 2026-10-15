@@ -20,11 +20,7 @@ export function parseValueEnd(state: TokenizerState) {
 }
 
 export function parse(chars: CharsBuffer, state: TokenizerState) {
-  if (
-    isWhitespace(chars.value()) ||
-    chars.value() === ">" ||
-    chars.value() === "/"
-  ) {
+  if (isWhitespace(chars.value()) || chars.value() === ">") {
     return parseValueEnd(state);
   }
 
