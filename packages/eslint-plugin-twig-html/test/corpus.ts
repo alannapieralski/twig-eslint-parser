@@ -3,5 +3,5 @@ import twigHtml from '../src/index.js';
 
 export default {
   package: 'eslint-plugin-twig-html',
-  checks: ruleChecks({ plugin: twigHtml, prefix: 'twig-html', rules: { 'attrs-newline': { fixKeeps: 'layout' } } }),
+  checks: ruleChecks({ plugin: twigHtml, prefix: 'twig-html', rules: { 'attrs-newline': { fixKeeps: 'layout' }, quotes: { fixKeeps: 'code' } } }),
 } satisfies PackageCorpus;

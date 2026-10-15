@@ -11,6 +11,7 @@ check still fires, and cover syntax the real corpus lacks.
 | `failures` | These lines get at least one failure, on purpose (not counted as new). |
 | `clean` | These lines get nothing from the check. |
 | `noFailures` | These lines may get reports but no failures. |
+| `output` | A file in this folder, not ending in `.twig`, that the canary must match exactly once the check's fixes are applied. |
 
 Use `"all"` instead of a list of lines for the whole file. Add `"pending": "why"` when the
 expectation describes behaviour that is not built yet: the run lists it as pending instead of

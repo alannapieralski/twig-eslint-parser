@@ -1,0 +1,7 @@
+<a class="flex" href="home">{{ 'Home' }}</a>
+<a class="{{ 'a' }}" title='say "hi"'>{{ "it's" ~ 'plain' }}</a>
+<p class={% if a %}"a"{% else %}'b'{% endif %}>x</p>
+<p class='a{% if x %}' data-x='{% endif %}'>x</p>
+{% include 'card.html.twig' with {'title': "x #{y}"} %}
+<a href=a/b>x</a>
+<a href=/home>x</a>

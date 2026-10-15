@@ -1,5 +1,6 @@
 import type { AST, Rule, SourceCode } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
+import { firstBlockIndexFrom } from '../twig-blocks.js';
 
 type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
@@ -12,17 +13,6 @@ type TagNode = {
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number; ignoreInside?: string[] };
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
-
-function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
-  let low = searchFrom;
-  let high = blocks.length;
-  while (low < high) {
-    const middle = (low + high) >> 1;
-    if ((blocks[middle]?.range[0] ?? Infinity) < offset) low = middle + 1;
-    else high = middle;
-  }
-  return low;
-}
 
 function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];
