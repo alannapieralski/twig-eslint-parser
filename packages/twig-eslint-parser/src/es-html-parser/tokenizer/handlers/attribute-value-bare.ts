@@ -19,12 +19,24 @@ export function parseValueEnd(state: TokenizerState) {
   state.currentContext = TokenizerContextTypes.Attributes;
 }
 
+export function isSelfClosingSlash(chars: CharsBuffer, state: TokenizerState) {
+  if (chars.value() !== "/") return false;
+  state.sourceCode.next();
+  const following = state.sourceCode.isEof() ? undefined : state.sourceCode.current();
+  state.sourceCode.prev();
+  return following?.isTemplate === false && following.value === ">";
+}
+
 export function parse(chars: CharsBuffer, state: TokenizerState) {
-  if (isWhitespace(chars.value()) || chars.value() === ">") {
+  if (isWhitespace(chars.value()) || chars.value() === ">" || isSelfClosingSlash(chars, state)) {
     return parseValueEnd(state);
   }
 
   state.accumulatedContent.concatBuffer(state.decisionBuffer);
   state.decisionBuffer.clear();
   state.sourceCode.next();
+}
+
+export function handleContentEnd(state: TokenizerState) {
+  if (state.accumulatedContent.length() > 0) parseValueEnd(state);
 }

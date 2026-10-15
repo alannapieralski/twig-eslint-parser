@@ -1,10 +1,13 @@
 Description: Keep "/" inside an unquoted attribute value
  An unquoted attribute value ended at "/", so "href=/home" lost its value and
  "href=a/b" was read as "href=a". Following the HTML tokenizer's "attribute
- value (unquoted)" state, only whitespace and ">" end an unquoted value, and a
- "/" right after "=" starts the value. "<input value=a/>" therefore has the
- value "a/" and an open tag end of ">", as in a browser: the element is
- self-closing only because it is void, and "<div class=a/>" stays open.
+ value (unquoted)" state, a "/" inside an unquoted value, or right after "=",
+ is part of the value. A "/" straight before ">" is still the self-closing
+ slash, as it is after a quoted value, so "<div class=a/>" and
+ "<div class="a"/>" read the same: whether a tag closes itself never depends
+ on how its last value is quoted. A browser would read "a/" there; no template
+ in the corpus has that shape. An unquoted value that runs to the end of the
+ input is kept instead of dropped.
 Author: Numiko
 Origin: vendor
 Forwarded: no
@@ -12,32 +15,57 @@ Test: test/parser/parse-for-eslint.test.ts ("unquoted attribute values")
 Last-Update: 2026-10-15
 ---
 diff --git a/src/tokenizer/handlers/attribute-value-bare.ts b/src/tokenizer/handlers/attribute-value-bare.ts
-index 4020d3e..8a5cc62 100644
+index 4020d3e..1070911 100644
 --- a/src/tokenizer/handlers/attribute-value-bare.ts
 +++ b/src/tokenizer/handlers/attribute-value-bare.ts
-@@ -20,11 +20,7 @@ export function parseValueEnd(state: TokenizerState) {
+@@ -19,12 +19,16 @@ export function parseValueEnd(state: TokenizerState) {
+   state.currentContext = TokenizerContextTypes.Attributes;
  }
  
++export function isSelfClosingSlash(chars: CharsBuffer, state: TokenizerState) {
++  if (chars.value() !== "/") return false;
++  state.sourceCode.next();
++  const following = state.sourceCode.isEof() ? undefined : state.sourceCode.current();
++  state.sourceCode.prev();
++  return following?.isTemplate === false && following.value === ">";
++}
++
  export function parse(chars: CharsBuffer, state: TokenizerState) {
 -  if (
 -    isWhitespace(chars.value()) ||
 -    chars.value() === ">" ||
 -    chars.value() === "/"
 -  ) {
-+  if (isWhitespace(chars.value()) || chars.value() === ">") {
++  if (isWhitespace(chars.value()) || chars.value() === ">" || isSelfClosingSlash(chars, state)) {
      return parseValueEnd(state);
    }
  
+@@ -32,3 +36,7 @@ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   state.decisionBuffer.clear();
+   state.sourceCode.next();
+ }
++
++export function handleContentEnd(state: TokenizerState) {
++  if (state.accumulatedContent.length() > 0) parseValueEnd(state);
++}
 diff --git a/src/tokenizer/handlers/attribute-value.ts b/src/tokenizer/handlers/attribute-value.ts
-index 40d8cf2..1053822 100644
+index 40d8cf2..0873ad9 100644
 --- a/src/tokenizer/handlers/attribute-value.ts
 +++ b/src/tokenizer/handlers/attribute-value.ts
-@@ -9,7 +9,7 @@ export function parse(chars: CharsBuffer, state: TokenizerState) {
+@@ -2,6 +2,7 @@ import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
+ import { isWhitespace } from "../../utils/index.js";
+ import type { TokenizerState, Range } from "../../types/index.js";
+ import { CharsBuffer } from "../chars-buffer.js";
++import { isSelfClosingSlash } from "./attribute-value-bare.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const value = chars.value();
+@@ -9,7 +10,7 @@ export function parse(chars: CharsBuffer, state: TokenizerState) {
      return parseWrapper(state);
    }
  
 -  if (value === ">" || value === "/") {
-+  if (value === ">") {
++  if (value === ">" || isSelfClosingSlash(chars, state)) {
      return parseTagEnd(state);
    }
  

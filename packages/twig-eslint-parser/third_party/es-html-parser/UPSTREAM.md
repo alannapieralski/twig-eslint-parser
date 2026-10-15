@@ -57,7 +57,7 @@ with upstream's own strictness (`strict`), not this package's extra checks
 | EHP-05 | A tag or attributes print among attributes is an attribute of its own and ends any name it follows; comments are skipped | `{% if x %}class` and `{{ a }}{% if b %}` were read as single attribute names | `test/parser/parse-for-eslint.test.ts` |
 | EHP-06 | Close tags pair with open tags by a name key without whitespace or a trailing `/` | `</{{element}}>` did not close `<{{ element }}>`, and `</div/>` did not close `<div>` as it does in a browser | `test/parser/parse-for-eslint.test.ts` |
 | EHP-07 | A close tag that matches an open ancestor closes back to it (HTML's "any other end tag" step) | One never-closed element swallowed every later close tag | `test/parser/parse-for-eslint.test.ts`, upstream snapshot "Custom tag raw content" |
-| EHP-08 | `/` inside an unquoted attribute value is part of the value; only whitespace and `>` end it (HTML's "attribute value (unquoted)" state) | `href=/home` lost its value and `href=a/b` was read as `href=a`. `<input value=a/>` now has the value `a/`, as in a browser | `test/parser/parse-for-eslint.test.ts` |
+| EHP-08 | `/` inside an unquoted attribute value, or right after `=`, is part of the value (HTML's "attribute value (unquoted)" state). A `/` straight before `>` is still the self-closing slash, as after a quoted value. An unquoted value that runs to the end of the input is kept | `href=/home` lost its value and `href=a/b` was read as `href=a`. `<div class=a/>` and `<div class="a"/>` both close themselves, so quoting never decides the tree; a browser would read `a/` there, a shape no corpus template has | `test/parser/parse-for-eslint.test.ts` |
 
 ## Commands
 

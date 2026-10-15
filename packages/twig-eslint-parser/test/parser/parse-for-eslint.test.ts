@@ -46,6 +46,9 @@ const blocksTwigItselfRejectsByFixture: Record<string, string[]> = {
   'operators.twig': ['{{ foo.is not }}'],
 };
 
+const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+
 describe('fixtures', () => {
   const fixtureNames = readdirSync(fixturesDirectory).filter((name) => name.endsWith('.twig'));
 
@@ -368,9 +371,7 @@ describe('readTwigServices', () => {
 });
 
 describe('Drupal attributes printed straight after a tag name', () => {
-  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
   const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
-  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const attributeSources = (code: string, tag: Node) => (tag['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute));
 
   it('parses <div{{ attributes }}> as a div with an attribute, closed where the template closes it', () => {
@@ -478,8 +479,6 @@ describe('Twig delimiters inside Twig strings', () => {
 });
 
 describe('Twig tags and verbatim content inside markup', () => {
-  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
-  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
 
   it('parses a conditional attribute written straight after the tag name, closed where the template closes it', () => {
@@ -530,8 +529,6 @@ describe('Twig tags and verbatim content inside markup', () => {
 });
 
 describe('Twig as part of the markup structure', () => {
-  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
-  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const keysOf = (code: string, name: string) => (namedTag(code, name)['attributes'] as Node[]).map((attribute) => (attribute['key'] as Node)['value']);
 
   it('reads a Twig tag before an attribute name as an attribute of its own', () => {
@@ -600,10 +597,7 @@ describe('Twig as part of the markup structure', () => {
 });
 
 describe('unquoted attribute values', () => {
-  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
-  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
-  const valuesOf = (code: string, name: string) =>
-    (namedTag(code, name)['attributes'] as Node[]).map((attribute) => (attribute['value'] as Node | undefined)?.['value']);
+  const valuesOf = (tag: Node) => (tag['attributes'] as Node[]).map((attribute) => (attribute['value'] as Node | undefined)?.['value']);
 
   it.each([
     ['<a href=/home>t</a>', '/home'],
@@ -611,28 +605,32 @@ describe('unquoted attribute values', () => {
     ['<a href=//cdn/x id=y>t</a>', '//cdn/x'],
     ['<a href={{ path }}/x>t</a>', '{{ path }}/x'],
   ])('keeps the slashes in %s', (code, value) => {
-    expect(valuesOf(code, 'a')[0]).toBe(value);
+    expect(valuesOf(namedTag(code, 'a'))[0]).toBe(value);
   });
 
-  it('reads a trailing slash on a void element as part of the value', () => {
-    const code = '<input value=a/><p>x</p>';
-    const input = namedTag(code, 'input');
-    expect(valuesOf(code, 'input')).toEqual(['a/']);
-    expect(sourceOf(code, input['openEnd'] as Node)).toBe('>');
-    expect(input['selfClosing']).toBe(true);
-  });
-
-  it('leaves a non-void element open when its last unquoted value ends in a slash', () => {
-    const code = '<div class=a/><p>x</p></div>';
+  it.each([
+    ['<div class=a/><p>x</p>', ['a']],
+    ['<div class="a"/><p>x</p>', ['a']],
+    ['<div class=a /><p>x</p>', ['a']],
+    ['<div class= /><p>x</p>', [undefined]],
+  ])('reads a slash straight before > in %s as self-closing, however the last value is quoted', (code, values) => {
     const div = namedTag(code, 'div');
-    expect(valuesOf(code, 'div')).toEqual(['a/']);
-    expect(div['selfClosing']).toBe(false);
-    expect((div['children'] as Node[]).map((child) => child['name'])).toEqual(['p']);
+    expect(valuesOf(div)).toEqual(values);
+    expect(div['selfClosing']).toBe(true);
+    expect(div['children']).toEqual([]);
   });
 
-  it('still self-closes after a quoted value or a space', () => {
-    expect(namedTag('<div class="a"/><p>x</p>', 'div')['selfClosing']).toBe(true);
-    expect(namedTag('<div class=a /><p>x</p>', 'div')['selfClosing']).toBe(true);
+  it('reads <a href=/> as a self-closing tag whose href has no value', () => {
+    const anchor = namedTag('<a href=/>', 'a');
+    expect(valuesOf(anchor)).toEqual([undefined]);
+    expect(anchor['selfClosing']).toBe(true);
+  });
+
+  it.each([
+    ['<a href=x/', 'x/'],
+    ['<a href=x', 'x'],
+  ])('keeps an unquoted value that runs to the end of the input in %s', (code, value) => {
+    expect(valuesOf(namedTag(code, 'a'))).toEqual([value]);
   });
 });
 

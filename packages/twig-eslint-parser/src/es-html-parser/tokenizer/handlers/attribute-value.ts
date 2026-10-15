@@ -2,6 +2,7 @@ import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
 import { isWhitespace } from "../../utils/index.js";
 import type { TokenizerState, Range } from "../../types/index.js";
 import { CharsBuffer } from "../chars-buffer.js";
+import { isSelfClosingSlash } from "./attribute-value-bare.js";
 
 export function parse(chars: CharsBuffer, state: TokenizerState) {
   const value = chars.value();
@@ -9,7 +10,7 @@ export function parse(chars: CharsBuffer, state: TokenizerState) {
     return parseWrapper(state);
   }
 
-  if (value === ">") {
+  if (value === ">" || isSelfClosingSlash(chars, state)) {
     return parseTagEnd(state);
   }
 
