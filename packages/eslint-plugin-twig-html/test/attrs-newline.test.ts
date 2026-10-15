@@ -64,6 +64,10 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
+  it('keeps a slash at the end of an unquoted last value in the value, as HTML reads it', async () => {
+    expect(await fixed('<svg-icon name=close size=s/>')).toBe('<svg-icon\n  name=close\n  size=s/\n>');
+  });
+
   it('puts /> of a self-closing tag on its own line', async () => {
     expect(await fixed('<img src="{{ src }}" alt="" loading="lazy" />')).toBe('<img\n  src="{{ src }}"\n  alt=""\n  loading="lazy"\n/>');
   });
