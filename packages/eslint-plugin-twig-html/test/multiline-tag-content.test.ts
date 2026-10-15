@@ -66,7 +66,7 @@ describe('twig-html/multiline-tag-content', () => {
   });
 
   it('only nests the first line break for a tag with a single attribute that is already multi-line', async () => {
-    expect(await fixed('<a\n  href="#">x</a>')).toBe('<a\n  href="#">\n  x\n</a>');
+    expect(await fixed('<h2\n  id="a">x</h2>')).toBe('<h2\n  id="a">\n  x\n</h2>');
   });
 
   it('keeps Windows line endings', async () => {
@@ -84,6 +84,20 @@ describe('twig-html/multiline-tag-content', () => {
   it.each(['pre', 'textarea'])('never touches <%s>, where whitespace is content', async (name) => {
     const code = `<${name}\n  class="a"\n  id="b"\n>text</${name}>`;
     expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it.each(['a', 'span', 'strong', 'button', 'label'])('never touches <%s>, where whitespace inside the tag is rendered', async (name) => {
+    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
+    expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it('keeps non-breaking spaces at the edges of the content', async () => {
+    expect(await fixed('<p\n  class="a"\n  id="b"\n>\u00A0text\u00A0</p>')).toBe('<p\n  class="a"\n  id="b"\n>\n  \u00A0text\u00A0\n</p>');
+  });
+
+  it('leaves <script> and <style> alone', async () => {
+    expect((await lint('<script\n  src="a"\n  type="module"\n>init()</script>')).messages).toEqual([]);
+    expect((await lint('<style\n  media="print"\n  id="b"\n>a { color: red; }</style>')).messages).toEqual([]);
   });
 
   it('leaves inline SVG alone, and lays it out when ignoreInside is empty', async () => {

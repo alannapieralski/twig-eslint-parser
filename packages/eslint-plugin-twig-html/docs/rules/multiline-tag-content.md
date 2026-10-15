@@ -49,6 +49,8 @@ What it leaves alone:
 - A tag whose opening tag is on one line, however long its content.
 - A tag with no content, or only whitespace: `></div>` is fine.
 - `<pre>` and `<textarea>`, where whitespace is content.
+- Inline elements such as `<a>`, `<span>`, `<strong>`, `<button>` and `<label>`, where a line break after `>` or before the closing tag renders as a space inside the element.
+- `<script>` and `<style>`, which this rule does not check (`attrs-newline` does).
 - Tags with no closing tag, such as `<img>`, and tags inside an inline `<svg>` (see `ignoreInside`).
 - An open tag that is missing its `>`, where the parser reads the markup after it as attributes.
 
@@ -56,7 +58,7 @@ The rule only checks that a line break sits between the `>` and the content, and
 and the closing tag. It does not re-indent content that is already on its own lines, and it does not
 re-indent child tags it moves. Content that already starts on a new line is accepted at any indentation.
 
-The fix only changes whitespace, uses the file's line endings (`\r\n` stays `\r\n`) and indents with
+The fix only changes HTML whitespace (space, tab, line feed, carriage return and form feed), so a non-breaking space at the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`) and indents with
 tabs when the tag is indented with tabs.
 
 ## Options
@@ -79,7 +81,7 @@ once it is multi-line, the content follows.
 
 ## Testing
 
-- `test/multiline-tag-content.test.ts` covers the layout, empty and whitespace-only tags, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, `pre` and `textarea`, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
+- `test/multiline-tag-content.test.ts` covers the layout, empty and whitespace-only tags, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, `pre`, `textarea` and inline elements, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/multiline-tag-content` does the same for real templates.
 

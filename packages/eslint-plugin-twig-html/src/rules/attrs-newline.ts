@@ -36,8 +36,7 @@ function groupAttributes(attributes: TagNode['attributes'], blocks: readonly Twi
   return groups;
 }
 
-function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
-  const lineBreak = lineBreakUsedIn(text);
+function describeGaps(node: TagNode, groups: readonly Range[], text: string, lineBreak: string, options: Required<Options>): Gap[] {
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
   const indentUnit = indentUnitFor(tagIndentation, options.indent);
   const attributeBreak = `${lineBreak}${tagIndentation}${indentUnit}`;
@@ -81,6 +80,7 @@ export const attrsNewline: Rule.RuleModule = {
   create(context) {
     const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
+    const lineBreak = lineBreakUsedIn(text);
     const { blocks } = readTwigServices(context.sourceCode, context.id);
     const isIgnored = createIgnoredInsideCheck(context.sourceCode, options.ignoreInside);
 
@@ -89,7 +89,7 @@ export const attrsNewline: Rule.RuleModule = {
       const groups = groupAttributes(node.attributes, blocks);
       if (groups.length <= options.ifAttrsMoreThan) return;
 
-      const gaps = describeGaps(node, groups, text, options);
+      const gaps = describeGaps(node, groups, text, lineBreak, options);
       const wrongGaps = gaps.filter((gap) => text.slice(...gap.range) !== gap.expected);
       const firstWrong = wrongGaps[0];
       if (!firstWrong) return;

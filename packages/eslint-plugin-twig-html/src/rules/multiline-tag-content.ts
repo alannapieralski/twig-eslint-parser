@@ -1,26 +1,21 @@
 import type { AST, Rule } from 'eslint';
-import { WHITESPACE_SENSITIVE_TAGS } from '../constants.js';
-import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
+import { countLeadingHtmlWhitespace, countTrailingHtmlWhitespace, createIgnoredInsideCheck, hasSignificantContentWhitespace, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
 
 type Options = { indent?: number; ignoreInside?: string[] };
-type ContentGap = { readonly range: Range; readonly expected: string; readonly messageId: 'contentOnOwnLine' | 'closeOnOwnLine'; readonly anchor: Range };
+type ContentEdge = { readonly range: Range; readonly messageId: 'contentOnOwnLine' | 'closeOnOwnLine'; readonly anchor: Range; readonly isOpeningSide: boolean };
 
-function describeContentGaps(node: TagNode, close: NonNullable<TagNode['close']>, text: string, indent: number): ContentGap[] {
+function findCrowdedContentEdges(node: TagNode, close: NonNullable<TagNode['close']>, text: string): ContentEdge[] {
   const contentStart = node.openEnd.range[1];
   const contentEnd = close.range[0];
   const content = text.slice(contentStart, contentEnd);
-  const trimmedStart = content.length - content.trimStart().length;
-  if (trimmedStart === content.length) return [];
+  const leading = countLeadingHtmlWhitespace(content);
+  if (leading === content.length) return [];
 
-  const lineBreak = lineBreakUsedIn(text);
-  const tagIndentation = lineIndentation(text, node.openStart.range[0]);
-  const contentBreak = `${lineBreak}${tagIndentation}${indentUnitFor(tagIndentation, indent)}`;
-  const closeBreak = `${lineBreak}${tagIndentation}`;
-  const trimmedEnd = content.trimEnd().length;
-  return [
-    { range: [contentStart, contentStart + trimmedStart], expected: contentBreak, messageId: 'contentOnOwnLine', anchor: node.openEnd.range },
-    { range: [contentStart + trimmedEnd, contentEnd], expected: closeBreak, messageId: 'closeOnOwnLine', anchor: close.range },
+  const edges: ContentEdge[] = [
+    { range: [contentStart, contentStart + leading], messageId: 'contentOnOwnLine', anchor: node.openEnd.range, isOpeningSide: true },
+    { range: [contentEnd - countTrailingHtmlWhitespace(content), contentEnd], messageId: 'closeOnOwnLine', anchor: close.range, isOpeningSide: false },
   ];
+  return edges.filter((edge) => !text.slice(...edge.range).includes('\n'));
 }
 
 export const multilineTagContent: Rule.RuleModule = {
@@ -49,22 +44,28 @@ export const multilineTagContent: Rule.RuleModule = {
     const options: Required<Options> = { indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
     const { sourceCode } = context;
     const text = sourceCode.text;
+    const lineBreak = lineBreakUsedIn(text);
     const isIgnored = createIgnoredInsideCheck(sourceCode, options.ignoreInside);
     const locate = ([start, end]: Range): AST.SourceLocation => ({ start: sourceCode.getLocFromIndex(start), end: sourceCode.getLocFromIndex(end) });
 
     const check = (node: TagNode) => {
       const { close } = node;
       if (!close) return;
-      if (WHITESPACE_SENSITIVE_TAGS.has(String(node.name ?? '').toLowerCase())) return;
+      if (hasSignificantContentWhitespace(node)) return;
       if (!text.slice(node.openStart.range[0], node.openEnd.range[1]).includes('\n')) return;
       if (isOpenTagSwallowingMarkup(node, text) || isIgnored(node)) return;
 
-      for (const gap of describeContentGaps(node, close, text, options.indent)) {
-        if (text.slice(...gap.range).includes('\n')) continue;
+      const edges = findCrowdedContentEdges(node, close, text);
+      if (edges.length === 0) return;
+
+      const tagIndentation = lineIndentation(text, node.openStart.range[0]);
+      const contentBreak = `${lineBreak}${tagIndentation}${indentUnitFor(tagIndentation, options.indent)}`;
+      const closeBreak = `${lineBreak}${tagIndentation}`;
+      for (const edge of edges) {
         context.report({
-          loc: locate(gap.anchor),
-          messageId: gap.messageId,
-          fix: (fixer) => fixer.replaceTextRange([...gap.range], gap.expected),
+          loc: locate(edge.anchor),
+          messageId: edge.messageId,
+          fix: (fixer) => fixer.replaceTextRange([...edge.range], edge.isOpeningSide ? contentBreak : closeBreak),
         });
       }
     };
