@@ -15,10 +15,12 @@
   data-js-gallery-pagination
 ></div>
 <h2 id="a" class="b">Short tags stay as they are</h2>
-<p>See <a
+<p>
+  See <a
   href="/one"
   class="link"
->this link</a>.</p>
+>this link</a>.
+</p>
 <pre
   class="a"
   id="b"

@@ -2,13 +2,13 @@ import { ESLint, type Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
-async function lint(code: string, ruleOptions?: Record<string, unknown>) {
+async function lint(code: string, ruleOptions?: Record<string, unknown>, fix = true) {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
     'twig-html/quotes': 'off',
-    'twig-html/multiline-tag-content': ruleOptions ? ['warn', ruleOptions] : 'warn',
+    'twig-html/multiline-html-element-content-newline': ruleOptions ? ['warn', ruleOptions] : 'warn',
   };
-  const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
+  const eslint = new ESLint({ overrideConfigFile: true, fix, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
   return { output: result.output ?? code, messages: result.messages };
@@ -18,7 +18,7 @@ async function fixed(code: string, ruleOptions?: Record<string, unknown>): Promi
   return (await lint(code, ruleOptions)).output;
 }
 
-describe('twig-html/multiline-tag-content', () => {
+describe('twig-html/multiline-html-element-content-newline', () => {
   it('moves text onto its own line when the opening tag spans several lines', async () => {
     expect(await fixed('<h2\n  id="system-breadcrumb"\n  class="sr-only"\n>You are here:</h2>')).toBe(
       '<h2\n  id="system-breadcrumb"\n  class="sr-only"\n>\n  You are here:\n</h2>',
@@ -30,14 +30,45 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it('leaves a tag with whitespace-only content alone', async () => {
+  it('accepts a tag with whitespace-only content on one line break', async () => {
     const code = '<div\n  class="a"\n  id="b"\n>\n</div>';
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it('leaves a tag whose opening tag is on one line alone, whatever it contains', async () => {
+  it('reduces whitespace-only content to one line break', async () => {
+    expect(await fixed('<div\n  class="a"\n  id="b"\n>\n\n</div>')).toBe('<div\n  class="a"\n  id="b"\n>\n</div>');
+    expect(await fixed('  <div\n    class="a"\n  >\n\n  </div>')).toBe('  <div\n    class="a"\n  >\n  </div>');
+  });
+
+  it('breaks an empty tag when ignoreWhenEmpty is off', async () => {
+    expect(await fixed('  <div\n    class="a"\n  ></div>', { ignoreWhenEmpty: false })).toBe('  <div\n    class="a"\n  >\n  </div>');
+  });
+
+  it('leaves an element on one line alone, whatever it contains', async () => {
     const code = '<h2 id="a" class="b">text</h2>\n<div class="a"><p>x</p></div>';
     expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it('lays out an element whose content spans several lines, even when its opening tag is on one line', async () => {
+    expect(await fixed('<p>Some\n  text</p>')).toBe('<p>\n  Some\n  text\n</p>');
+  });
+
+  it('removes blank lines around the content, keeping its indentation', async () => {
+    expect(await fixed('<div class="a">\n\n    text\n\n</div>')).toBe('<div class="a">\n    text\n</div>');
+  });
+
+  it('allows blank lines around the content when allowEmptyLines is on', async () => {
+    const code = '<div class="a">\n\n  text\n\n</div>';
+    expect((await lint(code, { allowEmptyLines: true })).messages).toEqual([]);
+    expect(await fixed('<div\n  class="a"\n>text</div>', { allowEmptyLines: true })).toBe('<div\n  class="a"\n>\n  text\n</div>');
+  });
+
+  it('reports with the same messages as vue/multiline-html-element-content-newline', async () => {
+    const { messages } = await lint('<p\n  class="a"\n>text</p>', undefined, false);
+    expect(messages.map((message) => message.message)).toEqual([
+      'Expected 1 line break after opening tag (`<p>`), but no line breaks found.',
+      'Expected 1 line break before closing tag (`</p>`), but no line breaks found.',
+    ]);
   });
 
   it('moves child elements and Twig onto their own lines', async () => {
@@ -87,8 +118,17 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it.each(['a', 'span', 'strong', 'button', 'label'])('never touches <%s>, where whitespace inside the tag is rendered', async (name) => {
-    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
+  it.each(['a', 'span', 'strong', 'label', 'ruby', 'video'])('ignores <%s> by default, like Vue', async (name) => {
+    const code = `<${name}\n  class="a"\n  id="b"\n>this</${name}>`;
+    expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it('lays out an inline element once it is taken out of ignores', async () => {
+    expect(await fixed('<span\n  class="a"\n>this</span>', { ignores: [] })).toBe('<span\n  class="a"\n>\n  this\n</span>');
+  });
+
+  it('never touches a tag inside an ignored element', async () => {
+    const code = '<a\n  href="/x"\n><div\n  class="a"\n>text</div></a>';
     expect((await lint(code)).messages).toEqual([]);
   });
 
@@ -97,13 +137,12 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it.each(['my-element', 'ruby', 'video', 'unknown'])('never touches <%s>, which is not known to be block-level', async (name) => {
-    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
-    expect((await lint(code)).messages).toEqual([]);
+  it.each(['button', 'my-element', 'unknown'])('lays out <%s>, which Vue does not ignore', async (name) => {
+    expect(await fixed(`<${name}\n  class="a"\n>this</${name}>`)).toBe(`<${name}\n  class="a"\n>\n  this\n</${name}>`);
   });
 
   it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
-    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
+    const code = `<${name}\n  class="a"\n  id="b"\n>this</${name}>`;
     expect((await lint(code)).messages).toEqual([]);
   });
 
@@ -116,10 +155,10 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint('<style\n  media="print"\n  id="b"\n>a { color: red; }</style>')).messages).toEqual([]);
   });
 
-  it('leaves inline SVG alone, and lays it out when ignoreInside is empty', async () => {
+  it('leaves inline SVG alone, and lays it out once svg is taken out of ignores', async () => {
     const code = '<svg\n  class="icon"\n  viewBox="0 0 1 1"\n><path d="M0 0"/></svg>';
     expect(await fixed(code)).toBe(code);
-    expect(await fixed(code, { ignoreInside: [] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 1 1"\n>\n  <path d="M0 0"/>\n</svg>');
+    expect(await fixed(code, { ignores: ['pre', 'textarea'] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 1 1"\n>\n  <path d="M0 0"/>\n</svg>');
   });
 
   it('does not re-indent child tags it moves', async () => {
@@ -139,6 +178,6 @@ describe('twig-html/multiline-tag-content', () => {
   ])('does not report %s, so the markup it swallowed is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);
-    expect(result.messages.filter((message) => message.ruleId === 'twig-html/multiline-tag-content')).toEqual([]);
+    expect(result.messages.filter((message) => message.ruleId === 'twig-html/multiline-html-element-content-newline')).toEqual([]);
   });
 });
