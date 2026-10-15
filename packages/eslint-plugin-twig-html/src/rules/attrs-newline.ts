@@ -1,14 +1,16 @@
-import type { AST, Rule } from 'eslint';
+import type { AST, Rule, SourceCode } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
 
 type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
 type TagNode = {
+  readonly name?: string;
   readonly openStart: Token;
   readonly openEnd: Token;
   readonly attributes: readonly { readonly range: Range }[];
 };
-type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number };
+type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number; ignoreInside?: string[] };
+type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 type Gap = { readonly range: Range; readonly expected: string; readonly isClosing: boolean };
 
 function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
@@ -47,12 +49,18 @@ function lineIndentation(text: string, offset: number): string {
   return /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
 }
 
+// Returns '\r\n' when the file uses Windows line endings, otherwise '\n'.
+function lineBreakUsedIn(text: string): string {
+  return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
 function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
+  const lineBreak = lineBreakUsedIn(text);
   const tagIndentation = lineIndentation(text, node.openStart.range[0]);
   const indentUnit = tagIndentation.includes('\t') ? '\t' : ' '.repeat(options.indent);
-  const attributeBreak = `\n${tagIndentation}${indentUnit}`;
+  const attributeBreak = `${lineBreak}${tagIndentation}${indentUnit}`;
   const selfClosingSpace = node.openEnd.value === '/>' ? ' ' : '';
-  const closingBreak = options.closeStyle === 'newline' ? `\n${tagIndentation}` : selfClosingSpace;
+  const closingBreak = options.closeStyle === 'newline' ? `${lineBreak}${tagIndentation}` : selfClosingSpace;
 
   const boundaries = [node.openStart.range[1], ...groups.flatMap(([start, end]) => [start, end]), node.openEnd.range[0]];
   const gaps: Gap[] = [];
@@ -77,6 +85,7 @@ export const attrsNewline: Rule.RuleModule = {
         ifAttrsMoreThan: { type: 'integer', minimum: 0 },
         closeStyle: { enum: ['newline', 'sameline'] },
         indent: { type: 'integer', minimum: 1 },
+        ignoreInside: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
       },
       additionalProperties: false,
     }],
@@ -88,11 +97,15 @@ export const attrsNewline: Rule.RuleModule = {
   },
 
   create(context) {
-    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ...(context.options[0] as Options | undefined) };
+    const options: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', indent: 2, ignoreInside: ['svg'], ...(context.options[0] as Options | undefined) };
     const text = context.sourceCode.text;
     const { blocks } = readTwigServices(context.sourceCode, context.id);
+    const ignoredElements = new Set(options.ignoreInside.map((name) => name.toLowerCase()));
+    const isIgnored = (node: TagNode) => [...context.sourceCode.getAncestors(node as unknown as EslintNode), node as unknown as EslintNode]
+      .some((ancestor) => ignoredElements.has(String((ancestor as unknown as TagNode).name ?? '').toLowerCase()));
 
     const check = (node: TagNode) => {
+      if (isIgnored(node)) return;
       const groups = groupAttributes(node.attributes, blocks);
       if (groups.length <= options.ifAttrsMoreThan) return;
 

@@ -79,6 +79,12 @@ describe('configs.recommended with configs.drupal', () => {
     expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope')]);
   });
 
+  it('lints classes added with |merge to a classes variable, and nothing else merged', async () => {
+    const code = "{% set classes = classes|merge(['nope']) %}{% set items = items|merge(['skipped']) %}";
+    const result = await lint(code, { withDrupal: false });
+    expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope')]);
+  });
+
   it.each([
     ['addClass()', "<div{{ attributes.addClass('nope') }}>x</div>"],
     ['create_attribute()', "{% set image = create_attribute({'class': ['nope']}) %}"],

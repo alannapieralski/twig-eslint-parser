@@ -86,8 +86,12 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | `class="..."` without Twig inside | better-tailwindcss defaults |
 | `{% set classes = [...] %}`, `{% set grid_classes = '...' %}` | `twigSelectors`: variables named `classes` or ending in `_classes` |
 | `{% include 'x' with { classes: [...] } %}`, `{% embed %}`, `include('x', { classes })` | `twigSelectors`: the `classes` value of the hash |
+| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable named `classes` or ending in `_classes` |
 | `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`configs.drupal`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
 | `create_attribute({ 'class': [...] })` | `drupalSelectors` (`configs.drupal`) |
+
+Not linted: `attributes.setAttribute('class', ...)`, because a selector cannot tell its `class` calls
+from every other attribute it sets.
 
 `configs.recommended` uses `twigSelectors` and `configs.drupal` adds `drupalSelectors`. Both are
 exported as plain better-tailwindcss selector objects. ESLint replaces arrays in `settings`
@@ -131,6 +135,19 @@ are linted and fixed as usual, and messages from other plugins are kept.
 [`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) then reports each such class
 string once, so it is not silently skipped. An ESLint config applies one processor per file, so
 if you set your own processor for `.twig` files, these strings are no longer silenced.
+
+## Class lists grouped with [ ] or |
+
+Some themes group classes by breakpoint with brackets and pipes, as in
+`'o-section | flex flex-col [ md:flex-row md:gap-8 ] [ lg:gap-12 ]'`. better-tailwindcss reads
+`[`, `]` and `|` as classes, so its fixes would sort them away from their group, remove the second
+`[` as a duplicate, or wrap a bracket away from its classes.
+
+The `twig-tailwind/twig` processor prevents this: it drops every better-tailwindcss report about a
+delimiter itself, and every report whose fix would rewrite a class list that contains one. Fixes
+to a single class in such a list, such as a deprecated or canonical class name, still apply, and
+lists without delimiters are sorted and wrapped as usual. The order and wrapping of grouped lists
+are not checked.
 
 ## Known limitations
 

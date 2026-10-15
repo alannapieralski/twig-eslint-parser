@@ -46,7 +46,11 @@ Twig that builds the tag name, such as `<h{{ level }}>` or `<{{ html_element }}>
 tag's line and is not counted as an attribute.
 
 `<script>` and `<style>` tags are checked too. Attribute values that already span several lines
-are kept as they are.
+are kept as they are. Tags inside an inline `<svg>` are left alone (see `ignoreInside`), and
+`<textarea>` and `<title>` content is text, so the rule never reads markup there.
+
+The line breaks it inserts match the file: a template with Windows line endings (`\r\n`) keeps
+them.
 
 The fix only changes the whitespace between attributes. If anything else sits between two
 attributes, such as a Twig comment, the rule reports the tag but does not fix it.
@@ -58,6 +62,7 @@ attributes, such as a Twig comment, the rule reports the tag but does not fix it
 | `ifAttrsMoreThan` | `1` | Lay out a tag once it has more attributes than this. |
 | `closeStyle` | `'newline'` | `'newline'` puts `>` on its own line; `'sameline'` keeps it after the last attribute. |
 | `indent` | `2` | Spaces per indent step. A tag indented with tabs gets its attributes indented with one more tab. |
+| `ignoreInside` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Inline SVG puts many short tags on one line, and one attribute per line would make it much longer for no gain. Set `[]` to lay SVG out too. |
 
 ```js
 'twig-html/attrs-newline': ['warn', { ifAttrsMoreThan: 2, closeStyle: 'sameline' }],
@@ -83,7 +88,7 @@ The defaults match Vue's threshold.
 
 ## Testing
 
-- `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values and the unfixable Twig-comment case.
+- `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in `textarea` and the unfixable Twig-comment case.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
 
@@ -97,9 +102,9 @@ skipped.
 
 Turn it off if your templates are laid out by a formatter.
 
-`configs.recommended` skips `**/*.svg.twig`. SVG sprites put many short tags on one line, and one
-attribute per line would make them much longer for no gain. The skipped files get no parser either,
-so to lint them anyway, reuse the whole recommended config for them:
+`configs.recommended` skips `**/*.svg.twig`, for the same reason the rule leaves inline SVG alone.
+The skipped files get no parser either, so to lint them anyway, reuse the whole recommended config
+for them and let the rule into SVG:
 
 ```js
 // eslint.config.js
@@ -107,6 +112,11 @@ import twigHtml from 'eslint-plugin-twig-html';
 
 export default [
   twigHtml.configs.recommended,
-  { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [] },
+  {
+    ...twigHtml.configs.recommended,
+    files: ['**/*.svg.twig'],
+    ignores: [],
+    rules: { 'twig-html/attrs-newline': ['warn', { ignoreInside: [] }] },
+  },
 ];
 ```

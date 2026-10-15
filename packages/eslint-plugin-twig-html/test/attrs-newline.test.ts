@@ -100,7 +100,7 @@ describe('twig-html/attrs-newline', () => {
 
   it('is not applied to .svg.twig templates by the recommended config', async () => {
     const eslint = new ESLint({ overrideConfigFile: true, overrideConfig: [twigHtml.configs.recommended] });
-    const code = '<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>';
+    const code = '<g id="a" fill="none" stroke="red"></g>';
     const [sprite] = await eslint.lintText(code, { filePath: 'sprite.svg.twig' });
     const [template] = await eslint.lintText(code, { filePath: 'template.html.twig' });
     expect(template?.messages.map((message) => message.ruleId)).toContain('twig-html/attrs-newline');
@@ -110,7 +110,10 @@ describe('twig-html/attrs-newline', () => {
   it('lints .svg.twig templates when the recommended config is reused for them', async () => {
     const eslint = new ESLint({
       overrideConfigFile: true,
-      overrideConfig: [twigHtml.configs.recommended, { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [] }],
+      overrideConfig: [
+        twigHtml.configs.recommended,
+        { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [], rules: { 'twig-html/attrs-newline': ['warn', { ignoreInside: [] }] } },
+      ],
     });
     const [sprite] = await eslint.lintText('<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>', { filePath: 'sprite.svg.twig' });
     expect(sprite?.messages.map((message) => message.ruleId)).toContain('twig-html/attrs-newline');
@@ -128,5 +131,26 @@ describe('twig-html/attrs-newline', () => {
 
   it('indents with tabs when the tag is indented with tabs', async () => {
     expect(await fixed('\t<a href="#" class="a" id="b">x</a>')).toBe('\t<a\n\t\thref="#"\n\t\tclass="a"\n\t\tid="b"\n\t>x</a>');
+  });
+
+  it('leaves tags inside an inline SVG alone', async () => {
+    const code = '<div class="a" id="b"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M0 0" fill="none"/></svg></div>';
+    expect(await fixed(code)).toBe('<div\n  class="a"\n  id="b"\n><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M0 0" fill="none"/></svg></div>');
+  });
+
+  it('can lay out inline SVG, or skip other elements', async () => {
+    const svg = '<svg class="icon" viewBox="0 0 24 24"></svg>';
+    expect(await fixed(svg, { ignoreInside: [] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 24 24"\n></svg>');
+    const math = '<math display="block" class="a"></math>';
+    expect(await fixed(math, { ignoreInside: ['math'] })).toBe(math);
+  });
+
+  it('keeps Windows line endings when it breaks a tag', async () => {
+    expect(await fixed('<div>\r\n  <a href="#" class="a">x</a>\r\n</div>')).toBe('<div>\r\n  <a\r\n    href="#"\r\n    class="a"\r\n  >x</a>\r\n</div>');
+  });
+
+  it('never touches markup inside textarea or title, which is text', async () => {
+    const code = '<textarea name="a" rows="2"><p class="x" id="y">typed</p></textarea>';
+    expect(await fixed(code)).toBe('<textarea\n  name="a"\n  rows="2"\n><p class="x" id="y">typed</p></textarea>');
   });
 });
