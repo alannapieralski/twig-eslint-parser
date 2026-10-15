@@ -1,7 +1,7 @@
 import type { TwigBlockSummary } from 'twig-eslint-parser';
 
-export function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[], searchFrom = 0): number {
-  let low = searchFrom;
+function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]): number {
+  let low = 0;
   let high = blocks.length;
   while (low < high) {
     const middle = (low + high) >> 1;

@@ -4,10 +4,13 @@ const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const quotedValue = /"[^"]*"|'[^']*'/g;
 const whitespaceSensitiveTags: ReadonlySet<string> = new Set(['pre', 'textarea']);
-const inlineTags: ReadonlySet<string> = new Set([
-  'a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'label',
-  'mark', 'output', 'q', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var',
-  'audio', 'canvas', 'iframe', 'meter', 'object', 'progress', 'rp', 'rt', 'ruby', 'slot', 'video',
+const blockTags: ReadonlySet<string> = new Set([
+  'address', 'article', 'aside', 'blockquote', 'body', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
+  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',
+  'search', 'section', 'summary', 'ul', 'table', 'caption', 'colgroup', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+]);
+const svgContainerTags: ReadonlySet<string> = new Set([
+  'svg', 'g', 'defs', 'symbol', 'clippath', 'mask', 'pattern', 'marker', 'filter', 'lineargradient', 'radialgradient',
 ]);
 
 export type Range = readonly [number, number];
@@ -30,7 +33,6 @@ export function lineIndentation(text: string, offset: number): string {
   return text.slice(lineStart, indentationEnd);
 }
 
-// Returns '\r\n' when the file uses Windows line endings, otherwise '\n'.
 export function lineBreakUsedIn(text: string): string {
   return text.includes('\r\n') ? '\r\n' : '\n';
 }
@@ -49,22 +51,13 @@ export function indentUnitFor(text: string, tagIndentation: string, indent: numb
   return isTabIndented ? '\t' : ' '.repeat(indent);
 }
 
-function endsWithClosingBracket(node: Pick<ParsedTag, 'openEnd'>): boolean {
-  return node.openEnd !== undefined && tagEnds.has(node.openEnd.value);
-}
-
-function withoutTwigAndQuotedText(attributeText: string): string {
-  const withoutTwig = attributeText.replace(twigSpan, '');
-  return withoutTwig.replace(quotedValue, '');
-}
-
-function hasStrayOpeningBracket(attributeText: string): boolean {
-  return withoutTwigAndQuotedText(attributeText).includes('<');
-}
-
 // True when the parser read the markup after an unterminated open tag as part of that tag.
 export function isOpenTagSwallowingMarkup(node: Pick<ParsedTag, 'openEnd' | 'attributes'>, text: string): boolean {
-  if (!endsWithClosingBracket(node)) return true;
+  const endsWithClosingBracket = node.openEnd !== undefined && tagEnds.has(node.openEnd.value);
+  if (!endsWithClosingBracket) return true;
+
+  const withoutTwigAndQuotedText = (attributeText: string) => attributeText.replace(twigSpan, '').replace(quotedValue, '');
+  const hasStrayOpeningBracket = (attributeText: string) => withoutTwigAndQuotedText(attributeText).includes('<');
 
   return node.attributes.some((attribute) => {
     const attributeText = text.slice(...attribute.range);
@@ -74,10 +67,6 @@ export function isOpenTagSwallowingMarkup(node: Pick<ParsedTag, 'openEnd' | 'att
 
 function normaliseElementName(name: string | undefined): string {
   return (name ?? '').toLowerCase();
-}
-
-function isInlineElement(name: string): boolean {
-  return inlineTags.has(name) || name.includes('-');
 }
 
 const leadingHtmlWhitespace = /^[ \t\n\r\f]*/;
@@ -91,7 +80,6 @@ export function countTrailingHtmlWhitespace(text: string): number {
   return text.match(trailingHtmlWhitespace)?.[0].length ?? 0;
 }
 
-// Builds a check for whether a tag is, or sits inside, one of the ignored elements.
 export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: readonly string[]): (node: TagNode) => boolean {
   const ignoredElementNames = new Set(ignoreInside.map(normaliseElementName));
 
@@ -107,19 +95,17 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
   };
 }
 
-// Builds a check for whether whitespace inside a tag is rendered: an inline element, or anything inside <pre> or <textarea>.
+// Builds a check for whether whitespace inside a tag may be rendered: any tag not known to be block-level, or anything inside <pre> or <textarea>.
 export function createContentWhitespaceCheck(sourceCode: SourceCode): (node: TagNode) => boolean {
   const isInsideWhitespaceSensitiveTag = createIgnoredInsideCheck(sourceCode, [...whitespaceSensitiveTags]);
-  return (node) => isInlineElement(normaliseElementName(node.name)) || isInsideWhitespaceSensitiveTag(node);
+  const isKnownBlockElement = (name: string) => blockTags.has(name) || svgContainerTags.has(name);
+  return (node) => !isKnownBlockElement(normaliseElementName(node.name)) || isInsideWhitespaceSensitiveTag(node);
 }
 
 type TagListener = (node: TagNode) => void;
 
-function isTerminated(node: ParsedTag): node is TagNode {
-  return node.openEnd !== undefined;
-}
-
 export function tagListeners(check: TagListener, selectors: readonly string[]): Rule.RuleListener {
+  const isTerminated = (node: ParsedTag): node is TagNode => node.openEnd !== undefined;
   const checkTerminated = (node: ParsedTag) => {
     if (isTerminated(node)) check(node);
   };

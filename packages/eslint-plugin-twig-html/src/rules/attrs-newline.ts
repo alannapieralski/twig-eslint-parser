@@ -1,6 +1,6 @@
 import type { AST, Rule } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
-import { firstBlockIndexFrom } from '../twig-blocks.js';
+import { depthChangeWithin } from '../twig-blocks.js';
 import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, layoutOptionDefaults, layoutOptionProperties, lineIndentation, tagListeners, type LayoutOptions, type Range, type TagNode } from '../tag-layout.js';
 
 type Options = LayoutOptions & { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline' };
@@ -8,13 +8,11 @@ type Gap = { readonly range: Range; readonly expected: string; readonly isClosin
 
 function groupAttributes(attributes: TagNode['attributes'], blocks: readonly TwigBlockSummary[]): Range[] {
   const groups: Range[] = [];
-  let blockIndex = 0;
   let groupStart: number | undefined;
   let depth = 0;
   for (const attribute of attributes) {
     groupStart ??= attribute.range[0];
-    blockIndex = firstBlockIndexFrom(attribute.range[0], blocks, blockIndex);
-    for (let block = blocks[blockIndex]; block && block.range[1] <= attribute.range[1]; block = blocks[++blockIndex]) depth += block.depthChange;
+    depth += depthChangeWithin(attribute.range, blocks);
     if (depth <= 0) {
       groups.push([groupStart, attribute.range[1]]);
       groupStart = undefined;

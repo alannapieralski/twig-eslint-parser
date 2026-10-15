@@ -97,7 +97,12 @@ describe('twig-html/multiline-tag-content', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it.each(['my-element', 'ruby', 'video'])('never touches <%s>, which renders inline', async (name) => {
+  it.each(['my-element', 'ruby', 'video', 'unknown'])('never touches <%s>, which is not known to be block-level', async (name) => {
+    const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
+    expect((await lint(code)).messages).toEqual([]);
+  });
+
+  it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
     const code = `<p>See <${name}\n  class="a"\n  id="b"\n>this</${name}>.</p>`;
     expect((await lint(code)).messages).toEqual([]);
   });
