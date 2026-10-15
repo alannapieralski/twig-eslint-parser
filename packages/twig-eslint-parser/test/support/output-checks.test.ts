@@ -37,6 +37,27 @@ function parserFailuresOf(code: string): string[] {
 }
 
 describe('checkParserOutput', () => {
+  it.each([
+    ['a comment opener inside a script string', '<script>var a = "<!--";</script><p class="x">y</p>'],
+    ['a comment opener inside an attribute value', '<p title="<!--" class="x">y</p><p class="z">w</p>'],
+    ['a class attribute inside a closed comment', '<!-- <p class="x"> --><p class="y">w</p>'],
+    ['a class attribute inside raw text', '<textarea><p class="x"></textarea><p class="y">w</p>'],
+    ['a script close tag inside a comment before the script', '<!-- </script> --><script>var a = \'<p class="x">\';</script><p class="y">w</p>'],
+  ])('counts class attributes as HTML reads them with %s', (_name, code) => {
+    expect(checkParserOutput(code).map((issue) => issue.check)).not.toContain('html: every class attribute is read');
+  });
+
+  it('reports the line of the first class attribute the parser did not read', () => {
+    const dropSecondTagAttributes = parseAndBreak((tags) => {
+      const second = tags[1];
+      if (second) second['attributes'] = [];
+    });
+    const issues = checkParserOutput('<ul class="a">\n  <li class="b">x</li>\n</ul>', dropSecondTagAttributes);
+    expect(issues.filter((issue) => issue.check === 'html: every class attribute is read')).toEqual([
+      expect.objectContaining({ detail: 'found 1, markup has 2', line: 2 }),
+    ]);
+  });
+
   it('finds nothing wrong with well-formed markup and Twig', () => {
     expect(checkParserOutput('<div class="a {{ b }}" id=x {# note #} data-y>\n  {% if c %}<p>{{ c }}</p>{% endif %}<br>\n</div>')).toEqual([]);
   });

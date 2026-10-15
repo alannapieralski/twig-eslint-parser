@@ -86,24 +86,24 @@
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-close-tag-missing-gt.html.twig": [
-    { "check": "parser/output-matches-source", "failures": [6, 7] },
+    { "check": "parser/output-matches-source", "noFailures": [6, 7], "pending": "a close tag without > swallows the close tag after it" },
     { "check": "parser/html-oracle", "failures": [6, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-comment-unterminated.html.twig": [
-    { "check": "parser/output-matches-source", "failures": [2, 8] },
+    { "check": "parser/output-matches-source", "noFailures": [2, 8], "pending": "the markup after an unterminated <!-- is dropped instead of read as comment text to the end of the file" },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-double-open-bracket.html.twig": [
-    { "check": "parser/output-matches-source", "failures": "all" },
+    { "check": "parser/output-matches-source", "noFailures": [4], "pending": "<<li loses the attributes of the li" },
     { "check": "parser/html-oracle", "failures": [4] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-mis-nested.html.twig": [
-    { "check": "parser/output-matches-source", "failures": [2] },
+    { "check": "parser/output-matches-source", "noFailures": [2], "pending": "</b> closes the open <i> with it, so the later </i> is left unread; HTML's adoption agency step is not modelled" },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
@@ -168,7 +168,8 @@
   ],
   "broken/html-script-unterminated.html.twig": [
     { "check": "parser/line-coverage", "noFailures": "all" },
-    { "check": "parser/output-matches-source", "reports": [2], "failures": [2, 8] },
+    { "check": "parser/output-matches-source", "reports": [2] },
+    { "check": "parser/output-matches-source", "noFailures": [2, 8], "pending": "the markup after an unterminated <script> is dropped instead of read as script text to the end of the file" },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
