@@ -19,16 +19,8 @@ export function parseValueEnd(state: TokenizerState) {
   state.currentContext = TokenizerContextTypes.Attributes;
 }
 
-export function isSelfClosingSlash(chars: CharsBuffer, state: TokenizerState) {
-  if (chars.value() !== "/") return false;
-  state.sourceCode.next();
-  const following = state.sourceCode.isEof() ? undefined : state.sourceCode.current();
-  state.sourceCode.prev();
-  return following?.isTemplate === false && following.value === ">";
-}
-
 export function parse(chars: CharsBuffer, state: TokenizerState) {
-  if (isWhitespace(chars.value()) || chars.value() === ">" || isSelfClosingSlash(chars, state)) {
+  if (isWhitespace(chars.value()) || chars.value() === ">") {
     return parseValueEnd(state);
   }
 

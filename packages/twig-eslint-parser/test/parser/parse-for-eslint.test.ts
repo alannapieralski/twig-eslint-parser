@@ -609,21 +609,25 @@ describe('unquoted attribute values', () => {
   });
 
   it.each([
-    ['<div class=a/><p>x</p>', ['a']],
-    ['<div class="a"/><p>x</p>', ['a']],
-    ['<div class=a /><p>x</p>', ['a']],
-    ['<div class= /><p>x</p>', [undefined]],
-  ])('reads a slash straight before > in %s as self-closing, however the last value is quoted', (code, values) => {
-    const div = namedTag(code, 'div');
-    expect(valuesOf(div)).toEqual(values);
-    expect(div['selfClosing']).toBe(true);
-    expect(div['children']).toEqual([]);
+    ['<a href=/>t</a>', 'a', '/'],
+    ['<div class=a/><p>x</p></div>', 'div', 'a/'],
+    ['<input value=a/><p>x</p>', 'input', 'a/'],
+    ['<div class= /><p>x</p></div>', 'div', '/'],
+  ])('keeps a slash before > in the unquoted value of %s, as HTML does', (code, name, value) => {
+    const tag = namedTag(code, name);
+    expect(valuesOf(tag)).toEqual([value]);
+    expect(sourceOf(code, tag['openEnd'] as Node)).toBe('>');
   });
 
-  it('reads <a href=/> as a self-closing tag whose href has no value', () => {
-    const anchor = namedTag('<a href=/>', 'a');
-    expect(valuesOf(anchor)).toEqual([undefined]);
-    expect(anchor['selfClosing']).toBe(true);
+  it('leaves a non-void element open when its unquoted value ends in a slash', () => {
+    const div = namedTag('<div class=a/><p>x</p></div>', 'div');
+    expect(div['selfClosing']).toBe(false);
+    expect((div['children'] as Node[]).map((child) => child['name'])).toEqual(['p']);
+  });
+
+  it('still reads /> as self-closing after a quoted value or a space', () => {
+    expect(namedTag('<div class="a"/><p>x</p>', 'div')['selfClosing']).toBe(true);
+    expect(namedTag('<div class=a /><p>x</p>', 'div')['selfClosing']).toBe(true);
   });
 
   it.each([

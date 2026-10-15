@@ -64,8 +64,8 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
-  it('keeps the self-closing slash after an unquoted last value with the closing bracket', async () => {
-    expect(await fixed('<svg-icon name=close size=s/>')).toBe('<svg-icon\n  name=close\n  size=s\n/>');
+  it('keeps a slash at the end of an unquoted last value in the value, as HTML reads it', async () => {
+    expect(await fixed('<svg-icon name=close size=s/>')).toBe('<svg-icon\n  name=close\n  size=s/\n>');
   });
 
   it('puts /> of a self-closing tag on its own line', async () => {
