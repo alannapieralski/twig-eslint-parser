@@ -1,0 +1,1217 @@
+Description: Use full .js specifiers in relative imports
+ es-html-parser is compiled to CommonJS, where extensionless imports such as
+ "../constants" resolve. This package ships native ES modules, where Node
+ requires the full specifier, so every relative import names its .js file or
+ its directory's index.js, and type-only re-exports use "export type" as
+ isolatedModules requires. TypeScript maps each .js specifier to its .ts
+ source at compile time.
+Author: Numiko
+Origin: vendor
+Forwarded: not-needed
+Test: npm run typecheck; npm run test:upstream
+Last-Update: 2026-10-14
+---
+diff --git a/src/constants/index.ts b/src/constants/index.ts
+index 2ddecc5..d92216e 100644
+--- a/src/constants/index.ts
++++ b/src/constants/index.ts
+@@ -1,6 +1,6 @@
+-export * from "./ast-types";
+-export * from "./tokenizer-context-types";
+-export * from "./regex";
+-export * from "./token-types";
+-export * from "./node-types";
+-export * from "./construct-tree-context-types";
++export * from "./ast-types.js";
++export * from "./tokenizer-context-types.js";
++export * from "./regex.js";
++export * from "./token-types.js";
++export * from "./node-types.js";
++export * from "./construct-tree-context-types.js";
+diff --git a/src/index.ts b/src/index.ts
+index 3394623..d207ef1 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,5 +1,5 @@
+-export { parse } from "./parser";
+-export { NodeTypes, TokenTypes } from "./constants";
+-export { AnyToken, ParseResult } from "./types";
+-export { Options } from "./types/parse";
+-export * from "./types/node";
++export { parse } from "./parser/index.js";
++export { NodeTypes, TokenTypes } from "./constants/index.js";
++export type { AnyToken, ParseResult } from "./types/index.js";
++export type { Options } from "./types/parse.js";
++export * from "./types/node.js";
+diff --git a/src/parser/index.ts b/src/parser/index.ts
+index 7b5e9c5..18b6895 100644
+--- a/src/parser/index.ts
++++ b/src/parser/index.ts
+@@ -1 +1 @@
+-export * from "./parse";
++export * from "./parse.js";
+diff --git a/src/parser/parse.ts b/src/parser/parse.ts
+index e487cbe..e6252e5 100644
+--- a/src/parser/parse.ts
++++ b/src/parser/parse.ts
+@@ -1,9 +1,9 @@
+-import { constructTree } from "../tree-constructor";
+-import { tokenize } from "../tokenizer";
+-import { ParseResult } from "../types";
+-import { clearParent } from "../utils";
+-import { defaultTokenAdapter } from "../token-adapter";
+-import { Options } from "../types/parse";
++import { constructTree } from "../tree-constructor/index.js";
++import { tokenize } from "../tokenizer/index.js";
++import { ParseResult } from "../types/index.js";
++import { clearParent } from "../utils/index.js";
++import { defaultTokenAdapter } from "../token-adapter/index.js";
++import { Options } from "../types/parse.js";
+ 
+ export function parse(html: string, options?: Options): ParseResult {
+   const tokenAdapter = (options && options.tokenAdapter) || defaultTokenAdapter;
+diff --git a/src/token-adapter/default-token-adapter.ts b/src/token-adapter/default-token-adapter.ts
+index 7ff6675..293b2d2 100644
+--- a/src/token-adapter/default-token-adapter.ts
++++ b/src/token-adapter/default-token-adapter.ts
+@@ -1,4 +1,4 @@
+-import type { TokenAdapter } from "../types";
++import type { TokenAdapter } from "../types/index.js";
+ 
+ export const defaultTokenAdapter: TokenAdapter = {
+   finalizeRange(token) {
+diff --git a/src/token-adapter/index.ts b/src/token-adapter/index.ts
+index 894aefb..b2c4c68 100644
+--- a/src/token-adapter/index.ts
++++ b/src/token-adapter/index.ts
+@@ -1 +1 @@
+-export { defaultTokenAdapter } from "./default-token-adapter";
++export { defaultTokenAdapter } from "./default-token-adapter.js";
+diff --git a/src/tokenizer/chars-buffer.ts b/src/tokenizer/chars-buffer.ts
+index 535d9bc..fe8352f 100644
+--- a/src/tokenizer/chars-buffer.ts
++++ b/src/tokenizer/chars-buffer.ts
+@@ -1,4 +1,4 @@
+-import { Chars } from "./chars";
++import { Chars } from "./chars.js";
+ 
+ export class CharsBuffer {
+   public charsBuffer: Chars[] = [];
+diff --git a/src/tokenizer/chars.ts b/src/tokenizer/chars.ts
+index 5f428c3..2f21185 100644
+--- a/src/tokenizer/chars.ts
++++ b/src/tokenizer/chars.ts
+@@ -1,4 +1,4 @@
+-import { Range } from "../types";
++import { Range } from "../types/index.js";
+ 
+ export enum CharsType {
+   HTML = "HTML",
+diff --git a/src/tokenizer/handlers/attribute-key.ts b/src/tokenizer/handlers/attribute-key.ts
+index dda5e86..7aecd54 100644
+--- a/src/tokenizer/handlers/attribute-key.ts
++++ b/src/tokenizer/handlers/attribute-key.ts
+@@ -1,8 +1,8 @@
+-import { TokenizerContextTypes } from "../../constants";
+-import { TokenTypes } from "../../constants/token-types";
+-import { calculateTokenPosition, isWhitespace, createParts } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes } from "../../constants/index.js";
++import { TokenTypes } from "../../constants/token-types.js";
++import { calculateTokenPosition, isWhitespace, createParts } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   if (isKeyBreak(chars)) {
+diff --git a/src/tokenizer/handlers/attribute-value-bare.ts b/src/tokenizer/handlers/attribute-value-bare.ts
+index ccf0105..4020d3e 100644
+--- a/src/tokenizer/handlers/attribute-value-bare.ts
++++ b/src/tokenizer/handlers/attribute-value-bare.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, isWhitespace, createParts } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, isWhitespace, createParts } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parseValueEnd(state: TokenizerState) {
+   const position = calculateTokenPosition(state, { keepBuffer: false });
+diff --git a/src/tokenizer/handlers/attribute-value-wrapped.ts b/src/tokenizer/handlers/attribute-value-wrapped.ts
+index 09d4211..47d1a03 100644
+--- a/src/tokenizer/handlers/attribute-value-wrapped.ts
++++ b/src/tokenizer/handlers/attribute-value-wrapped.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import type { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import type { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const wrapperChar =
+diff --git a/src/tokenizer/handlers/attribute-value.ts b/src/tokenizer/handlers/attribute-value.ts
+index c474c79..40d8cf2 100644
+--- a/src/tokenizer/handlers/attribute-value.ts
++++ b/src/tokenizer/handlers/attribute-value.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { isWhitespace } from "../../utils";
+-import type { TokenizerState, Range } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { isWhitespace } from "../../utils/index.js";
++import type { TokenizerState, Range } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const value = chars.value();
+diff --git a/src/tokenizer/handlers/attributes.ts b/src/tokenizer/handlers/attributes.ts
+index 0ed9b1e..cc868f3 100644
+--- a/src/tokenizer/handlers/attributes.ts
++++ b/src/tokenizer/handlers/attributes.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, isWhitespace, raise } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, isWhitespace, raise } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const value = chars.value();
+diff --git a/src/tokenizer/handlers/close-tag.ts b/src/tokenizer/handlers/close-tag.ts
+index 3933733..f4650f3 100644
+--- a/src/tokenizer/handlers/close-tag.ts
++++ b/src/tokenizer/handlers/close-tag.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const value = chars.value();
+diff --git a/src/tokenizer/handlers/comment-content.ts b/src/tokenizer/handlers/comment-content.ts
+index 16d76ca..a86c23f 100644
+--- a/src/tokenizer/handlers/comment-content.ts
++++ b/src/tokenizer/handlers/comment-content.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import type { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import type { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ const COMMENT_END = "-->";
+ 
+diff --git a/src/tokenizer/handlers/custom-tag-raw-content.ts b/src/tokenizer/handlers/custom-tag-raw-content.ts
+index 8c3035c..c15051e 100644
+--- a/src/tokenizer/handlers/custom-tag-raw-content.ts
++++ b/src/tokenizer/handlers/custom-tag-raw-content.ts
+@@ -2,10 +2,10 @@ import {
+   TokenizerContextTypes,
+   INCOMPLETE_CLOSING_TAG_PATTERN,
+   TokenTypes,
+-} from "../../constants";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++} from "../../constants/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   if (
+diff --git a/src/tokenizer/handlers/data.ts b/src/tokenizer/handlers/data.ts
+index 2d6f847..92333ba 100644
+--- a/src/tokenizer/handlers/data.ts
++++ b/src/tokenizer/handlers/data.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import { Range, AnyToken, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import { Range, AnyToken, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ const COMMENT_START = "<!--";
+ const OPEN_TAG_START_PATTERN = /^<\w/;
+diff --git a/src/tokenizer/handlers/doctype-attribute-bare.ts b/src/tokenizer/handlers/doctype-attribute-bare.ts
+index 818fc32..a86c3e3 100644
+--- a/src/tokenizer/handlers/doctype-attribute-bare.ts
++++ b/src/tokenizer/handlers/doctype-attribute-bare.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, isWhitespace } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, isWhitespace } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   if (isWhitespace(chars.value()) || chars.value() === ">") {
+diff --git a/src/tokenizer/handlers/doctype-attribute-wrapped.ts b/src/tokenizer/handlers/doctype-attribute-wrapped.ts
+index 3e13573..4eb404c 100644
+--- a/src/tokenizer/handlers/doctype-attribute-wrapped.ts
++++ b/src/tokenizer/handlers/doctype-attribute-wrapped.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition } from "../../utils";
+-import type { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition } from "../../utils/index.js";
++import type { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const wrapperChar =
+diff --git a/src/tokenizer/handlers/doctype-attributes.ts b/src/tokenizer/handlers/doctype-attributes.ts
+index eaf2739..8f29cfb 100644
+--- a/src/tokenizer/handlers/doctype-attributes.ts
++++ b/src/tokenizer/handlers/doctype-attributes.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { isWhitespace } from "../../utils";
+-import type { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { isWhitespace } from "../../utils/index.js";
++import type { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   if (chars.value() === '"' || chars.value() === "'") {
+diff --git a/src/tokenizer/handlers/doctype-end.ts b/src/tokenizer/handlers/doctype-end.ts
+index 3425568..b4d87df 100644
+--- a/src/tokenizer/handlers/doctype-end.ts
++++ b/src/tokenizer/handlers/doctype-end.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const position = calculateTokenPosition(state, { keepBuffer: true });
+diff --git a/src/tokenizer/handlers/doctype-start.ts b/src/tokenizer/handlers/doctype-start.ts
+index 1ae1b7d..cfec755 100644
+--- a/src/tokenizer/handlers/doctype-start.ts
++++ b/src/tokenizer/handlers/doctype-start.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition, isWhitespace } from "../../utils";
+-import { AnyToken, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition, isWhitespace } from "../../utils/index.js";
++import { AnyToken, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   const value = chars.value();
+diff --git a/src/tokenizer/handlers/index.ts b/src/tokenizer/handlers/index.ts
+index 5156b86..2b26923 100644
+--- a/src/tokenizer/handlers/index.ts
++++ b/src/tokenizer/handlers/index.ts
+@@ -1,23 +1,23 @@
+-import { TokenizeHandler } from "../../types";
++import { TokenizeHandler } from "../../types/index.js";
+ 
+-export * as attributeKey from "./attribute-key";
+-export * as attributeValueBare from "./attribute-value-bare";
+-export * as attributeValueWrapped from "./attribute-value-wrapped";
+-export * as attributeValue from "./attribute-value";
+-export * as attributes from "./attributes";
+-export * as closeTag from "./close-tag";
+-export * as commentContent from "./comment-content";
+-export * as data from "./data";
+-export * as doctypeAttributeBare from "./doctype-attribute-bare";
+-export * as doctypeAttributeWrapped from "./doctype-attribute-wrapped";
+-export * as doctypeAttributes from "./doctype-attributes";
+-export * as DoctypeClose from "./doctype-end";
+-export * as DoctypeOpen from "./doctype-start";
+-export * as openTagEnd from "./open-tag-end";
+-export * as openTagStart from "./open-tag-start";
+-export * as scriptTagContent from "./script-tag-content";
+-export * as styleTagContent from "./style-tag-content";
+-export * as customTagRawContent from "./custom-tag-raw-content";
++export * as attributeKey from "./attribute-key.js";
++export * as attributeValueBare from "./attribute-value-bare.js";
++export * as attributeValueWrapped from "./attribute-value-wrapped.js";
++export * as attributeValue from "./attribute-value.js";
++export * as attributes from "./attributes.js";
++export * as closeTag from "./close-tag.js";
++export * as commentContent from "./comment-content.js";
++export * as data from "./data.js";
++export * as doctypeAttributeBare from "./doctype-attribute-bare.js";
++export * as doctypeAttributeWrapped from "./doctype-attribute-wrapped.js";
++export * as doctypeAttributes from "./doctype-attributes.js";
++export * as DoctypeClose from "./doctype-end.js";
++export * as DoctypeOpen from "./doctype-start.js";
++export * as openTagEnd from "./open-tag-end.js";
++export * as openTagStart from "./open-tag-start.js";
++export * as scriptTagContent from "./script-tag-content.js";
++export * as styleTagContent from "./style-tag-content.js";
++export * as customTagRawContent from "./custom-tag-raw-content.js";
+ export const noop: TokenizeHandler = {
+   parse: () => void 0,
+ };
+diff --git a/src/tokenizer/handlers/open-tag-end.ts b/src/tokenizer/handlers/open-tag-end.ts
+index deae96f..8ce0fae 100644
+--- a/src/tokenizer/handlers/open-tag-end.ts
++++ b/src/tokenizer/handlers/open-tag-end.ts
+@@ -1,7 +1,7 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
+-import { calculateTokenPosition } from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
++import { calculateTokenPosition } from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ const tokensMap = {
+   script: TokenTypes.OpenScriptTagEnd,
+diff --git a/src/tokenizer/handlers/open-tag-start.ts b/src/tokenizer/handlers/open-tag-start.ts
+index e4aff41..5aafa61 100644
+--- a/src/tokenizer/handlers/open-tag-start.ts
++++ b/src/tokenizer/handlers/open-tag-start.ts
+@@ -1,11 +1,11 @@
+-import { TokenizerContextTypes, TokenTypes } from "../../constants";
++import { TokenizerContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   calculateTokenPosition,
+   isWhitespace,
+   parseOpenTagName,
+-} from "../../utils";
+-import type { TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++} from "../../utils/index.js";
++import type { TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ const tokensMap = {
+   script: TokenTypes.OpenScriptTagStart,
+diff --git a/src/tokenizer/handlers/script-tag-content.ts b/src/tokenizer/handlers/script-tag-content.ts
+index e126065..4683cf7 100644
+--- a/src/tokenizer/handlers/script-tag-content.ts
++++ b/src/tokenizer/handlers/script-tag-content.ts
+@@ -3,10 +3,10 @@ import {
+   INCOMPLETE_CLOSING_TAG_PATTERN,
+   CLOSING_SCRIPT_TAG_PATTERN,
+   TokenTypes,
+-} from "../../constants";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import { Range, TokenizerState } from "../../types";
+-import { CharsBuffer } from "../chars-buffer";
++} from "../../constants/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import { Range, TokenizerState } from "../../types/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ export function parse(chars: CharsBuffer, state: TokenizerState) {
+   if (
+diff --git a/src/tokenizer/handlers/style-tag-content.ts b/src/tokenizer/handlers/style-tag-content.ts
+index 1bf51fd..a71320f 100644
+--- a/src/tokenizer/handlers/style-tag-content.ts
++++ b/src/tokenizer/handlers/style-tag-content.ts
+@@ -2,10 +2,10 @@ import {
+   INCOMPLETE_CLOSING_TAG_PATTERN,
+   TokenizerContextTypes,
+   TokenTypes,
+-} from "../../constants";
+-import { Range, TokenizerState } from "../../types";
+-import { calculateTokenPosition, createParts } from "../../utils";
+-import { CharsBuffer } from "../chars-buffer";
++} from "../../constants/index.js";
++import { Range, TokenizerState } from "../../types/index.js";
++import { calculateTokenPosition, createParts } from "../../utils/index.js";
++import { CharsBuffer } from "../chars-buffer.js";
+ 
+ const CLOSING_STYLE_TAG_PATTERN = /<\/style\s*>/i;
+ 
+diff --git a/src/tokenizer/index.ts b/src/tokenizer/index.ts
+index 24605a5..6cc3c78 100644
+--- a/src/tokenizer/index.ts
++++ b/src/tokenizer/index.ts
+@@ -1 +1 @@
+-export { tokenize } from "./tokenize";
++export { tokenize } from "./tokenize.js";
+diff --git a/src/tokenizer/source-code.ts b/src/tokenizer/source-code.ts
+index 5f1b81d..daf6cc0 100644
+--- a/src/tokenizer/source-code.ts
++++ b/src/tokenizer/source-code.ts
+@@ -1,11 +1,11 @@
+-import { Range, TemplateInfo } from "../types";
+-import { SourceLocation } from "../types/source-location";
++import { Range, TemplateInfo } from "../types/index.js";
++import { SourceLocation } from "../types/source-location.js";
+ import {
+   computeLineStartOffsets,
+   getLineInfoFromOffsets,
+   getRange,
+-} from "../utils";
+-import { Chars, CharsType } from "./chars";
++} from "../utils/index.js";
++import { Chars, CharsType } from "./chars.js";
+ 
+ export class SourceCode {
+   private charsList: Chars[];
+diff --git a/src/tokenizer/tokenize.ts b/src/tokenizer/tokenize.ts
+index 27c88e3..c9f3af7 100644
+--- a/src/tokenizer/tokenize.ts
++++ b/src/tokenizer/tokenize.ts
+@@ -1,5 +1,5 @@
+-import { TokenizerContextTypes } from "../constants";
+-import { AnyToken, TemplateInfo, TokenAdapter, TokenizerState } from "../types";
++import { TokenizerContextTypes } from "../constants/index.js";
++import { AnyToken, TemplateInfo, TokenAdapter, TokenizerState } from "../types/index.js";
+ import {
+   attributeKey,
+   attributeValueBare,
+@@ -20,10 +20,10 @@ import {
+   attributeValueWrapped,
+   customTagRawContent,
+   noop,
+-} from "./handlers";
+-import { TokenizeHandler } from "../types";
+-import { SourceCode } from "./source-code";
+-import { CharsBuffer } from "./chars-buffer";
++} from "./handlers/index.js";
++import { TokenizeHandler } from "../types/index.js";
++import { SourceCode } from "./source-code.js";
++import { CharsBuffer } from "./chars-buffer.js";
+ 
+ const contextHandlers: Record<TokenizerContextTypes, TokenizeHandler> = {
+   [TokenizerContextTypes.Data]: data,
+diff --git a/src/tree-constructor/construct-tree.ts b/src/tree-constructor/construct-tree.ts
+index a3b10ce..78adfab 100644
+--- a/src/tree-constructor/construct-tree.ts
++++ b/src/tree-constructor/construct-tree.ts
+@@ -1,8 +1,8 @@
+-import { ConstructTreeContextTypes, NodeTypes } from "../constants";
+-import { ConstructTreeState, DocumentNode, Range, AnyToken } from "../types";
+-import { SourceLocation } from "../types/source-location";
+-import { first, last } from "../utils";
+-import { cloneLocation } from "../utils/clone-location";
++import { ConstructTreeContextTypes, NodeTypes } from "../constants/index.js";
++import { ConstructTreeState, DocumentNode, Range, AnyToken } from "../types/index.js";
++import { SourceLocation } from "../types/source-location.js";
++import { first, last } from "../utils/index.js";
++import { cloneLocation } from "../utils/clone-location.js";
+ import {
+   tagContent,
+   tag,
+@@ -16,7 +16,7 @@ import {
+   doctypeAttribute,
+   scriptTag,
+   styleTag,
+-} from "./handlers";
++} from "./handlers/index.js";
+ 
+ const contextHandlers = {
+   [ConstructTreeContextTypes.TagContent]: tagContent,
+diff --git a/src/tree-constructor/handlers/attribute-value.ts b/src/tree-constructor/handlers/attribute-value.ts
+index 85fbac0..f3a1d79 100644
+--- a/src/tree-constructor/handlers/attribute-value.ts
++++ b/src/tree-constructor/handlers/attribute-value.ts
+@@ -1,4 +1,4 @@
+-import { TokenTypes } from "../../constants";
++import { TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   AttributeValueNode,
+@@ -7,13 +7,13 @@ import {
+   ConstructTreeState,
+   ContextualTagNode,
+   Token,
+-} from "../../types";
++} from "../../types/index.js";
+ import {
+   cloneLocation,
+   cloneRange,
+   createNodeFrom,
+   updateNodeEnd,
+-} from "../../utils";
++} from "../../utils/index.js";
+ 
+ const VALUE_END_TOKENS = [
+   TokenTypes.OpenTagEnd,
+diff --git a/src/tree-constructor/handlers/attribute.ts b/src/tree-constructor/handlers/attribute.ts
+index 0201855..6191377 100644
+--- a/src/tree-constructor/handlers/attribute.ts
++++ b/src/tree-constructor/handlers/attribute.ts
+@@ -1,11 +1,11 @@
+-import { ConstructTreeContextTypes, TokenTypes } from "../../constants";
++import { ConstructTreeContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   AttributeKeyNode,
+   ConstructTreeState,
+   ContextualTagNode,
+-} from "../../types";
+-import { createNodeFrom } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom } from "../../utils/index.js";
+ 
+ const OPEN_TAG_END_TOKENS = [
+   TokenTypes.OpenTagEnd,
+diff --git a/src/tree-constructor/handlers/attributes.ts b/src/tree-constructor/handlers/attributes.ts
+index ca6742c..c1e7f2b 100644
+--- a/src/tree-constructor/handlers/attributes.ts
++++ b/src/tree-constructor/handlers/attributes.ts
+@@ -2,9 +2,9 @@ import {
+   ConstructTreeContextTypes,
+   NodeTypes,
+   TokenTypes,
+-} from "../../constants";
+-import { AnyToken, ConstructTreeState, ContextualTagNode } from "../../types";
+-import { cloneRange, cloneLocation, initAttributesIfNone } from "../../utils";
++} from "../../constants/index.js";
++import { AnyToken, ConstructTreeState, ContextualTagNode } from "../../types/index.js";
++import { cloneRange, cloneLocation, initAttributesIfNone } from "../../utils/index.js";
+ 
+ const ATTRIBUTE_START_TOKENS = [
+   TokenTypes.AttributeKey,
+diff --git a/src/tree-constructor/handlers/comment.ts b/src/tree-constructor/handlers/comment.ts
+index 2a46869..d63884f 100644
+--- a/src/tree-constructor/handlers/comment.ts
++++ b/src/tree-constructor/handlers/comment.ts
+@@ -1,4 +1,4 @@
+-import { TokenTypes } from "../../constants";
++import { TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   CommentContentNode,
+@@ -6,8 +6,8 @@ import {
+   CommentOpenNode,
+   ConstructTreeState,
+   ContextualCommentNode,
+-} from "../../types";
+-import { createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ function handleCommentOpen(
+   state: ConstructTreeState<ContextualCommentNode>,
+diff --git a/src/tree-constructor/handlers/doctype-attribute.ts b/src/tree-constructor/handlers/doctype-attribute.ts
+index 1e3c0b4..1815c00 100644
+--- a/src/tree-constructor/handlers/doctype-attribute.ts
++++ b/src/tree-constructor/handlers/doctype-attribute.ts
+@@ -1,4 +1,4 @@
+-import { TokenTypes } from "../../constants";
++import { TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   ConstructTreeState,
+@@ -7,8 +7,8 @@ import {
+   DoctypeAttributeWrapperEndNode,
+   DoctypeAttributeWrapperStartNode,
+   Token,
+-} from "../../types";
+-import { cloneRange, createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { cloneRange, createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ function getLastAttribute(state: ConstructTreeState<ContextualDoctypeNode>) {
+   const attributes = state.currentNode.attributes;
+diff --git a/src/tree-constructor/handlers/doctype-attributes.ts b/src/tree-constructor/handlers/doctype-attributes.ts
+index 806ed55..7771a5c 100644
+--- a/src/tree-constructor/handlers/doctype-attributes.ts
++++ b/src/tree-constructor/handlers/doctype-attributes.ts
+@@ -2,13 +2,13 @@ import {
+   ConstructTreeContextTypes,
+   NodeTypes,
+   TokenTypes,
+-} from "../../constants";
++} from "../../constants/index.js";
+ import {
+   AnyToken,
+   ConstructTreeState,
+   ContextualDoctypeNode,
+-} from "../../types";
+-import { cloneRange, cloneLocation, initAttributesIfNone } from "../../utils";
++} from "../../types/index.js";
++import { cloneRange, cloneLocation, initAttributesIfNone } from "../../utils/index.js";
+ 
+ const ATTRIBUTE_START_TOKENS = [
+   TokenTypes.DoctypeAttributeWrapperStart,
+diff --git a/src/tree-constructor/handlers/doctype.ts b/src/tree-constructor/handlers/doctype.ts
+index 6d35644..20aefbb 100644
+--- a/src/tree-constructor/handlers/doctype.ts
++++ b/src/tree-constructor/handlers/doctype.ts
+@@ -1,12 +1,12 @@
+-import { ConstructTreeContextTypes, TokenTypes } from "../../constants";
++import { ConstructTreeContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   ConstructTreeState,
+   ContextualDoctypeNode,
+   DoctypeCloseNode,
+   DoctypeOpenNode,
+-} from "../../types";
+-import { createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ const ATTRIBUTES_START_TOKENS = [
+   TokenTypes.DoctypeAttributeWrapperStart,
+diff --git a/src/tree-constructor/handlers/index.ts b/src/tree-constructor/handlers/index.ts
+index 218b55b..91bca94 100644
+--- a/src/tree-constructor/handlers/index.ts
++++ b/src/tree-constructor/handlers/index.ts
+@@ -1,12 +1,12 @@
+-export * as attributeValue from "./attribute-value";
+-export * as attributes from "./attributes";
+-export * as attribute from "./attribute";
+-export * as comment from "./comment";
+-export * as doctypeAttribute from "./doctype-attribute";
+-export * as doctypeAttributes from "./doctype-attributes";
+-export * as doctype from "./doctype";
+-export * as scriptTag from "./script-tag";
+-export * as styleTag from "./style-tag";
+-export * as tagContent from "./tag-content";
+-export * as tagName from "./tag-name";
+-export * as tag from "./tag";
++export * as attributeValue from "./attribute-value.js";
++export * as attributes from "./attributes.js";
++export * as attribute from "./attribute.js";
++export * as comment from "./comment.js";
++export * as doctypeAttribute from "./doctype-attribute.js";
++export * as doctypeAttributes from "./doctype-attributes.js";
++export * as doctype from "./doctype.js";
++export * as scriptTag from "./script-tag.js";
++export * as styleTag from "./style-tag.js";
++export * as tagContent from "./tag-content.js";
++export * as tagName from "./tag-name.js";
++export * as tag from "./tag.js";
+diff --git a/src/tree-constructor/handlers/script-tag.ts b/src/tree-constructor/handlers/script-tag.ts
+index f2cba90..726ccff 100644
+--- a/src/tree-constructor/handlers/script-tag.ts
++++ b/src/tree-constructor/handlers/script-tag.ts
+@@ -1,4 +1,4 @@
+-import { ConstructTreeContextTypes, TokenTypes } from "../../constants";
++import { ConstructTreeContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   CloseScriptTagNode,
+@@ -7,8 +7,8 @@ import {
+   OpenScriptTagEndNode,
+   OpenScriptTagStartNode,
+   ScriptTagContentNode,
+-} from "../../types";
+-import { createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ const ATTRIBUTE_START_TOKENS = [
+   TokenTypes.AttributeKey,
+diff --git a/src/tree-constructor/handlers/style-tag.ts b/src/tree-constructor/handlers/style-tag.ts
+index 3f41717..4a53e08 100644
+--- a/src/tree-constructor/handlers/style-tag.ts
++++ b/src/tree-constructor/handlers/style-tag.ts
+@@ -1,4 +1,4 @@
+-import { ConstructTreeContextTypes, TokenTypes } from "../../constants";
++import { ConstructTreeContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   CloseStyleTagNode,
+@@ -7,8 +7,8 @@ import {
+   OpenStyleTagEndNode,
+   OpenStyleTagStartNode,
+   StyleTagContentNode,
+-} from "../../types";
+-import { createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ const ATTRIBUTE_START_TOKENS = [
+   TokenTypes.AttributeKey,
+diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
+index 409a7ef..c753d8a 100644
+--- a/src/tree-constructor/handlers/tag-content.ts
++++ b/src/tree-constructor/handlers/tag-content.ts
+@@ -2,7 +2,7 @@ import {
+   ConstructTreeContextTypes,
+   NodeTypes,
+   TokenTypes,
+-} from "../../constants";
++} from "../../constants/index.js";
+ import {
+   ConstructTreeState,
+   AnyToken,
+@@ -16,14 +16,14 @@ import {
+   TextNode,
+   CompositeToken,
+   RawContentNode,
+-} from "../../types";
++} from "../../types/index.js";
+ import {
+   cloneRange,
+   parseCloseTagName,
+   createNodeFrom,
+   cloneLocation,
+   initChildrenIfNone,
+-} from "../../utils";
++} from "../../utils/index.js";
+ 
+ function handleOpenTagStart(
+   state: ConstructTreeState<ContextualTagNode>,
+diff --git a/src/tree-constructor/handlers/tag-name.ts b/src/tree-constructor/handlers/tag-name.ts
+index 2a7b102..de36bac 100644
+--- a/src/tree-constructor/handlers/tag-name.ts
++++ b/src/tree-constructor/handlers/tag-name.ts
+@@ -1,11 +1,11 @@
+-import { TokenTypes } from "../../constants";
++import { TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   ConstructTreeState,
+   Token,
+   ContextualTagNode,
+-} from "../../types";
+-import { parseOpenTagName } from "../../utils";
++} from "../../types/index.js";
++import { parseOpenTagName } from "../../utils/index.js";
+ 
+ function handleTagOpenStart(
+   state: ConstructTreeState<ContextualTagNode>,
+diff --git a/src/tree-constructor/handlers/tag.ts b/src/tree-constructor/handlers/tag.ts
+index 437f373..91ceb21 100644
+--- a/src/tree-constructor/handlers/tag.ts
++++ b/src/tree-constructor/handlers/tag.ts
+@@ -1,4 +1,4 @@
+-import { ConstructTreeContextTypes, TokenTypes } from "../../constants";
++import { ConstructTreeContextTypes, TokenTypes } from "../../constants/index.js";
+ import {
+   AnyToken,
+   CloseTagNode,
+@@ -7,8 +7,8 @@ import {
+   OpenTagEndNode,
+   OpenTagStartNode,
+   Token,
+-} from "../../types";
+-import { createNodeFrom, updateNodeEnd } from "../../utils";
++} from "../../types/index.js";
++import { createNodeFrom, updateNodeEnd } from "../../utils/index.js";
+ 
+ const ATTRIBUTE_START_TOKENS = [
+   TokenTypes.AttributeKey,
+diff --git a/src/tree-constructor/index.ts b/src/tree-constructor/index.ts
+index d526734..ed925b4 100644
+--- a/src/tree-constructor/index.ts
++++ b/src/tree-constructor/index.ts
+@@ -1 +1 @@
+-export { constructTree } from "./construct-tree";
++export { constructTree } from "./construct-tree.js";
+diff --git a/src/types/base-node.ts b/src/types/base-node.ts
+index c6697f2..b2b64de 100644
+--- a/src/types/base-node.ts
++++ b/src/types/base-node.ts
+@@ -1,6 +1,6 @@
+-import { NodeTypes } from "../constants";
+-import { SourceLocation } from "./source-location";
+-import { Range } from "./range";
++import { NodeTypes } from "../constants/index.js";
++import { SourceLocation } from "./source-location.js";
++import { Range } from "./range.js";
+ 
+ export interface BaseNode {
+   type: NodeTypes;
+diff --git a/src/types/construct-tree-state.ts b/src/types/construct-tree-state.ts
+index 320257e..2f30d56 100644
+--- a/src/types/construct-tree-state.ts
++++ b/src/types/construct-tree-state.ts
+@@ -1,6 +1,6 @@
+-import { ConstructTreeContextTypes } from "../constants";
+-import { DocumentNode } from "./node";
+-import { AnyContextualNode } from "./contextual-node";
++import { ConstructTreeContextTypes } from "../constants/index.js";
++import { DocumentNode } from "./node.js";
++import { AnyContextualNode } from "./contextual-node.js";
+ 
+ export type ConstructTreeState<N extends AnyContextualNode> = {
+   caretPosition: number;
+diff --git a/src/types/contextual-node.ts b/src/types/contextual-node.ts
+index 8dd9c65..7cf1409 100644
+--- a/src/types/contextual-node.ts
++++ b/src/types/contextual-node.ts
+@@ -7,7 +7,7 @@ import {
+   DocumentNode,
+   AnyNode,
+   AttributeNode,
+-} from "./node";
++} from "./node.js";
+ 
+ type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+ 
+diff --git a/src/types/index.ts b/src/types/index.ts
+index 89e6c33..ce1a767 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -1,12 +1,12 @@
+-export * from "./token";
+-export * from "./tokenizer-state";
+-export * from "./tokenizer-context-handler";
+-export * from "./construct-tree-state";
+-export * from "./position";
+-export * from "./node";
+-export * from "./range";
+-export * from "./contextual-node";
+-export * from "./base-node";
+-export * from "./parse-result";
+-export * from "./token-adapter";
+-export * from "./template";
++export * from "./token.js";
++export * from "./tokenizer-state.js";
++export * from "./tokenizer-context-handler.js";
++export * from "./construct-tree-state.js";
++export * from "./position.js";
++export * from "./node.js";
++export * from "./range.js";
++export * from "./contextual-node.js";
++export * from "./base-node.js";
++export * from "./parse-result.js";
++export * from "./token-adapter.js";
++export * from "./template.js";
+diff --git a/src/types/node.ts b/src/types/node.ts
+index 7f99c95..d17281e 100644
+--- a/src/types/node.ts
++++ b/src/types/node.ts
+@@ -1,11 +1,11 @@
+-import { NodeTypes } from "../constants";
++import { NodeTypes } from "../constants/index.js";
+ import {
+   SimpleNode,
+   CompositeNode,
+   PartNodeBase,
+   TemplateNodeBase,
+-} from "./simple-node";
+-import { BaseNode } from "./base-node";
++} from "./simple-node.js";
++import { BaseNode } from "./base-node.js";
+ 
+ export interface DocumentNode extends BaseNode {
+   type: NodeTypes.Document;
+diff --git a/src/types/parse-result.ts b/src/types/parse-result.ts
+index 06658ea..72505cd 100644
+--- a/src/types/parse-result.ts
++++ b/src/types/parse-result.ts
+@@ -1,5 +1,5 @@
+-import { DocumentNode } from "./node";
+-import { AnyToken } from "./token";
++import { DocumentNode } from "./node.js";
++import { AnyToken } from "./token.js";
+ 
+ export type ParseResult = {
+   ast: DocumentNode;
+diff --git a/src/types/parse.ts b/src/types/parse.ts
+index 8a71546..49f50a3 100644
+--- a/src/types/parse.ts
++++ b/src/types/parse.ts
+@@ -1,7 +1,7 @@
+-import { DocumentNode } from "./node";
+-import { TokenAdapter } from "./token-adapter";
+-import { AnyToken } from "./token";
+-import { TemplateInfo } from "./template";
++import { DocumentNode } from "./node.js";
++import { TokenAdapter } from "./token-adapter.js";
++import { AnyToken } from "./token.js";
++import { TemplateInfo } from "./template.js";
+ 
+ export type ParseResult = {
+   ast: DocumentNode;
+diff --git a/src/types/simple-node.ts b/src/types/simple-node.ts
+index 9a7fd8b..f1dc87c 100644
+--- a/src/types/simple-node.ts
++++ b/src/types/simple-node.ts
+@@ -1,5 +1,5 @@
+-import { NodeTypes } from "../constants";
+-import { BaseNode } from "./base-node";
++import { NodeTypes } from "../constants/index.js";
++import { BaseNode } from "./base-node.js";
+ 
+ export interface SimpleNode<T extends NodeTypes> extends BaseNode {
+   type: T;
+diff --git a/src/types/source-location.ts b/src/types/source-location.ts
+index 5d5280f..48ac4c6 100644
+--- a/src/types/source-location.ts
++++ b/src/types/source-location.ts
+@@ -1,4 +1,4 @@
+-import { Position } from "./position";
++import { Position } from "./position.js";
+ 
+ export interface SourceLocation {
+   start: Position;
+diff --git a/src/types/template.ts b/src/types/template.ts
+index 9d5065a..a1c4375 100644
+--- a/src/types/template.ts
++++ b/src/types/template.ts
+@@ -1,4 +1,4 @@
+-import { Range } from "./range";
++import { Range } from "./range.js";
+ 
+ export type TemplateInfo =
+   | Range
+diff --git a/src/types/token-adapter.ts b/src/types/token-adapter.ts
+index 3345eae..bbda3f2 100644
+--- a/src/types/token-adapter.ts
++++ b/src/types/token-adapter.ts
+@@ -1,6 +1,6 @@
+-import type { SourceLocation } from "./source-location";
+-import type { Range } from "./range";
+-import type { BaseToken } from "./token";
++import type { SourceLocation } from "./source-location.js";
++import type { Range } from "./range.js";
++import type { BaseToken } from "./token.js";
+ 
+ export interface TokenAdapter {
+   finalizeRange(token: Omit<BaseToken, "loc">): Range;
+diff --git a/src/types/token.ts b/src/types/token.ts
+index b712a8a..b2e303c 100644
+--- a/src/types/token.ts
++++ b/src/types/token.ts
+@@ -1,6 +1,6 @@
+-import { TokenTypes } from "../constants";
+-import { SourceLocation } from "./source-location";
+-import { Range } from "./range";
++import { TokenTypes } from "../constants/index.js";
++import { SourceLocation } from "./source-location.js";
++import { Range } from "./range.js";
+ 
+ export interface BaseToken {
+   value: string;
+diff --git a/src/types/tokenizer-context-handler.ts b/src/types/tokenizer-context-handler.ts
+index b860be2..540b9bd 100644
+--- a/src/types/tokenizer-context-handler.ts
++++ b/src/types/tokenizer-context-handler.ts
+@@ -1,5 +1,5 @@
+-import { CharsBuffer } from "../tokenizer/chars-buffer";
+-import { TokenizerState } from "./tokenizer-state";
++import { CharsBuffer } from "../tokenizer/chars-buffer.js";
++import { TokenizerState } from "./tokenizer-state.js";
+ 
+ export interface TokenizeHandler {
+   parse(chars: CharsBuffer, state: TokenizerState): void;
+diff --git a/src/types/tokenizer-state.ts b/src/types/tokenizer-state.ts
+index ded3b82..d4d8e8a 100644
+--- a/src/types/tokenizer-state.ts
++++ b/src/types/tokenizer-state.ts
+@@ -1,9 +1,9 @@
+-import { TokenizerContextTypes } from "../constants";
+-import { CharsBuffer } from "../tokenizer/chars-buffer";
+-import { SourceCode } from "../tokenizer/source-code";
+-import { TemplateInfo } from "./template";
+-import { AnyToken } from "./token";
+-import { TokenAdapter } from "./token-adapter";
++import { TokenizerContextTypes } from "../constants/index.js";
++import { CharsBuffer } from "../tokenizer/chars-buffer.js";
++import { SourceCode } from "../tokenizer/source-code.js";
++import { TemplateInfo } from "./template.js";
++import { AnyToken } from "./token.js";
++import { TokenAdapter } from "./token-adapter.js";
+ 
+ type ContextParams = {
+   [TokenizerContextTypes.AttributeValueWrapped]?: {
+diff --git a/src/utils/calculate-token-characters-range.ts b/src/utils/calculate-token-characters-range.ts
+index 401eb37..010190c 100644
+--- a/src/utils/calculate-token-characters-range.ts
++++ b/src/utils/calculate-token-characters-range.ts
+@@ -1,4 +1,4 @@
+-import { TokenizerState, Range } from "../types";
++import { TokenizerState, Range } from "../types/index.js";
+ 
+ export function calculateTokenCharactersRange(
+   state: TokenizerState,
+diff --git a/src/utils/calculate-token-location.ts b/src/utils/calculate-token-location.ts
+index 4bb12dd..313c89b 100644
+--- a/src/utils/calculate-token-location.ts
++++ b/src/utils/calculate-token-location.ts
+@@ -1,5 +1,5 @@
+-import { Range } from "../types";
+-import { getLineInfo } from "./get-line-info";
++import { Range } from "../types/index.js";
++import { getLineInfo } from "./get-line-info.js";
+ 
+ export function calculateTokenLocation(source: string, range: Range) {
+   return {
+diff --git a/src/utils/calculate-token-position.ts b/src/utils/calculate-token-position.ts
+index f6f10b3..b27b2ac 100644
+--- a/src/utils/calculate-token-position.ts
++++ b/src/utils/calculate-token-position.ts
+@@ -1,5 +1,5 @@
+-import { TokenizerState } from "../types";
+-import { calculateTokenCharactersRange } from "./calculate-token-characters-range";
++import { TokenizerState } from "../types/index.js";
++import { calculateTokenCharactersRange } from "./calculate-token-characters-range.js";
+ 
+ export function calculateTokenPosition(
+   state: TokenizerState,
+diff --git a/src/utils/clear-parent.ts b/src/utils/clear-parent.ts
+index 987d61e..a0fe8ac 100644
+--- a/src/utils/clear-parent.ts
++++ b/src/utils/clear-parent.ts
+@@ -1,4 +1,4 @@
+-import { ContextualDocumentNode, DocumentNode } from "../types";
++import { ContextualDocumentNode, DocumentNode } from "../types/index.js";
+ 
+ export function clearParent(ast: ContextualDocumentNode): DocumentNode {
+   const cleanAst = ast;
+diff --git a/src/utils/clone-location.ts b/src/utils/clone-location.ts
+index 42fee9b..781b7a9 100644
+--- a/src/utils/clone-location.ts
++++ b/src/utils/clone-location.ts
+@@ -1,4 +1,4 @@
+-import { SourceLocation } from "../types/source-location";
++import { SourceLocation } from "../types/source-location.js";
+ 
+ export function cloneLocation(loc: SourceLocation): SourceLocation {
+   return {
+diff --git a/src/utils/clone-range.ts b/src/utils/clone-range.ts
+index 26562df..8744a2c 100644
+--- a/src/utils/clone-range.ts
++++ b/src/utils/clone-range.ts
+@@ -1,4 +1,4 @@
+-import { Range } from "../types/range";
++import { Range } from "../types/range.js";
+ 
+ export function cloneRange(range: Range): Range {
+   return [range[0], range[1]];
+diff --git a/src/utils/create-node-from.ts b/src/utils/create-node-from.ts
+index a61b823..41a4504 100644
+--- a/src/utils/create-node-from.ts
++++ b/src/utils/create-node-from.ts
+@@ -1,6 +1,6 @@
+-import { AnyToken } from "../types";
+-import { cloneLocation } from "./clone-location";
+-import { cloneRange } from "./clone-range";
++import { AnyToken } from "../types/index.js";
++import { cloneLocation } from "./clone-location.js";
++import { cloneRange } from "./clone-range.js";
+ 
+ export function createNodeFrom<T extends AnyToken>(token: T): unknown {
+   const loc = cloneLocation(token.loc);
+diff --git a/src/utils/index.ts b/src/utils/index.ts
+index 3529556..0d30281 100644
+--- a/src/utils/index.ts
++++ b/src/utils/index.ts
+@@ -1,17 +1,17 @@
+-export * from "./calculate-token-characters-range";
+-export * from "./is-whitespace";
+-export * from "./parse-open-tag-name";
+-export * from "./parse-close-tag-name";
+-export * from "./clear-parent";
+-export * from "./calculate-token-location";
+-export * from "./calculate-token-position";
+-export * from "./last";
+-export * from "./clone-range";
+-export * from "./create-node-from";
+-export * from "./update-node-end";
+-export * from "./get-line-info";
+-export * from "./first";
+-export * from "./clone-location";
+-export * from "./init-if-none";
+-export * from "./templates";
+-export * from "./raise";
++export * from "./calculate-token-characters-range.js";
++export * from "./is-whitespace.js";
++export * from "./parse-open-tag-name.js";
++export * from "./parse-close-tag-name.js";
++export * from "./clear-parent.js";
++export * from "./calculate-token-location.js";
++export * from "./calculate-token-position.js";
++export * from "./last.js";
++export * from "./clone-range.js";
++export * from "./create-node-from.js";
++export * from "./update-node-end.js";
++export * from "./get-line-info.js";
++export * from "./first.js";
++export * from "./clone-location.js";
++export * from "./init-if-none.js";
++export * from "./templates.js";
++export * from "./raise.js";
+diff --git a/src/utils/parse-close-tag-name.ts b/src/utils/parse-close-tag-name.ts
+index 45f0ddb..a0442c8 100644
+--- a/src/utils/parse-close-tag-name.ts
++++ b/src/utils/parse-close-tag-name.ts
+@@ -1,4 +1,4 @@
+-import { CLOSE_TAG_NAME_PATTERN } from "../constants";
++import { CLOSE_TAG_NAME_PATTERN } from "../constants/index.js";
+ 
+ export function parseCloseTagName(closeTagTokenContent: string): string {
+   const match = closeTagTokenContent.match(CLOSE_TAG_NAME_PATTERN);
+diff --git a/src/utils/parse-open-tag-name.ts b/src/utils/parse-open-tag-name.ts
+index 931d961..d75c44e 100644
+--- a/src/utils/parse-open-tag-name.ts
++++ b/src/utils/parse-open-tag-name.ts
+@@ -1,4 +1,4 @@
+-import { OPEN_TAG_NAME_PATTERN } from "../constants";
++import { OPEN_TAG_NAME_PATTERN } from "../constants/index.js";
+ 
+ export function parseOpenTagName(openTagStartTokenContent: string) {
+   const match = openTagStartTokenContent.match(OPEN_TAG_NAME_PATTERN);
+diff --git a/src/utils/raise.ts b/src/utils/raise.ts
+index 2effbcb..126217b 100644
+--- a/src/utils/raise.ts
++++ b/src/utils/raise.ts
+@@ -1,5 +1,5 @@
+-import { Range } from "../types";
+-import { SourceLocation } from "../types/source-location";
++import { Range } from "../types/index.js";
++import { SourceLocation } from "../types/source-location.js";
+ 
+ export function raise(
+   position: {
+diff --git a/src/utils/templates.ts b/src/utils/templates.ts
+index d8c26e9..db0b247 100644
+--- a/src/utils/templates.ts
++++ b/src/utils/templates.ts
+@@ -1,7 +1,7 @@
+-import { TemplateInfo, Token } from "../types";
+-import { TokenTypes } from "../constants";
+-import { PartToken, TemplateToken, TokenizerState } from "../types";
+-import { CharsType } from "../tokenizer/chars";
++import { TemplateInfo, Token } from "../types/index.js";
++import { TokenTypes } from "../constants/index.js";
++import { PartToken, TemplateToken, TokenizerState } from "../types/index.js";
++import { CharsType } from "../tokenizer/chars.js";
+ 
+ export const getRange = (info: TemplateInfo) => {
+   return Array.isArray(info) ? info : [info.open[0], info.close[1]];
+diff --git a/src/utils/update-node-end.ts b/src/utils/update-node-end.ts
+index bb39b91..9a01b2c 100644
+--- a/src/utils/update-node-end.ts
++++ b/src/utils/update-node-end.ts
+@@ -1,4 +1,4 @@
+-import { AnyContextualNode, AnyNode, AnyToken } from "../types";
++import { AnyContextualNode, AnyNode, AnyToken } from "../types/index.js";
+ 
+ export function updateNodeEnd(
+   node: AnyNode | AnyContextualNode,

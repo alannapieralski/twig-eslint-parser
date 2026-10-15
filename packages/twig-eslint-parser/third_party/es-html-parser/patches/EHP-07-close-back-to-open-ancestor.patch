@@ -1,0 +1,103 @@
+Description: Let a close tag close back to a matching open ancestor
+ A close tag that did not match the current element was dropped, so one
+ element left open, such as Drupal's never-closed "<head-placeholder>",
+ swallowed every later close tag and nested the rest of the document inside
+ it. Following HTML's "any other end tag" step, a close tag that matches an
+ open ancestor now leaves the elements in between unclosed and closes the
+ ancestor. A close tag that matches nothing open is still dropped.
+Author: Numiko
+Origin: vendor
+Forwarded: no
+Test: test/parser/parse-for-eslint.test.ts ("Twig as part of the markup structure"); upstream snapshot "Custom tag raw content" updated: </markdown> now closes <markdown>
+Last-Update: 2026-10-14
+---
+diff --git a/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json b/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
+index 2961559..8d83be7 100644
+--- a/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
++++ b/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
+@@ -9,7 +9,7 @@
+       "type": "Tag",
+       "range": [
+         0,
+-        19
++        271
+       ],
+       "loc": {
+         "start": {
+@@ -17,8 +17,8 @@
+           "column": 0
+         },
+         "end": {
+-          "line": 1,
+-          "column": 19
++          "line": 17,
++          "column": 11
+         }
+       },
+       "attributes": [
+@@ -249,7 +249,25 @@
+           19
+         ]
+       },
+-      "selfClosing": false
++      "selfClosing": false,
++      "close": {
++        "type": "CloseTag",
++        "value": "</markdown>",
++        "loc": {
++          "start": {
++            "line": 17,
++            "column": 0
++          },
++          "end": {
++            "line": 17,
++            "column": 11
++          }
++        },
++        "range": [
++          260,
++          271
++        ]
++      }
+     }
+   ],
+   "loc": {
+diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
+index 45a8a4f..c83d6a6 100644
+--- a/src/tree-constructor/handlers/tag-content.ts
++++ b/src/tree-constructor/handlers/tag-content.ts
+@@ -52,6 +52,19 @@ function handleOpenTagStart(
+   return state;
+ }
+ 
++function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
++  for (
++    let ancestor = node as ContextualTagNode | undefined;
++    ancestor?.type === NodeTypes.Tag;
++    ancestor = ancestor.parentRef as ContextualTagNode | undefined
++  ) {
++    if (tagNameKey(ancestor.name ?? "") === nameKey) {
++      return true;
++    }
++  }
++  return false;
++}
++
+ function handleCloseTag(
+   state: ConstructTreeState<ContextualTagNode>,
+   token: AnyToken
+@@ -59,8 +72,13 @@ function handleCloseTag(
+   const closeTagName = tagNameKey(closeTagNameOf(token));
+ 
+   if (closeTagName !== tagNameKey(state.currentNode.name ?? "")) {
+-    state.caretPosition++;
++    if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
++      state.caretPosition++;
++      return state;
++    }
+ 
++    state.currentNode = state.currentNode.parentRef as ContextualTagNode;
++    state.currentContext = state.currentContext.parentRef.parentRef;
+     return state;
+   }
+ 

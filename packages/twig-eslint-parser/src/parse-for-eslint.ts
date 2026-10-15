@@ -2,7 +2,7 @@ import type { Linter } from 'eslint';
 import { unionWith } from 'eslint-visitor-keys';
 import { omitInterpolatedAttributes, type OmittedAttribute } from './attributes.js';
 import { parseJavaScriptAt, type EstreeNode } from './estree.js';
-import { parseMarkup, type MarkupParserOptions } from './markup.js';
+import { parseMarkup, type MarkupParserOptions } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
 import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockKind, type TwigBlockSummary } from './twig/blocks.js';
@@ -65,12 +65,12 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
   const markup = parseMarkup(code, blocks, options);
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, ...twigServices } = convertTwigBlocks(blocks, createOffsetLocator(code));
-  const visitorKeys = unionWith(markup.visitorKeys ?? {});
+  const visitorKeys = unionWith(markup.visitorKeys);
+  const ast = { ...markup.ast, twigBody: statements } as unknown as TwigParseResult['ast'];
 
   return {
-    ...markup,
-    ast: { ...markup.ast, twigBody: statements },
+    ast,
     visitorKeys: { ...visitorKeys, Program: [...(visitorKeys['Program'] ?? []), 'twigBody'] },
-    services: { ...markup.services, twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
+    services: { twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
   };
 }

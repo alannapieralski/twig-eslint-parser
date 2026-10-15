@@ -1,3 +1,4 @@
+import { isClosedInAnotherBranch } from './branches.js';
 import { TokenizerMode, type Token } from 'parse5';
 import { SAXParser, type EndTag, type StartTag } from 'parse5-sax-parser';
 import type { Golden } from '../lexer/parity.js';
@@ -34,12 +35,19 @@ type OracleEvent =
   | { readonly kind: 'end'; readonly tag: OracleEndTag }
   | { readonly kind: 'text' };
 type EndTagKind = 'closes-current' | 'closes-after-implied-ends' | 'unmatched';
-type OracleDocument = { readonly startTags: readonly OracleStartTag[]; readonly endTags: readonly OracleEndTag[]; readonly endTagKinds: ReadonlyMap<number, EndTagKind>; readonly rawTextRegions: readonly Range[] };
+type OracleDocument = {
+  readonly startTags: readonly OracleStartTag[];
+  readonly endTags: readonly OracleEndTag[];
+  readonly endTagKinds: ReadonlyMap<number, EndTagKind>;
+  readonly parentStarts: ReadonlyMap<number, number | undefined>;
+  readonly rawTextRegions: readonly Range[];
+};
 
 type OurAttribute = { readonly key: Range; readonly value: Range | undefined };
-type OurTag = { readonly name: string; readonly openStart: Range; readonly openEnd: Range; readonly close: Range | undefined; readonly attributes: readonly OurAttribute[] };
+type OurTag = { readonly name: string; readonly range: Range; readonly parentStart: number | undefined; readonly openStart: Range; readonly openEnd: Range; readonly close: Range | undefined; readonly attributes: readonly OurAttribute[] };
 
 type Report = (check: string, range: Range, message: string) => void;
+type OpenElement = { readonly pairingName: string; readonly start: number };
 type SaxLocation = { readonly startOffset: number; readonly endOffset: number; readonly attrs?: Record<string, { readonly startOffset: number }> };
 
 const tagModes = new Set<Mode>(['tag-name', 'before-attribute-name', 'attribute-name', 'after-attribute-name', 'before-attribute-value', 'attribute-value-unquoted', 'after-attribute-value', 'self-closing']);
@@ -52,6 +60,7 @@ const specialElements = new Set(`address applet area article aside base basefont
   keygen li link listing main marquee menu meta nav noembed noframes noscript object ol p param plaintext pre script search section select source
   style summary table tbody td template textarea tfoot th thead title tr track ul wbr xmp`.split(/\s+/));
 const endTagChecks: Record<EndTagKind, string> = { 'closes-current': 'end tags', 'closes-after-implied-ends': 'implied end tags', 'unmatched': 'unmatched end tags' };
+export const branchPairedEndTagCheck = 'html-oracle: element opened and closed in different Twig branches';
 const foreignRoots = new Set(['svg', 'math']);
 const knownElements = new Set(`a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup
   data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr
@@ -196,6 +205,10 @@ function isKnownElementName(name: string): boolean {
   return knownElements.has(name) || customElementName.test(name);
 }
 
+function isAttributesPrint(printText: string): boolean {
+  return attributesObjectPrint.test(printText);
+}
+
 function isAttributesAfterTagName(state: ScanState, printText: string): boolean {
   return !state.isEndTag && (isKnownElementName(state.tagName) || attributesObjectPrint.test(printText));
 }
@@ -207,9 +220,10 @@ function startsAttributeName(character: string | undefined): boolean {
 function fillerFor(state: ScanState, range: TwigRange, source: string): Filler {
   if (range.kind !== 'print') return 'blank';
   switch (state.mode) {
+    case 'attribute-name':
+      return isAttributesPrint(source.slice(range.start, range.end)) ? 'blank' : 'name';
     case 'tag-open':
     case 'end-tag-open':
-    case 'attribute-name':
     case 'before-attribute-value':
     case 'attribute-value-double':
     case 'attribute-value-single':
@@ -221,7 +235,7 @@ function fillerFor(state: ScanState, range: TwigRange, source: string): Filler {
     case 'after-attribute-name':
     case 'after-attribute-value':
     case 'self-closing':
-      return startsAttributeName(source[range.end]) ? 'name' : 'blank';
+      return startsAttributeName(source[range.end]) && !isAttributesPrint(source.slice(range.start, range.end)) ? 'name' : 'blank';
     default:
       return 'blank';
   }
@@ -420,31 +434,35 @@ function findRawTextRegions(events: readonly OracleEvent[], sourceLength: number
   });
 }
 
-function indexOfOpenElement(openNames: readonly string[], pairingName: string): number {
-  for (let index = openNames.length - 1; index >= 0; index -= 1) {
-    const name = openNames[index] ?? '';
+function indexOfOpenElement(openElements: readonly OpenElement[], pairingName: string): number {
+  for (let index = openElements.length - 1; index >= 0; index -= 1) {
+    const name = openElements[index]?.pairingName ?? '';
     if (name === pairingName) return index;
     if (specialElements.has(name)) return -1;
   }
   return -1;
 }
 
-// Classifies each end tag by how a browser-like open-element stack would treat it.
-function classifyEndTags(events: readonly OracleEvent[]): Map<number, EndTagKind> {
-  const kinds = new Map<number, EndTagKind>();
-  const openNames: string[] = [];
+// Walks a browser-like open-element stack, recording each end tag's kind and each start tag's parent.
+function walkOpenElements(events: readonly OracleEvent[]): { readonly endTagKinds: Map<number, EndTagKind>; readonly parentStarts: Map<number, number | undefined> } {
+  const endTagKinds = new Map<number, EndTagKind>();
+  const parentStarts = new Map<number, number | undefined>();
+  const openElements: OpenElement[] = [];
   for (const event of events) {
-    if (event.kind === 'start' && !event.selfClosing && !voidElements.has(event.tag.name)) openNames.push(event.tag.pairingName);
+    if (event.kind === 'start') {
+      parentStarts.set(event.tag.range[0], openElements.at(-1)?.start);
+      if (!event.selfClosing && !voidElements.has(event.tag.name)) openElements.push({ pairingName: event.tag.pairingName, start: event.tag.range[0] });
+    }
     if (event.kind !== 'end') continue;
-    const openIndex = indexOfOpenElement(openNames, event.tag.pairingName);
+    const openIndex = indexOfOpenElement(openElements, event.tag.pairingName);
     if (openIndex === -1) {
-      kinds.set(event.tag.range[0], 'unmatched');
+      endTagKinds.set(event.tag.range[0], 'unmatched');
       continue;
     }
-    kinds.set(event.tag.range[0], openIndex === openNames.length - 1 ? 'closes-current' : 'closes-after-implied-ends');
-    openNames.length = openIndex;
+    endTagKinds.set(event.tag.range[0], openIndex === openElements.length - 1 ? 'closes-current' : 'closes-after-implied-ends');
+    openElements.length = openIndex;
   }
-  return kinds;
+  return { endTagKinds, parentStarts };
 }
 
 function readOracleDocument(source: string, masked: string): OracleDocument {
@@ -452,7 +470,7 @@ function readOracleDocument(source: string, masked: string): OracleDocument {
   return {
     startTags: events.flatMap((event) => (event.kind === 'start' ? [event.tag] : [])),
     endTags: events.flatMap((event) => (event.kind === 'end' ? [event.tag] : [])),
-    endTagKinds: classifyEndTags(events),
+    ...walkOpenElements(events),
     rawTextRegions: findRawTextRegions(events, masked.length),
   };
 }
@@ -471,10 +489,12 @@ function readOptionalRange(value: unknown, description: string): Range | undefin
   return value === undefined || value === null ? undefined : readRange(value, description);
 }
 
-function readOurTag(node: Record<string, unknown>): OurTag {
+function readOurTag(node: Record<string, unknown>, parentStart: number | undefined): OurTag {
   const attributes = Array.isArray(node['attributes']) ? node['attributes'] : [];
   return {
     name: typeof node['name'] === 'string' ? node['name'] : String(node['type']).replace(/Tag$/, '').toLowerCase(),
+    range: readRange(node, 'tag'),
+    parentStart,
     openStart: readRange(node['openStart'], 'openStart'),
     openEnd: readRange(node['openEnd'], 'openEnd'),
     close: readOptionalRange(node['close'], 'close'),
@@ -488,19 +508,21 @@ function readOurTag(node: Record<string, unknown>): OurTag {
 function collectOurTags(ast: unknown): OurTag[] {
   const tags: OurTag[] = [];
   const seen = new Set<object>();
-  const visit = (value: unknown): void => {
+  const visit = (value: unknown, parentStart: number | undefined): void => {
     if (!isRecord(value) || seen.has(value)) return;
     seen.add(value);
     if (Array.isArray(value)) {
-      value.forEach(visit);
+      value.forEach((child) => visit(child, parentStart));
       return;
     }
-    if (value['type'] === 'Tag' || value['type'] === 'ScriptTag' || value['type'] === 'StyleTag') tags.push(readOurTag(value));
+    const isTag = value['type'] === 'Tag' || value['type'] === 'ScriptTag' || value['type'] === 'StyleTag';
+    const tag = isTag ? readOurTag(value, parentStart) : undefined;
+    if (tag) tags.push(tag);
     for (const [key, child] of Object.entries(value)) {
-      if (key !== 'parent' && key !== 'loc' && key !== 'range' && key !== 'tokens' && key !== 'comments') visit(child);
+      if (key !== 'parent' && key !== 'loc' && key !== 'range' && key !== 'tokens' && key !== 'comments') visit(child, tag ? tag.openStart[0] : parentStart);
     }
   };
-  visit(ast);
+  visit(ast, undefined);
   return tags.sort((first, second) => first.openStart[0] - second.openStart[0]);
 }
 
@@ -592,7 +614,7 @@ function compareAttributes(
   }
 }
 
-export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigRange[], ast: unknown): OutputIssue[] {
+export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigRange[], ast: unknown, issueLimit: number = maxIssuesPerTemplate): OutputIssue[] {
   assertSortedAndDisjoint(source, twigRanges);
   const masked = maskTwig(source, twigRanges);
   const oracle = readOracleDocument(source, masked);
@@ -601,7 +623,7 @@ export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigR
   const issues = new Map<string, OutputIssue>();
   const report: Report = (check, range, message) => {
     const detail = `line ${lineOf(range[0])}: ${message} "${excerpt(source, range)}"`;
-    issues.set(`${check}\0${detail}`, { check: `html-oracle: ${check}`, detail, line: lineOf(range[0]) });
+    issues.set(`${check}\0${detail}`, { check: `html-oracle: ${check}`, detail, line: lineOf(range[0]), range });
   };
 
   const isInRawText = (offset: number) => oracle.rawTextRegions.some((region) => containsOffset(region, offset));
@@ -626,14 +648,17 @@ export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigR
     }
     if (ourTag.openEnd[1] !== oracleTag.range[1]) report('start tags', oracleTag.range, `start tag ends at ${ourTag.openEnd[1]}, oracle ${oracleTag.range[1]}`);
     compareAttributes(source, twigRanges, masked, oracleTag, ourTag, report);
+    if (oracle.parentStarts.get(oracleTag.range[0]) !== ourTag.parentStart) report('parents', ourTag.range, `<${ourTag.name}> sits in a different element than the oracle puts it in`);
   }
 
   const ourCloseStarts = new Set(ours.flatMap((tag) => (tag.close ? [tag.close[0]] : [])));
   for (const endTag of oracle.endTags) {
     if (ourCloseStarts.has(endTag.range[0])) continue;
-    const check = endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
+    const branchTags = ours.map((tag) => ({ name: tag.name, openStart: tag.openStart[0], isClosed: tag.close !== undefined }));
+    const isBranchPaired = isClosedInAnotherBranch(ast, endTag.range[0], endTag.name, branchTags);
+    const check = isBranchPaired ? branchPairedEndTagCheck.replace('html-oracle: ', '') : endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
     report(check, endTag.range, 'end tag is not the close of any element');
   }
 
-  return [...issues.values()].slice(0, maxIssuesPerTemplate);
+  return [...issues.values()].slice(0, issueLimit);
 }

@@ -82,11 +82,11 @@ byte-identical to upstream and carries no notice.
 | `npm run vendor:check` | Fails if `src/lexer` differs from pristine plus patches. |
 | `npm run vendor:write` | Regenerates `src/lexer` from pristine plus patches. |
 | `npm run test:upstream` | Runs upstream's tape tests against the patched sources. |
-| `node scripts/vendor-twig-lexer.ts --workspace <dir>` | Creates a git workspace of pristine plus current patches for writing a new patch. |
+| `node scripts/vendor.ts --workspace twig-lexer <dir>` | Creates a git workspace of pristine plus current patches for writing a new patch. |
 
 ## Adding or changing a patch
 
-1. `node scripts/vendor-twig-lexer.ts --workspace /tmp/twig-lexer-ws`
+1. `node scripts/vendor.ts --workspace twig-lexer /tmp/twig-lexer-ws`
 2. Edit the files in the workspace.
 3. Save `git -C /tmp/twig-lexer-ws diff` as `patches/TL-NN-short-name.patch`,
    prefixed with a DEP-3 header (copy one from an existing patch).

@@ -31,6 +31,10 @@ export const includeTags: ReadonlySet<string> = new Set(['include', 'embed']);
 
 export const includeKeywordsToBlank: ReadonlySet<string> = new Set(['only', 'ignore', 'missing']);
 
+export const twigDelimiters = /\{\{|\}\}|\{%|%\}|\{#|#\}/g;
+
+export const tagsThatScopeBranches: ReadonlySet<string> = new Set(['for', 'block', 'macro', 'embed', 'autoescape', 'sandbox', 'with']);
+
 export const convertedTags: ReadonlySet<string> = new Set(['set', 'block', 'for', ...expressionTags, ...includeTags]);
 
 export const tagsLeftUnconverted: ReadonlySet<string> = new Set([

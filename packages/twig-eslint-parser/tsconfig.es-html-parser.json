@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "strict": true,
+    "rootDir": "src/es-html-parser",
+    "outDir": "dist/es-html-parser",
+    "tsBuildInfoFile": ".tsbuild/es-html-parser.tsbuildinfo"
+  },
+  "include": ["src/es-html-parser"]
+}

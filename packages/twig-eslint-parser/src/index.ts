@@ -12,7 +12,8 @@ export type { ParserOptions, TwigParseResult, TwigParserServices, UnconvertedTwi
 export { containsTwig, isAttributeNode } from './attributes.js';
 export type { AttributeNode, OmittedAttribute } from './attributes.js';
 export type { TwigBlockSummary } from './twig/blocks.js';
-export { HtmlSyntaxError } from './markup.js';
+export { drupalAttributeMethods, drupalAttributeObjectFunction, drupalClassMethods, isDrupalAttributeListPrint } from './drupal.js';
+export { HtmlSyntaxError } from './html/syntax-error.js';
 export { TwigSyntaxError } from './twig/tokens.js';
 
 export default { meta, parseForESLint };

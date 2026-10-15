@@ -1,5 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { checkParserOutput, templateDefectChecks } from './output-checks.js';
+import { parseForESLint } from '../../src/index.js';
+import { checkParserOutput, templateDefectChecks, type ParseForOutputChecks } from './output-checks.js';
+
+type Mutable = Record<string, unknown>;
+
+function tagsIn(value: unknown, found: Mutable[] = []): Mutable[] {
+  if (typeof value !== 'object' || value === null) return found;
+  if (Array.isArray(value)) {
+    value.forEach((child) => tagsIn(child, found));
+    return found;
+  }
+  const node = value as Mutable;
+  if (node['type'] === 'Tag') found.push(node);
+  for (const [key, child] of Object.entries(node)) {
+    if (key !== 'parent') tagsIn(child, found);
+  }
+  return found;
+}
+
+function parseAndBreak(breakTree: (tags: Mutable[]) => void): ParseForOutputChecks {
+  return (code, options) => {
+    const result = parseForESLint(code, options);
+    breakTree(tagsIn(result.ast.body));
+    return result;
+  };
+}
+
+const dropCloseOf = (name: string) => parseAndBreak((tags) => tags.filter((tag) => tag['name'] === name).forEach((tag) => delete tag['close']));
 
 function checksOf(code: string): string[] {
   return checkParserOutput(code).map((issue) => issue.check);
@@ -20,13 +47,25 @@ describe('checkParserOutput', () => {
     ]);
   });
 
-  it('fails a close tag that the parser drops while its element is still open', () => {
-    const code = '<html><head><head-placeholder token="x"></head><body></body></html>';
-    expect(parserFailuresOf(code)).toContain('html: close tag is read');
+  it('reads Drupal placeholders and dynamic tag names without losing a close tag', () => {
+    expect(parserFailuresOf('<html><head><head-placeholder token="x"></head><body></body></html>')).toEqual([]);
+    expect(parserFailuresOf('<{{ element }}>a</{{element}}>')).toEqual([]);
   });
 
-  it('fails a dynamic close tag the parser cannot pair because its Twig is spaced differently', () => {
-    expect(parserFailuresOf('<{{ element }}>a</{{element}}>')).toContain('html: close tag is read');
+  it('fails a close tag that the parser drops while its element is still open', () => {
+    const failures = checkParserOutput('<html><head><title>t</title></head></html>', dropCloseOf('head')).map((issue) => issue.check);
+    expect(failures).toContain('html: close tag is read');
+  });
+
+  it('fails a dynamic close tag the parser cannot pair', () => {
+    const failures = checkParserOutput('<{{ element }}>a</{{element}}>', dropCloseOf('{{ element }}')).map((issue) => issue.check);
+    expect(failures).toContain('html: close tag is read');
+  });
+
+  it('reports an element opened in one Twig branch and closed in another as a known limitation', () => {
+    const code = '{% if url %}<a href="{{ url }}">{% else %}<div>{% endif %}x{% if url %}</a>{% else %}</div>{% endif %}';
+    expect(checksOf(code)).toContain('html: element opened and closed in different Twig branches');
+    expect(parserFailuresOf(code)).toEqual([]);
   });
 
   it('reports a close tag that closes nothing as a template defect', () => {
@@ -38,8 +77,20 @@ describe('checkParserOutput', () => {
     expect(issues.map((issue) => issue.detail)).toEqual(['line 1: <span']);
   });
 
+  it('reads a Twig tag after an attribute name as an attribute of its own', () => {
+    expect(parserFailuresOf('<input type="checkbox"{% if checked %} checked{% endif %}>')).toEqual([]);
+  });
+
   it('fails a Twig tag glued into an attribute name', () => {
-    expect(parserFailuresOf('<input type="checkbox"{% if checked %} checked{% endif %}>')).toContain('html: Twig block glued to a name');
+    const glueFirstTwoAttributes = parseAndBreak(([input]) => {
+      const [first, second, ...rest] = (input?.['attributes'] as Mutable[] | undefined) ?? [];
+      const firstKey = first?.['key'] as Mutable;
+      const secondKey = second?.['key'] as Mutable;
+      firstKey['value'] = `${String(firstKey['value'])}${String(secondKey['value'])}`;
+      (input as Mutable)['attributes'] = [first, ...rest];
+    });
+    const failures = checkParserOutput('<input {% if checked %}checked{% endif %}>', glueFirstTwoAttributes).map((issue) => issue.check);
+    expect(failures).toContain('html: Twig block glued to a name');
   });
 
   it('accepts a Twig print that is part of an attribute name', () => {

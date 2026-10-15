@@ -7,13 +7,14 @@ import { describe, expect, it } from 'vitest';
 import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/canaries.js';
 import { findingKey, findStaleBaselineKeys, keepBaselineKeysOutsideTheRun } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
+import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
 import { describeFixProblems, reviewFix, type FixKeeps } from '../src/fix-invariants.js';
 import type { AppliedFix } from '../src/fixing.js';
-import { compareRuns, describeStrictViolations, mergeHistory, recordRun } from '../src/history.js';
+import { compareRuns, describeStrictViolations, mergeHistory, recordRun, renderComparison } from '../src/history.js';
 import { createProgressReporter } from '../src/progress.js';
 import { ruleChecks, type CorpusPlugin } from '../src/rule-checks.js';
 import { selectChecks } from '../src/select.js';
-import type { Check, CheckOutcome, Finding, Template } from '../src/types.js';
+import type { Check, CheckOutcome, Finding, Template, TemplateCoverage } from '../src/types.js';
 
 function createCorpusDirectory(files: Record<string, string>): string {
   const directory = mkdtempSync(join(tmpdir(), 'corpus-test-'));
@@ -305,6 +306,74 @@ describe('run history', () => {
     expect(describeStrictViolations(compareRuns(before, skipped))).toEqual(['c was skipped this time']);
   });
 });
+
+describe('line coverage', () => {
+  const template = (relativePath: string, root = '/r'): Template => ({ root, path: `${root}/${relativePath}`, relativePath, source: '<p>x</p>' });
+  const coverage = (on: Template, lines: number, uncovered: number, excused = 0): TemplateCoverage => ({
+    template: on,
+    lines,
+    uncovered,
+    excused,
+    spans: uncovered === 0 ? [] : [{ startLine: 3, endLine: 4, label: 'misplaced', detail: 'd', isExcused: false }],
+  });
+  const record = (entries: readonly TemplateCoverage[]) => recordRun(entries.map((entry) => entry.template), [{ id: 'c', outcome: { findings: [], stats: {}, lineCoverage: entries } }]);
+
+  it('scores the lines read out of the lines that can be scored', () => {
+    expect(scoreOf(100, 10, 0)).toBe(90);
+    expect(scoreOf(100, 10, 50)).toBe(80);
+    expect(scoreOf(10, 0, 10)).toBe(100);
+    expect(scoreOf(0, 0, 0)).toBe(100);
+  });
+
+  it('never shows 100% while a line is still not read', () => {
+    expect(formatScore(scoreOf(131621, 9, 0))).toBe('99.99%');
+    expect(formatScore(scoreOf(10, 0, 0))).toBe('100.00%');
+  });
+
+  it('adds up templates and leaves the canaries out of the score', () => {
+    const entries = [coverage(template('a.twig'), 10, 1), coverage(template('b.twig'), 30, 0, 5), coverage({ ...template('c.twig'), root: canaryRoot }, 4, 4)];
+    expect(summariseCoverage(entries)).toMatchObject({ templates: 2, lines: 40, uncovered: 1, excused: 5 });
+  });
+
+  it('lists the templates with the most lines not read, with where and why', () => {
+    const rendered = renderCoverage('c', [coverage(template('a.twig'), 10, 1), coverage(template('b.twig'), 10, 4)]);
+    expect(rendered).toContain('## Line coverage: c');
+    expect(rendered.indexOf('b.twig')).toBeLessThan(rendered.indexOf('a.twig'));
+    expect(rendered).toContain('4 of 10 lines (3-4 misplaced)');
+  });
+
+  it('compares the score on templates that are the same in both runs', () => {
+    const a = template('a.twig');
+    const [comparison] = compareRuns(record([coverage(a, 10, 4)]), record([coverage(a, 10, 1)]));
+    expect(comparison?.coverage).toEqual({ before: [10, 4, 0], after: [10, 1, 0] });
+    expect(renderComparison(comparisons(comparison), undefined)).toContain('| c | 60.00% → 90.00% | 4 → 1 | 0 |');
+  });
+
+  it('fails a strict run when more lines are not read', () => {
+    const a = template('a.twig');
+    expect(describeStrictViolations(compareRuns(record([coverage(a, 10, 1)]), record([coverage(a, 10, 2)])))).toEqual(['c lines not read rose from 1 to 2']);
+    expect(describeStrictViolations(compareRuns(record([coverage(a, 10, 2)]), record([coverage(a, 10, 1)])))).toEqual([]);
+  });
+
+  it('compares against a history written before line coverage existed', () => {
+    const a = template('a.twig');
+    const earlier = recordRun([a], [{ id: 'c', outcome: { findings: [], stats: {} } }]);
+    const [comparison] = compareRuns(earlier, record([coverage(a, 10, 1)]));
+    expect(comparison?.coverage).toBeUndefined();
+    expect(describeStrictViolations(comparisons(comparison))).toEqual([]);
+  });
+
+  it('keeps earlier coverage for templates a partial run did not cover', () => {
+    const [a, b] = [template('a.twig'), template('b.twig')];
+    const merged = mergeHistory(record([coverage(a, 10, 4), coverage(b, 10, 2)]), record([coverage(a, 10, 1)]));
+    const [comparison] = compareRuns(merged, record([coverage(a, 10, 1), coverage(b, 10, 2)]));
+    expect(comparison?.coverage).toEqual({ before: [20, 3, 0], after: [20, 3, 0] });
+  });
+});
+
+function comparisons<Item>(comparison: Item | undefined): Item[] {
+  return comparison === undefined ? [] : [comparison];
+}
 
 describe('baseline hygiene', () => {
   const key = (check: string, hash: string) => `${check}|${hash}|message`;

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { checkRewritesKeepTheTree, rewrites } from './metamorphic.js';
+import { parseHtmlProgram } from '../../src/html/program.js';
+import { checkRewritesKeepTheTree, rewrites, type TreeParser } from './metamorphic.js';
+
+const parseWithoutTwigKinds: TreeParser = (source) => {
+  const templateInfos = groupTwigBlocks(tokenizeTwig(source)).map((block): [number, number] => [block.start, block.end]);
+  const program = parseHtmlProgram(source, { templateInfos }, { branchSegments: [], branchControlRanges: [] });
+  return { ast: { body: program.body, twigBody: [] } };
+};
 
 function rewrite(name: string, source: string): string {
   const selected = rewrites.find((candidate) => candidate.name === name);
@@ -40,13 +47,13 @@ describe('checkRewritesKeepTheTree', () => {
     expect(checkRewritesKeepTheTree('<div class="a {{ b }}" id="{{ c }}">\n  {% for d in e %}<p>{{ d|upper }}</p>{% endfor %}\n</div>')).toEqual([]);
   });
 
-  it('flags a Twig tag glued to an attribute name, because spacing them changes the attributes', () => {
-    const issues = checkRewritesKeepTheTree('<span {% if x %}class="a"{% endif %}>b</span>');
-    expect(issues.map((issue) => issue.check)).toContain('metamorphic: Twig tags spaced from attribute names: html');
+  it('finds nothing for a Twig tag before an attribute name or a dynamic tag name spaced two ways', () => {
+    expect(checkRewritesKeepTheTree('<span {% if x %}class="a"{% endif %}>b</span>')).toEqual([]);
+    expect(checkRewritesKeepTheTree('<{{ element }}>a</{{element}}>')).toEqual([]);
   });
 
-  it('flags a dynamic close tag that pairs only when spaced like its open tag', () => {
-    const issues = checkRewritesKeepTheTree('<{{ element }}>a</{{element}}>');
-    expect(issues.map((issue) => issue.check)).toContain('metamorphic: Twig delimiters with inner spaces: html');
+  it('flags a parser that glues a Twig tag to an attribute name, because spacing them changes the attributes', () => {
+    const issues = checkRewritesKeepTheTree('<span {% if x %}class="a"{% endif %}>b</span>', rewrites, parseWithoutTwigKinds);
+    expect(issues.map((issue) => issue.check)).toContain('metamorphic: Twig tags spaced from attribute names: html');
   });
 });

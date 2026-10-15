@@ -46,10 +46,6 @@ const blocksTwigItselfRejectsByFixture: Record<string, string[]> = {
   'operators.twig': ['{{ foo.is not }}'],
 };
 
-const parserBugsAwaitingTheTwigAwareHtmlLayer: Record<string, string[]> = {
-  'markup.twig': ['"checked{% endif %}"'],
-};
-
 describe('fixtures', () => {
   const fixtureNames = readdirSync(fixturesDirectory).filter((name) => name.endsWith('.twig'));
 
@@ -73,10 +69,8 @@ describe('fixtures', () => {
   it.each(fixtureNames)('%s produces output that matches the source node by node', (fixtureName) => {
     const code = readFileSync(new URL(fixtureName, fixturesDirectory), 'utf8');
     const rejectedByTwig = blocksTwigItselfRejectsByFixture[fixtureName] ?? [];
-    const knownBugs = parserBugsAwaitingTheTwigAwareHtmlLayer[fixtureName] ?? [];
     const issues = checkParserOutput(code).filter((issue) => !rejectedByTwig.some((source) => issue.detail.startsWith(source)));
-    expect(issues.map((issue) => issue.detail).filter((detail) => knownBugs.includes(detail))).toEqual(knownBugs);
-    expect(issues.filter((issue) => !knownBugs.includes(issue.detail))).toEqual([]);
+    expect(issues).toEqual([]);
   });
 });
 
@@ -375,6 +369,7 @@ describe('readTwigServices', () => {
 
 describe('Drupal attributes printed straight after a tag name', () => {
   const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const childTagNames = (tag: Node) => (tag['children'] as Node[]).filter((child) => child.type === 'Tag').map((child) => child['name']);
   const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
   const attributeSources = (code: string, tag: Node) => (tag['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute));
 
@@ -394,6 +389,43 @@ describe('Drupal attributes printed straight after a tag name', () => {
       expect(attributeSources(code, namedTag(code, 'div'))).toEqual([`{{ ${expression} }}`, 'id="a"']);
     },
   );
+
+  it.each(['attr', 'wrapper_attrs', 'item.link_attributes', 'options.html|join(" ")'])(
+    'reads {{ %s }} straight after a tag name as an attribute when no close tag spells it into the name',
+    (expression) => {
+      const code = `<div{{ ${expression} }} id="a"><p>x</p></div><span>after</span>`;
+      const div = namedTag(code, 'div');
+      expect(attributeSources(code, div)).toEqual([`{{ ${expression} }}`, 'id="a"']);
+      expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+      expect(childTagNames(div)).toEqual(['p']);
+    },
+  );
+
+  it('keeps the elements after a void element with an unrecognised print as siblings', () => {
+    const code = '<input{{ attr }}><span>after</span>';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['input', 'span']);
+    expect(childTagNames(namedTag(code, 'input'))).toEqual([]);
+  });
+
+  it('reads a print after a Twig tag name as attributes while the name print stays in the name', () => {
+    const code = '<{{ tag }}{{ attr }}><li>x</li></{{ tag }}><span>after</span>';
+    const [wrapper] = tagsOf(code);
+    expect(wrapper?.['name']).toBe('{{ tag }}');
+    expect((wrapper?.['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(['{{ attr }}']);
+    expect(sourceOf(code, wrapper?.['close'] as Node)).toBe('</{{ tag }}>');
+  });
+
+  it('keeps a print in the name when a close tag spells it, whatever the expression is', () => {
+    const code = '<h{{ attributes }}>x</h{{ attributes }}><span>after</span>';
+    const [heading] = tagsOf(code);
+    expect(heading?.['name']).toBe('h{{ attributes }}');
+    expect(sourceOf(code, heading?.['close'] as Node)).toBe('</h{{ attributes }}>');
+  });
+
+  it('is not misled by a less-than sign inside Twig', () => {
+    const code = '{% if a <b{{ c }} %}<div{{ attr }}>x</div>{% endif %}';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['div']);
+  });
 
   it('keeps every later range and line/column exact after several of them', () => {
     const code = '<ul{{ attributes }}>\n  <li{{ item.attributes }} class="a">x</li>\n</ul>';
@@ -458,9 +490,11 @@ describe('Twig tags and verbatim content inside markup', () => {
     expect(childTagNames(div)).toEqual(['p']);
   });
 
-  it('leaves a Twig tag that builds the tag name alone', () => {
+  it('reads a Twig tag inside a tag name as the end of the name, which is a known limitation', () => {
     const code = '<h{% if big %}1{% else %}2{% endif %} id="a">x</h1>';
-    expect(sourceOf(code, tagsOf(code)[0]?.['openStart'] as Node).startsWith('<h{%')).toBe(true);
+    const [heading] = tagsOf(code);
+    expect(heading?.['name']).toBe('h');
+    expect((heading?.['attributes'] as Node[]).map((attribute) => sourceOf(code, attribute))).toEqual(['{% if big %}', '1', '{% else %}', '2', '{% endif %}', 'id="a"']);
   });
 
   it('closes an element whose name is built with {{ }} where the template closes it', () => {
@@ -492,6 +526,76 @@ describe('Twig tags and verbatim content inside markup', () => {
     const texts = collectNodes(attribute, () => true).filter((node) => typeof node['value'] === 'string').map((node) => [node['value'], sourceOf(code, node)]);
     for (const [value, source] of texts) expect(value).toBe(source);
     expect(sourceOf(code, attribute as Node).endsWith(attributeText)).toBe(true);
+  });
+});
+
+describe('Twig as part of the markup structure', () => {
+  const tagsOf = (code: string) => collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+  const namedTag = (code: string, name: string) => tagsOf(code).find((tag) => tag['name'] === name) as Node;
+  const keysOf = (code: string, name: string) => (namedTag(code, name)['attributes'] as Node[]).map((attribute) => (attribute['key'] as Node)['value']);
+
+  it('reads a Twig tag before an attribute name as an attribute of its own', () => {
+    expect(keysOf('<span {% if x %}class="a"{% endif %}>b</span>', 'span')).toEqual(['{% if x %}', 'class', '{% endif %}']);
+  });
+
+  it('reads a Twig tag after an attribute name as an attribute of its own', () => {
+    expect(keysOf('<input type="checkbox"{% if checked %} checked{% endif %}>', 'input')).toEqual(['type', '{% if checked %}', 'checked', '{% endif %}']);
+  });
+
+  it('keeps a print and the Twig tag after it as separate attributes', () => {
+    expect(keysOf('<p {{ a }}{% if b %} id="c"{% endif %}>t</p>', 'p')).toEqual(['{{ a }}', '{% if b %}', 'id', '{% endif %}']);
+  });
+
+  it('keeps a print that is part of an attribute name in that name', () => {
+    expect(keysOf('<div data-{{ name }}="x"></div>', 'div')).toEqual(['data-{{ name }}']);
+  });
+
+  it('skips a Twig comment between attributes', () => {
+    expect(keysOf('<a href="x" {# note #} id="y">t</a>', 'a')).toEqual(['href', 'id']);
+  });
+
+  it('ends a tag name at a Drupal attributes method call', () => {
+    const code = "<div{{ wrapper.addClass('x') }}>t</div>";
+    const div = namedTag(code, 'div');
+    expect(keysOf(code, 'div')).toEqual(["{{ wrapper.addClass('x') }}"]);
+    expect(sourceOf(code, div['close'] as Node)).toBe('</div>');
+  });
+
+  it('pairs a dynamic tag name with a close tag spaced differently', () => {
+    const code = '<{{ element }} class="a">t</{{element}}><span>after</span>';
+    const element = namedTag(code, '{{ element }}');
+    expect(sourceOf(code, element['close'] as Node)).toBe('</{{element}}>');
+  });
+
+  it('closes back to the open element when a never-closed element sits inside it', () => {
+    const code = '<html><head><head-placeholder token="x"><title>t</title></head><body><p>x</p></body></html>';
+    const head = namedTag(code, 'head');
+    expect(sourceOf(code, head['close'] as Node)).toBe('</head>');
+    expect(namedTag(code, 'head-placeholder')['close']).toBeUndefined();
+    expect(sourceOf(code, namedTag(code, 'body')['close'] as Node)).toBe('</body>');
+    expect(sourceOf(code, namedTag(code, 'html')['close'] as Node)).toBe('</html>');
+  });
+
+  it('pairs a close tag that ends in a stray slash, as a browser does', () => {
+    const code = '<{{ title_tag }}>t</{{ title_tag }}/><p>after</p>';
+    expect(sourceOf(code, namedTag(code, '{{ title_tag }}')['close'] as Node)).toBe('</{{ title_tag }}/>');
+  });
+
+  it('drops a close tag that matches no open element', () => {
+    const code = '<div></div></span><p>x</p>';
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['div', 'p']);
+  });
+
+  it.each(['textarea', 'title'])('reads %s content as raw text', (element) => {
+    const code = `<${element}><b class="x">y</b>{{ z }}</${element}><p>after</p>`;
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual([element, 'p']);
+  });
+
+  it('keeps a Twig string holding a script close tag inside the script', () => {
+    const code = "<script>var a = '{{ '</script>' }}';</script><p>x</p>";
+    const scripts = collectNodes(parse(code).result.ast.body, (node) => node.type === 'ScriptTag');
+    expect(scripts.map((script) => sourceOf(code, script['close'] as Node))).toEqual(['</script>']);
+    expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['p']);
   });
 });
 

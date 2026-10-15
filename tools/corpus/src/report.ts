@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { findingKey } from './baseline.js';
 import { isCanary } from './canaries.js';
+import { coverageNdjson, renderCoverage, summariseCoverage, type CoverageTotals } from './coverage.js';
 import { hashText } from './history.js';
 import { unifiedDiff } from './diff.js';
 import type { Check, CheckOutcome, Finding, FixChange } from './types.js';
@@ -20,6 +21,7 @@ export type CheckReport = {
   readonly skipped?: string;
   readonly reports: number;
   readonly hasCorpusCoverage: boolean;
+  readonly coverage?: CoverageTotals;
   readonly failures: number;
   readonly knownFailures: number;
   readonly newFailures: readonly Finding[];
@@ -40,6 +42,7 @@ export function buildCheckReport({ package: packageName, check, outcome, seconds
     stats: outcome.stats,
     ...(outcome.skipped !== undefined && { skipped: outcome.skipped }),
     reports: outcome.findings.filter((finding) => finding.severity === 'report').length,
+    ...(outcome.lineCoverage && { coverage: summariseCoverage(outcome.lineCoverage) }),
     hasCorpusCoverage: check.rule === undefined || outcome.findings.some((finding) => finding.severity === 'report' && !isCanary(finding.template)),
     failures: failures.length,
     knownFailures: failures.length - newFailures.length,
@@ -89,6 +92,15 @@ export function renderSummary(reports: readonly CheckReport[], templateCount: nu
   return `${lines.join('\n')}\n`;
 }
 
+function renderCoverageSections(results: readonly CheckResult[]): string {
+  return results.flatMap(({ check, outcome }) => (outcome.lineCoverage ? [renderCoverage(check.id, outcome.lineCoverage)] : [])).join('');
+}
+
+function writeCoverage(directory: string, results: readonly CheckResult[]): void {
+  const lines = results.flatMap(({ check, outcome }) => (outcome.lineCoverage ? coverageNdjson(check.id, outcome.lineCoverage) : []));
+  if (lines.length > 0) writeFileSync(join(directory, 'coverage.ndjson'), `${lines.join('\n')}\n`);
+}
+
 function renderStaleBaseline(staleKeys: readonly string[]): string {
   if (staleKeys.length === 0) return '';
   const listed = staleKeys.slice(0, maxListedFailuresPerCheck).map((key) => `- ${key}`);
@@ -96,8 +108,9 @@ function renderStaleBaseline(staleKeys: readonly string[]): string {
   return `${['', `## Stale baseline entries: ${staleKeys.length}`, '', 'These known failures no longer happen. Run with --update-baseline to drop them.', '', ...listed, ...unlisted].join('\n')}\n`;
 }
 
-function statusOf(finding: Finding, baseline: ReadonlySet<string>): 'report' | 'skipped' | 'known' | 'new' {
+function statusOf(finding: Finding, baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean): 'report' | 'skipped' | 'expected' | 'known' | 'new' {
   if (finding.severity !== 'failure') return finding.severity;
+  if (isExpectedFailure(finding)) return 'expected';
   return baseline.has(findingKey(finding)) ? 'known' : 'new';
 }
 
@@ -106,10 +119,10 @@ function excerptOf(finding: Finding): string | undefined {
   return finding.template.source.split(/\r?\n/)[finding.line - 1]?.trim().slice(0, 160);
 }
 
-function writeFindings(directory: string, results: readonly CheckResult[], baseline: ReadonlySet<string>): void {
+function writeFindings(directory: string, results: readonly CheckResult[], baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean): void {
   const lines = results.flatMap(({ outcome }) => outcome.findings.map((finding) => JSON.stringify({
     check: finding.check,
-    status: statusOf(finding, baseline),
+    status: statusOf(finding, baseline, isExpectedFailure),
     root: finding.template.root,
     file: finding.template.relativePath,
     line: finding.line,
@@ -185,13 +198,15 @@ export function writeReport(directory: string, input: {
   readonly sampleSize: number;
   readonly staleBaselineKeys: readonly string[];
   readonly comparison: string;
+  readonly isExpectedFailure: (finding: Finding) => boolean;
 }): string {
   rmSync(directory, { recursive: true, force: true });
   mkdirSync(directory, { recursive: true });
-  const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
+  const summary = renderSummary(input.reports, input.templateCount, input.rootCount) + renderCoverageSections(input.results) + renderStaleBaseline(input.staleBaselineKeys) + input.comparison;
   writeFileSync(join(directory, 'summary.md'), summary);
   writeFileSync(join(directory, 'summary.json'), `${JSON.stringify(input.reports.map(({ newFailures, ...rest }) => ({ ...rest, newFailures: newFailures.length })), null, 2)}\n`);
-  writeFindings(directory, input.results, input.baseline);
+  writeFindings(directory, input.results, input.baseline, input.isExpectedFailure);
+  writeCoverage(directory, input.results);
   writeFailureFiles(directory, input.results);
   writeSamples(directory, input.results, input.sampleSize);
   return summary;

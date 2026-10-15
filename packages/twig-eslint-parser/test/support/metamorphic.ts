@@ -5,6 +5,7 @@ import { tokenizeTwig } from '../../src/twig/tokens.js';
 import type { OutputIssue } from './output-checks.js';
 
 export type Rewrite = { readonly name: string; readonly apply: (source: string, blocks: readonly TwigBlock[]) => string };
+export type TreeParser = (source: string) => { readonly ast: { readonly body: unknown; readonly twigBody: unknown } };
 
 type Edit = { readonly at: number; readonly remove: number; readonly insert: string };
 type Entry = { readonly depth: number; readonly description: string; readonly offset: number };
@@ -131,9 +132,9 @@ function flatten(root: unknown): Entry[] {
   return entries;
 }
 
-function massagedTree(source: string): Tree | undefined {
+function massagedTree(source: string, parse: TreeParser): Tree | undefined {
   try {
-    const { ast } = parseForESLint(source);
+    const { ast } = parse(source);
     return { html: flatten(ast.body), twig: flatten(ast.twigBody) };
   } catch {
     return undefined;
@@ -155,21 +156,21 @@ function describeEntry(entry: Entry | undefined): string {
   return entry ? `${'  '.repeat(Math.min(entry.depth, 3))}${entry.description}`.slice(0, 80) : '(nothing)';
 }
 
-export function checkRewritesKeepTheTree(source: string, selected: readonly Rewrite[] = rewrites): OutputIssue[] {
+export function checkRewritesKeepTheTree(source: string, selected: readonly Rewrite[] = rewrites, parse: TreeParser = parseForESLint): OutputIssue[] {
   let blocks: TwigBlock[];
   try {
     blocks = groupTwigBlocks(tokenizeTwig(source));
   } catch {
     return [];
   }
-  const original = massagedTree(source);
+  const original = massagedTree(source, parse);
   if (!original) return [];
   const locate = createOffsetLocator(source);
   const issues: OutputIssue[] = [];
   for (const rewrite of selected) {
     const rewritten = rewrite.apply(source, blocks);
     if (rewritten === source) continue;
-    const tree = massagedTree(rewritten);
+    const tree = massagedTree(rewritten, parse);
     if (!tree) {
       issues.push({ check: `metamorphic: ${rewrite.name}: parses`, detail: 'the rewritten template no longer parses' });
       continue;

@@ -3,3 +3,4 @@
 <{{ element }} class="dynamic">Three</{{element}}>
 <div{{ wrapper.addClass('wrapper') }}>Four</div>
 <input type="checkbox"{% if checked %} checked{% endif %}>
+{% if url %}<a href="{{ url }}">{% else %}<div>{% endif %}Six{% if url %}</a>{% else %}</div>{% endif %}

@@ -6,3 +6,13 @@ This product includes software derived from twig-lexer 1.0.0
 Copyright Eric MORAND, licensed under the Apache License, Version 2.0.
 The licence text is in third_party/twig-lexer/LICENSE and every change
 made to it is recorded in third_party/twig-lexer/UPSTREAM.md.
+
+This product includes software derived from es-html-parser 0.3.2
+(https://github.com/yeonjuan/es-html-parser, revision 0dd4a9c),
+Copyright (c) 2022 YeonJuan, licensed under the MIT License.
+The licence text is in third_party/es-html-parser/LICENSE.md and every change
+made to it is recorded in third_party/es-html-parser/UPSTREAM.md.
+
+The HTML and CSS visitor keys in src/html/visitor-keys.ts follow
+@html-eslint/parser 0.66.0 (https://github.com/yeonjuan/html-eslint),
+Copyright (c) 2020 YeonJuan, licensed under the MIT License.

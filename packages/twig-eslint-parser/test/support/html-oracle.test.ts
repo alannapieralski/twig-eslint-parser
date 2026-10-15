@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseHtmlProgram } from '../../src/html/program.js';
 import { parseForESLint } from '../../src/index.js';
 import type { Golden } from '../lexer/parity.js';
 import { compareWithHtmlOracle, twigRangesFromOracle, type TwigRange } from './html-oracle.js';
@@ -24,6 +25,26 @@ function plainHtml(source: string): CompactToken[] {
 
 function oracleIssues(source: string, tokens: readonly CompactToken[]) {
   return compareWithHtmlOracle(source, twigRangesFromOracle(source, golden(tokens)), parseForESLint(source).ast).map(({ check, detail }) => ({ check, detail }));
+}
+
+function issuesForTreeWithoutTwigKinds(source: string, tokens: readonly CompactToken[]) {
+  const ranges = twigRangesFromOracle(source, golden(tokens));
+  const templateInfos = ranges.map(({ start, end }): [number, number] => [start, end]);
+  const ast = parseHtmlProgram(source, { templateInfos, rawContentTags: [] }, { branchSegments: [], branchControlRanges: [] });
+  return compareWithHtmlOracle(source, ranges, ast).map(({ check, detail }) => ({ check, detail }));
+}
+
+function withoutCloseOf(ast: unknown, name: string): unknown {
+  const visit = (node: unknown): void => {
+    if (typeof node !== 'object' || node === null) return;
+    const record = node as Record<string, unknown>;
+    if (record['type'] === 'Tag' && record['name'] === name) delete record['close'];
+    for (const [key, child] of Object.entries(record)) {
+      if (key !== 'parent') (Array.isArray(child) ? child : [child]).forEach(visit);
+    }
+  };
+  visit(ast);
+  return ast;
 }
 
 function checksOf(issues: readonly { check: string }[]): string[] {
@@ -98,11 +119,18 @@ describe('compareWithHtmlOracle', () => {
     expect(oracleIssues(source, plainHtml(source))).toEqual([]);
   });
 
+  it('accepts a Twig tag read as an attribute of its own', () => {
+    const source = '<span {% if x %}class="a"{% endif %}>t</span>';
+    const tokens: CompactToken[] = [['text', 0, '<span '], ['tag', 6], ['endTag', 14], ['text', 16, 'class="a"'], ['tag', 25], ['endTag', 34], ['text', 36, '>t</span>'], ['end', 45]];
+
+    expect(oracleIssues(source, tokens)).toEqual([]);
+  });
+
   it('reports a Twig tag glued to an attribute name', () => {
     const source = '<span {% if x %}class="a"{% endif %}>t</span>';
     const tokens: CompactToken[] = [['text', 0, '<span '], ['tag', 6], ['endTag', 14], ['text', 16, 'class="a"'], ['tag', 25], ['endTag', 34], ['text', 36, '>t</span>'], ['end', 45]];
 
-    expect(oracleIssues(source, tokens)).toEqual([
+    expect(issuesForTreeWithoutTwigKinds(source, tokens)).toEqual([
       { check: 'html-oracle: attribute names', detail: 'line 1: oracle reads the name "class" in "{% if x %}class"' },
     ]);
   });
@@ -111,24 +139,39 @@ describe('compareWithHtmlOracle', () => {
     const source = '<p {{ a }}{% if b %} id="c"{% endif %}>t</p>';
     const tokens: CompactToken[] = [['text', 0, '<p '], ['print', 3], ['endPrint', 8], ['tag', 10], ['endTag', 18], ['text', 20, ' id="c"'], ['tag', 27], ['endTag', 36], ['text', 38, '>t</p>'], ['end', 44]];
 
-    expect(oracleIssues(source, tokens)).toEqual([
+    expect(oracleIssues(source, tokens)).toEqual([]);
+    expect(issuesForTreeWithoutTwigKinds(source, tokens)).toEqual([
       { check: 'html-oracle: attribute names', detail: 'line 1: attribute key glues a Twig tag to other content "{{ a }}{% if b %}"' },
     ]);
   });
 
-  it('reports an end tag the parser drops after an unclosed placeholder element', () => {
+  it('reports an end tag that is not the close of its element', () => {
     const source = '<html><head><head-placeholder token="x"></head><body></body></html>';
+    const { ast } = parseForESLint(source);
 
-    expect(checksOf(oracleIssues(source, plainHtml(source)))).toEqual(['html-oracle: end tags', 'html-oracle: implied end tags']);
+    expect(oracleIssues(source, plainHtml(source))).toEqual([]);
+    expect(checksOf(compareWithHtmlOracle(source, [], withoutCloseOf(ast, 'head')))).toEqual(['html-oracle: implied end tags']);
   });
 
   it('reports a close tag with a Twig name that the parser does not pair', () => {
     const source = '<{{ element }} id="a">t</{{element}}>';
     const tokens: CompactToken[] = [['text', 0, '<'], ['print', 1], ['endPrint', 12], ['text', 14, ' id="a">t</'], ['print', 25], ['endPrint', 34], ['text', 36, '>'], ['end', 37]];
+    const ranges = twigRangesFromOracle(source, golden(tokens));
 
-    expect(oracleIssues(source, tokens)).toEqual([
+    expect(oracleIssues(source, tokens)).toEqual([]);
+    expect(compareWithHtmlOracle(source, ranges, withoutCloseOf(parseForESLint(source).ast, '{{ element }}')).map(({ check, detail }) => ({ check, detail }))).toEqual([
       { check: 'html-oracle: end tags', detail: 'line 1: end tag is not the close of any element "</{{element}}>"' },
     ]);
+  });
+
+  it('separates an element opened and closed in different Twig branches', () => {
+    const source = '{% if u %}<a>{% else %}<div>{% endif %}x{% if u %}</a>{% else %}</div>{% endif %}';
+    const tokens: CompactToken[] = [
+      ['tag', 0], ['endTag', 8], ['text', 10, '<a>'], ['tag', 13], ['endTag', 21], ['text', 23, '<div>'], ['tag', 28], ['endTag', 37],
+      ['text', 39, 'x'], ['tag', 40], ['endTag', 48], ['text', 50, '</a>'], ['tag', 54], ['endTag', 62], ['text', 64, '</div>'], ['tag', 70], ['endTag', 79], ['end', 81],
+    ];
+
+    expect(checksOf(oracleIssues(source, tokens))).toEqual(['html-oracle: element opened and closed in different Twig branches']);
   });
 
   it('separates stray end tags from dropped ones', () => {
@@ -142,16 +185,25 @@ describe('compareWithHtmlOracle', () => {
   it('reports tags parsed inside textarea content', () => {
     const source = '<textarea>\n<b>x</b></textarea>';
 
-    expect(oracleIssues(source, plainHtml(source))).toEqual([
+    expect(oracleIssues(source, plainHtml(source))).toEqual([]);
+    expect(issuesForTreeWithoutTwigKinds(source, plainHtml(source))).toEqual([
       { check: 'html-oracle: raw text', detail: 'line 2: <b> is parsed as a tag inside raw text "<b>"' },
     ]);
+  });
+
+  it('reads an attributes print glued to an attribute name as its own attribute list', () => {
+    const source = '<div data-panes{{ attributes }}>t</div>';
+    const tokens: CompactToken[] = [['text', 0, '<div data-panes'], ['print', 15], ['endPrint', 29], ['text', 31, '>t</div>'], ['end', 39]];
+
+    expect(oracleIssues(source, tokens)).toEqual([]);
   });
 
   it('reports a Twig method call read as part of the tag name', () => {
     const source = "<div{{ x.addClass('y') }}>t</div>";
     const tokens: CompactToken[] = [['text', 0, '<div'], ['print', 4], ['endPrint', 23], ['text', 25, '>t</div>'], ['end', 33]];
 
-    expect(checksOf(oracleIssues(source, tokens))).toEqual(['html-oracle: end tags', 'html-oracle: tag names']);
+    expect(oracleIssues(source, tokens)).toEqual([]);
+    expect(checksOf(issuesForTreeWithoutTwigKinds(source, tokens))).toEqual(['html-oracle: end tags', 'html-oracle: tag names']);
   });
 
   it('compares attribute names and value ranges by offset', () => {
@@ -161,6 +213,7 @@ describe('compareWithHtmlOracle', () => {
       body: [{
         type: 'Tag',
         name: 'a',
+        range: [0, 22],
         openStart: { value: '<a', range: [0, 2] },
         openEnd: { value: '>', range: [16, 17] },
         close: { value: '</a>', range: [18, 22] },
@@ -173,15 +226,36 @@ describe('compareWithHtmlOracle', () => {
     expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual(['html-oracle: attribute values', 'html-oracle: attributes']);
   });
 
+  it('reports an element the parser nests differently from the oracle', () => {
+    const source = '<div><p>a</p><span>b</span></div>';
+    const ast = parseForESLint(source).ast;
+    const [div] = (ast.body[0] as unknown as { children: { children: { name: string }[] }[] }).children;
+    const [paragraph, span] = div?.children ?? [];
+
+    expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual([]);
+    Object.assign(paragraph ?? {}, { children: [...((paragraph as { children?: unknown[] }).children ?? []), span] });
+    div?.children.pop();
+    expect(checksOf(compareWithHtmlOracle(source, [], ast))).toEqual(['html-oracle: parents']);
+  });
+
+  it('gives each issue the range it covers and can lift the issue limit', () => {
+    const source = `<textarea>${'\n<b></b>'.repeat(30)}</textarea>`;
+    const ranges = twigRangesFromOracle(source, golden(plainHtml(source)));
+    const ast = parseHtmlProgram(source, { templateInfos: [], rawContentTags: [] }, { branchSegments: [], branchControlRanges: [] });
+
+    expect(compareWithHtmlOracle(source, ranges, ast).every((issue) => issue.range !== undefined)).toBe(true);
+    expect(compareWithHtmlOracle(source, ranges, ast, Infinity).length).toBeGreaterThan(compareWithHtmlOracle(source, ranges, ast).length);
+  });
+
   it('de-duplicates identical issues', () => {
     const source = `<textarea>${'<b></b>'.repeat(30)}</textarea>`;
 
-    expect(oracleIssues(source, plainHtml(source))).toHaveLength(1);
+    expect(issuesForTreeWithoutTwigKinds(source, plainHtml(source))).toHaveLength(1);
   });
 
   it('bounds the issues for one template', () => {
     const source = `<textarea>${'\n<b></b>'.repeat(30)}</textarea>`;
 
-    expect(oracleIssues(source, plainHtml(source))).toHaveLength(20);
+    expect(issuesForTreeWithoutTwigKinds(source, plainHtml(source))).toHaveLength(20);
   });
 });
