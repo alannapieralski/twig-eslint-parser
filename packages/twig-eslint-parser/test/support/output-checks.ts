@@ -19,6 +19,7 @@ type Token = { readonly value: string; readonly range: [number, number] };
 type Range = readonly [number, number];
 type ReportIssue = (check: string, detail: string, where?: number | Range) => void;
 
+const rawTextTagTypes = new Set(['ScriptTag', 'StyleTag']);
 const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 function isNode(value: unknown): value is Node {
@@ -50,7 +51,7 @@ type Attribute = {
   readonly startWrapper?: Token;
 };
 type TagNode = Node & {
-  readonly name: string;
+  readonly name?: string;
   readonly openStart: Token;
   readonly close?: Token;
   readonly selfClosing?: boolean;
@@ -108,19 +109,23 @@ function findUncoveredSource(code: string, coveredRanges: readonly Range[]): Ran
   return uncovered;
 }
 
+function tagNameOf(tag: TagNode): string {
+  return tag.name ?? tag.openStart.value.slice(1);
+}
+
 function comparableTagName(name: string): string {
   return name.replace(/\s+/g, '').toLowerCase();
 }
 
 function hasUnclosedElementNamed(name: string, openedBefore: number, tags: readonly TagNode[]): boolean {
-  return tags.some((tag) => !tag.close && !tag.selfClosing && tag.range[0] < openedBefore && comparableTagName(tag.name) === comparableTagName(name));
+  return tags.some((tag) => !tag.close && !tag.selfClosing && tag.range[0] < openedBefore && comparableTagName(tagNameOf(tag)) === comparableTagName(name));
 }
 
 function containsUnclosedElement(tag: TagNode): boolean {
   return (tag.children ?? []).some((child) => {
     const childTag = child as TagNode;
     if (!('openStart' in childTag)) return false;
-    return (!childTag.close && !childTag.selfClosing && !voidElements.has(childTag.name.toLowerCase())) || containsUnclosedElement(childTag);
+    return (!childTag.close && !childTag.selfClosing && !voidElements.has(tagNameOf(childTag).toLowerCase())) || containsUnclosedElement(childTag);
   });
 }
 
@@ -133,13 +138,13 @@ function checkTreeShape(tags: readonly TagNode[], report: ReportIssue): void {
     const children = tag.children ?? [];
     children.forEach((child, index) => {
       const previous = children[index - 1];
-      if (previous && child.range[0] < previous.range[1]) report('html: siblings in source order', `${child.type} after ${previous.type} in <${tag.name}>`, child.range);
-      if (tag.close && (child.range[0] < tag.range[0] || child.range[1] > tag.range[1])) report('html: child inside parent', `${child.type} outside <${tag.name}>`, child.range);
+      if (previous && child.range[0] < previous.range[1]) report('html: siblings in source order', `${child.type} after ${previous.type} in <${tagNameOf(tag)}>`, child.range);
+      if (tag.close && (child.range[0] < tag.range[0] || child.range[1] > tag.range[1])) report('html: child inside parent', `${child.type} outside <${tagNameOf(tag)}>`, child.range);
     });
     const attributes = tag.attributes ?? [];
     attributes.forEach((attribute, index) => {
       const previous = attributes[index - 1];
-      if (previous && attribute.range[0] < previous.range[1]) report('html: siblings in source order', `attribute ${JSON.stringify(attribute.key.value).slice(0, 40)} in <${tag.name}>`, attribute.range);
+      if (previous && attribute.range[0] < previous.range[1]) report('html: siblings in source order', `attribute ${JSON.stringify(attribute.key.value).slice(0, 40)} in <${tagNameOf(tag)}>`, attribute.range);
     });
   }
 }
@@ -161,7 +166,7 @@ function describeUncoveredSource(code: string, [start, end]: Range, tags: readon
     const [closeTag, name = ''] = match;
     const closeStart = start + match.index;
     const isDroppedClose = hasUnclosedElementNamed(name, closeStart, tags);
-    const branchTags = tags.map((tag) => ({ name: tag.name, openStart: tag.range[0], isClosed: Boolean(tag.close || tag.selfClosing) }));
+    const branchTags = tags.map((tag) => ({ name: tagNameOf(tag), openStart: tag.range[0], isClosed: Boolean(tag.close || tag.selfClosing) }));
     const check = !isDroppedClose
       ? 'html: stray close tag'
       : isClosedInAnotherBranch(ast, closeStart, name, branchTags) ? 'html: element opened and closed in different Twig branches' : 'html: close tag is read';
@@ -200,10 +205,10 @@ function countClassAttributesInMarkup(code: string, blocks: readonly TwigBlock[]
     masked = masked.slice(0, block.start) + (startsTagName ? 'x' : ' ').repeat(block.end - block.start) + masked.slice(block.end);
   }
   masked = masked
-    .replace(/<!--[\s\S]*?-->/g, (comment) => ' '.repeat(comment.length))
-    .replace(/<(script|style|textarea|title)\b[\s\S]*?<\/\1>/gi, (element) => element.replace(/>[\s\S]*</, (inner) => ' '.repeat(inner.length)));
+    .replace(/<!--[\s\S]*?(?:-->|$)/g, (comment) => ' '.repeat(comment.length))
+    .replace(/(<(script|style|textarea|title)\b[^>]*>)([\s\S]*?)(<\/\2>|$)/gi, (_element, open: string, _name, text: string, close: string) => open + ' '.repeat(text.length) + close);
   let count = 0;
-  for (const [, , head = ''] of masked.matchAll(/<([A-Za-z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g)) count += (head.match(/(?:^|\s)class\s*=/gi) ?? []).length;
+  for (const [, , head = ''] of masked.matchAll(/<([A-Za-z][\w:-]*)((?:=\s*"[^"]*"|=\s*'[^']*'|[^>])*)(?:>|$)/g)) count += (head.match(/(?:^|\s)class\s*=/gi) ?? []).length;
   return count;
 }
 
@@ -274,6 +279,12 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
 
   const commentRanges: Range[] = allBlocks.filter((block) => block.kind === 'comment').map((block) => [block.start, block.end]);
   const branchSegments = branchSegmentsOf(result.ast);
+  const reportIfLeftOpen = (tag: TagNode) => {
+    const isUnclosed = !tag.close && !tag.selfClosing && !voidElements.has(tagNameOf(tag).toLowerCase());
+    if (!isUnclosed || containsUnclosedElement(tag)) return;
+    const closeCheck = isInsideABranch(tag.range[0], branchSegments) ? 'html: element left open in a Twig branch' : 'html: element closes';
+    report(closeCheck, `line ${tag.loc.start.line}: ${code.slice(...tag.openStart.range).slice(0, 60)}`, tag.openStart.range);
+  };
   let classAttributes = services.omittedAttributes.filter((attribute) => attribute.name.toLowerCase() === 'class').length;
   walk(result.ast.body, (node) => {
     if (!isRangeInSource(node)) return report('html: range inside the source', `${node.type} ${JSON.stringify(node.range)}`);
@@ -283,18 +294,17 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
     if (typeof value === 'string' && value !== source && !node.type.startsWith('Css') && !overlaps(node.range, commentRanges)) {
       report('html: node text matches source', `${node.type} ${JSON.stringify(source).slice(0, 50)} read as ${JSON.stringify(value).slice(0, 50)}`, node.range);
     }
+    if (rawTextTagTypes.has(node.type)) return reportIfLeftOpen(node as TagNode);
     if (node.type !== 'Tag') return;
     const tag = node as TagNode;
-    const name = String(tag.name);
+    const name = tagNameOf(tag);
     for (const part of ['openStart', 'openEnd', 'close'] as const) {
       const token = node[part] as Token | undefined;
       if (token && code.slice(...token.range) !== token.value) report('html: tag parts match source', `${part} ${JSON.stringify(token.value).slice(0, 40)}`, token.range);
     }
     if (name.toLowerCase() !== code.slice(tag.openStart.range[0] + 1, tag.openStart.range[1]).toLowerCase()) report('html: tag name matches source', `${name} vs ${code.slice(...tag.openStart.range)}`, tag.openStart.range);
     if (isTwigGluedToName(name)) report('html: Twig block glued to a name', `<${name.slice(0, 60)}`, tag.openStart.range);
-    const isUnclosed = !tag.close && !tag.selfClosing && !voidElements.has(name.toLowerCase());
-    const closeCheck = isInsideABranch(tag.range[0], branchSegments) ? 'html: element left open in a Twig branch' : 'html: element closes';
-    if (isUnclosed && !containsUnclosedElement(tag)) report(closeCheck, `line ${tag.loc.start.line}: ${code.slice(...tag.openStart.range).slice(0, 60)}`, tag.openStart.range);
+    reportIfLeftOpen(tag);
     for (const attribute of tag.attributes ?? []) {
       if (code.slice(...attribute.key.range) !== attribute.key.value) report('html: attribute name matches source', JSON.stringify(attribute.key.value).slice(0, 40), attribute.key.range);
       if (isTwigGluedToName(attribute.key.value)) report('html: Twig block glued to a name', JSON.stringify(attribute.key.value).slice(0, 60), attribute.key.range);

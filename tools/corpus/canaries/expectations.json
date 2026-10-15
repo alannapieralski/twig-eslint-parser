@@ -86,20 +86,24 @@
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-close-tag-missing-gt.html.twig": [
+    { "check": "parser/output-matches-source", "failures": [6, 7] },
     { "check": "parser/html-oracle", "failures": [6, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-comment-unterminated.html.twig": [
+    { "check": "parser/output-matches-source", "failures": [2, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-double-open-bracket.html.twig": [
+    { "check": "parser/output-matches-source", "failures": "all" },
     { "check": "parser/html-oracle", "failures": [4] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-mis-nested.html.twig": [
+    { "check": "parser/output-matches-source", "failures": [2] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
@@ -163,7 +167,8 @@
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
   "broken/html-script-unterminated.html.twig": [
-    { "check": "parser/line-coverage", "noFailures": "all", "pending": "the measurement crashes on an unterminated <script>" },
+    { "check": "parser/line-coverage", "noFailures": "all" },
+    { "check": "parser/output-matches-source", "reports": [2], "failures": [2, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-tag-content", "noFailures": "all" }
   ],
