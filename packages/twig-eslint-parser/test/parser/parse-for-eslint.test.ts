@@ -135,6 +135,18 @@ describe('strings and numbers', () => {
     expect(findInterpolatedStrings(code).map((range) => code.slice(...range))).toEqual(['"y #{z}"', '"r #{s}"', '"p #{q ~ "r #{s}"}"']);
   });
 
+  it('lists every Twig string with its quote, including ones in tags that never become JavaScript', () => {
+    const code = `{% extends "base.twig" %}<p title="{{ 'x' }}">{{ "a #{ 'b' }" ~ "c" }}</p>{# "d" #}{% verbatim %}{{ "e" }}{% endverbatim %}`;
+    const { services } = parse(code);
+    expect(services.strings.map((string) => [code.slice(...string.range), string.quote, string.isInterpolated])).toEqual([
+      ['"base.twig"', '"', false],
+      ["'x'", "'", false],
+      ["'b'", "'", false],
+      [`"a #{ 'b' }"`, '"', true],
+      ['"c"', '"', false],
+    ]);
+  });
+
   it('accepts escaped quotes and escaped line breaks', () => {
     expect(onlyStatement("{{ 'it\\'s' ~ 'a \\\nb' }}")).toBeDefined();
   });
@@ -311,6 +323,7 @@ describe('markup and options', () => {
     const code = '<p class="a {{ b }}" id="{{ c }}">x</p>';
     const { services } = parse(code, { ignoreInterpolatedAttributes: ['CLASS'] });
     expect(services.omittedAttributes.map((attribute) => [attribute.name, code.slice(...attribute.range)])).toEqual([['class', 'class="a {{ b }}"']]);
+    expect(services.omittedAttributes[0]?.attribute).toMatchObject({ type: 'Attribute', key: { value: 'class' } });
   });
 
   it('keeps interpolated attributes unless asked to leave them out', () => {

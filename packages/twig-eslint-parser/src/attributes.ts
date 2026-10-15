@@ -5,7 +5,7 @@ export type AttributeNode = {
   readonly value?: { readonly parts?: readonly { readonly type: string }[] };
 };
 
-export type OmittedAttribute = { readonly name: string; readonly range: readonly [number, number] };
+export type OmittedAttribute = { readonly name: string; readonly range: readonly [number, number]; readonly attribute: AttributeNode };
 
 export function isAttributeNode(value: unknown): value is AttributeNode {
   return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'Attribute';
@@ -29,7 +29,7 @@ export function omitInterpolatedAttributes(root: unknown, attributeNames: Readon
     const node = value as Record<string, unknown>;
     const attributes = node['attributes'];
     if (Array.isArray(attributes) && attributes.every(isAttributeNode)) {
-      for (const attribute of attributes.filter(shouldOmit)) omitted.push({ name: attribute.key.value, range: attribute.range });
+      for (const attribute of attributes.filter(shouldOmit)) omitted.push({ name: attribute.key.value, range: attribute.range, attribute });
       node['attributes'] = attributes.filter((attribute) => !shouldOmit(attribute));
     }
     for (const [key, child] of Object.entries(node)) {

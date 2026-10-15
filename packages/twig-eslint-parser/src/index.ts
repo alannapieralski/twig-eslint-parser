@@ -7,7 +7,8 @@ export const meta = { name, version };
 
 export { parseForESLint };
 export { readTwigServices } from './services.js';
-export { findInterpolatedStrings } from './twig/interpolated-strings.js';
+export { findInterpolatedStrings } from './twig/strings.js';
+export type { TwigQuote, TwigStringSummary } from './twig/strings.js';
 export type { ParserOptions, TwigParseResult, TwigParserServices, UnconvertedTwigBlock } from './parse-for-eslint.js';
 export { containsTwig, isAttributeNode } from './attributes.js';
 export type { AttributeNode, OmittedAttribute } from './attributes.js';

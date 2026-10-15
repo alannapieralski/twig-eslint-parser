@@ -7,6 +7,7 @@ import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
 import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockKind, type TwigBlockSummary } from './twig/blocks.js';
 import { toSameLengthJavaScript } from './twig/javascript.js';
+import { summariseTwigStrings, type TwigStringSummary } from './twig/strings.js';
 import { tokenizeTwig } from './twig/tokens.js';
 
 export type ParserOptions = MarkupParserOptions & { ignoreInterpolatedAttributes?: readonly string[] } & Record<string, unknown>;
@@ -24,6 +25,7 @@ export type TwigParserServices = {
   readonly unconvertedBlocks: readonly UnconvertedTwigBlock[];
   readonly omittedAttributes: readonly OmittedAttribute[];
   readonly blocks: readonly TwigBlockSummary[];
+  readonly strings: readonly TwigStringSummary[];
 };
 
 export type TwigParseResult = Omit<Linter.ESLintParseResult, 'ast' | 'services'> & {
@@ -31,7 +33,7 @@ export type TwigParseResult = Omit<Linter.ESLintParseResult, 'ast' | 'services'>
   readonly services: Record<string, unknown> & { readonly twig: TwigParserServices };
 };
 
-type TwigExpressions = Omit<TwigParserServices, 'omittedAttributes' | 'blocks'> & { readonly statements: EstreeNode[] };
+type TwigExpressions = Omit<TwigParserServices, 'omittedAttributes' | 'blocks' | 'strings'> & { readonly statements: EstreeNode[] };
 
 function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number) => SourcePosition): TwigExpressions {
   const statements: EstreeNode[] = [];
@@ -61,7 +63,8 @@ function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number
 
 export function parseForESLint(code: string, options: ParserOptions = {}): TwigParseResult {
   const { ignoreInterpolatedAttributes } = parseTwigParserOptions(options);
-  const blocks = groupTwigBlocks(tokenizeTwig(code));
+  const tokens = tokenizeTwig(code);
+  const blocks = groupTwigBlocks(tokens);
   const markup = parseMarkup(code, blocks, options);
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, ...twigServices } = convertTwigBlocks(blocks, createOffsetLocator(code));
@@ -71,6 +74,6 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
   return {
     ast,
     visitorKeys: { ...visitorKeys, Program: [...(visitorKeys['Program'] ?? []), 'twigBody'] },
-    services: { twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks) } },
+    services: { twig: { ...twigServices, omittedAttributes, blocks: summariseTwigBlocks(blocks), strings: summariseTwigStrings(tokens) } },
   };
 }
