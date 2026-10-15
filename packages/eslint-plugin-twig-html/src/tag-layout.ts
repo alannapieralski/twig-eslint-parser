@@ -3,15 +3,6 @@ import type { Rule, SourceCode } from 'eslint';
 const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const quotedValue = /"[^"]*"|'[^']*'/g;
-const whitespaceSensitiveTags: ReadonlySet<string> = new Set(['pre', 'textarea']);
-const blockTags: ReadonlySet<string> = new Set([
-  'address', 'article', 'aside', 'blockquote', 'body', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
-  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',
-  'search', 'section', 'summary', 'ul', 'table', 'caption', 'colgroup', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
-]);
-const svgContainerTags: ReadonlySet<string> = new Set([
-  'svg', 'g', 'defs', 'symbol', 'clippath', 'mask', 'pattern', 'marker', 'filter', 'lineargradient', 'radialgradient',
-]);
 
 export type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
@@ -93,13 +84,6 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
       return ignoredElementNames.has(normaliseElementName(candidateName));
     });
   };
-}
-
-// Builds a check for whether whitespace inside a tag may be rendered: any tag not known to be block-level, or anything inside <pre> or <textarea>.
-export function createContentWhitespaceCheck(sourceCode: SourceCode): (node: TagNode) => boolean {
-  const isInsideWhitespaceSensitiveTag = createIgnoredInsideCheck(sourceCode, [...whitespaceSensitiveTags]);
-  const isKnownBlockElement = (name: string) => blockTags.has(name) || svgContainerTags.has(name);
-  return (node) => !isKnownBlockElement(normaliseElementName(node.name)) || isInsideWhitespaceSensitiveTag(node);
 }
 
 type TagListener = (node: TagNode) => void;
