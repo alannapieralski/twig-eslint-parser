@@ -63,7 +63,7 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixed('<div\n  class="a"\n>text</div>', { allowEmptyLines: true })).toBe('<div\n  class="a"\n>\n  text\n</div>');
   });
 
-  it('reports with the same messages as vue/multiline-html-element-content-newline', async () => {
+  it('reports how many line breaks it found on each side', async () => {
     const { messages } = await lint('<p\n  class="a"\n>text</p>', undefined, false);
     expect(messages.map((message) => message.message)).toEqual([
       'Expected 1 line break after opening tag (`<p>`), but no line breaks found.',
@@ -119,7 +119,7 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint(code, { ignores: ['span'] })).messages).toEqual([]);
   });
 
-  it.each(['a', 'span', 'strong', 'label', 'ruby', 'video'])('ignores <%s> by default, like Vue', async (name) => {
+  it.each(['a', 'span', 'strong', 'label', 'ruby', 'video'])('ignores the inline element <%s> by default', async (name) => {
     const code = `<${name}\n  class="a"\n  id="b"\n>this</${name}>`;
     expect((await lint(code)).messages).toEqual([]);
   });
@@ -141,7 +141,7 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it.each(['my-element', 'unknown'])('reports <%s>, which Vue does not ignore, but does not fix it, since a line break inside it may render as a space', async (name) => {
+  it.each(['my-element', 'unknown'])('reports <%s>, which is not ignored by default, but does not fix it, since a line break inside it may render as a space', async (name) => {
     const code = `<${name}\n  class="a"\n>new</${name}>`;
     const result = await lint(code);
     expect(result.output).toBe(code);

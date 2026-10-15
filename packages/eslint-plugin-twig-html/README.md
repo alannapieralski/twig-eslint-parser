@@ -39,13 +39,12 @@ config, which uses the same parser.
 | Rule | Description | Recommended | Fixable |
 |---|---|---|---|
 | [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
-| [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element, as `vue/multiline-html-element-content-newline` does | warn | yes |
+| [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
 ## Upgrading from `multiline-tag-content`
 
-`multiline-tag-content` is now `multiline-html-element-content-newline`, and works like
-`vue/multiline-html-element-content-newline`. Rename the rule in your config, and rename its `ignoreInside` option to
+`multiline-tag-content` is now `multiline-html-element-content-newline`. Rename the rule in your config, and rename its `ignoreInside` option to
 `ignores`. `ignores` replaces the default list, so copy in any defaults you want to keep. It now also checks elements whose
 opening tag fits on one line, once their content spans several lines.
 

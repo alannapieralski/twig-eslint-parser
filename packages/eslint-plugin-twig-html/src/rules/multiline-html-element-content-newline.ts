@@ -1,5 +1,6 @@
 import type { AST, Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
+import { elementsWithUnrenderedEdgeWhitespace, inlineNonVoidElements, whitespaceSensitiveElements } from '../html-elements.js';
 import { countLeadingHtmlWhitespace, countTrailingHtmlWhitespace, createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, layoutOptionDefaults, layoutOptionProperties, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
 import { isTwigBalancedWithin } from '../twig-blocks.js';
 
@@ -7,24 +8,9 @@ type Options = { indent?: number; ignores?: string[]; ignoreWhenEmpty?: boolean;
 type MessageId = 'unexpectedAfterClosingBracket' | 'unexpectedBeforeOpeningBracket';
 type ContentEdge = { readonly range: Range; readonly messageId: MessageId; readonly indentationWhenMissing: string };
 
-const whitespaceSensitiveElements = ['pre', 'textarea'];
-
-const vueInlineNonVoidElements = [
-  'a', 'abbr', 'audio', 'b', 'bdi', 'bdo', 'canvas', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'iframe', 'ins', 'kbd', 'label', 'map',
-  'mark', 'noscript', 'object', 'output', 'picture', 'q', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'time', 'u',
-  'var', 'video',
-];
-
-const elementsWithUnrenderedEdgeWhitespace: ReadonlySet<string> = new Set([
-  'address', 'article', 'aside', 'blockquote', 'body', 'button', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
-  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',
-  'search', 'section', 'summary', 'ul', 'table', 'caption', 'colgroup', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
-  'svg', 'g', 'defs', 'symbol', 'clippath', 'mask', 'pattern', 'marker', 'filter', 'lineargradient', 'radialgradient',
-]);
-
 const defaultOptions: Required<Options> = {
   indent: layoutOptionDefaults.indent,
-  ignores: [...whitespaceSensitiveElements, ...vueInlineNonVoidElements],
+  ignores: [...whitespaceSensitiveElements, ...inlineNonVoidElements],
   ignoreWhenEmpty: true,
   allowEmptyLines: false,
 };
