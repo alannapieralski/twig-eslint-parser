@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
 async function lint(code: string, ruleOptions?: Record<string, unknown>) {
-  const rules: Linter.RulesRecord = ruleOptions ? { 'twig-html/attrs-newline': ['warn', ruleOptions] } : {};
+  const rules: Linter.RulesRecord = { 'twig-html/multiline-tag-content': 'off', ...(ruleOptions && { 'twig-html/attrs-newline': ['warn', ruleOptions] }) };
   const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
@@ -19,6 +19,10 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed('<button type="button" class="flex" data-js-toggle>x</button>')).toBe(
       '<button\n  type="button"\n  class="flex"\n  data-js-toggle\n>x</button>',
     );
+  });
+
+  it('indents a top-level tag with tabs when the rest of the file is indented with tabs', async () => {
+    expect(await fixed('<div class="a" id="b"></div>\n<section>\n\t<p>x</p>\n</section>')).toBe('<div\n\tclass="a"\n\tid="b"\n></div>\n<section>\n\t<p>x</p>\n</section>');
   });
 
   it('leaves tags with one attribute alone', async () => {
@@ -92,6 +96,24 @@ describe('twig-html/attrs-newline', () => {
     const result = await lint(code);
     expect(result.output).toBe(code);
     expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);
+  });
+
+  it.each([
+    ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
+    ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
+    ['an open tag whose unquoted value swallowed the next tag', '<li class="a" id=b<span>x</span></li>'],
+  ])('reports but does not fix %s, so the markup it swallowed is never split', async (_name, code) => {
+    const result = await lint(code);
+    expect(result.output).toBe(code);
+    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);
+  });
+
+  it.each([
+    ['an open tag with no > before the end of the file', '<li class="a" id="b" data-x="c"'],
+    ['an open tag with no > before the end of the file, after a closed tag', '<ul class="a" id="b" data-x="c">\n</ul>\n<li class="a" id="b" data-x="c"\n'],
+  ])('does not crash on %s', async (_name, code) => {
+    const result = await lint(code);
+    expect(result.messages.filter((message) => message.fatal)).toEqual([]);
   });
 
   it('checks <script> and <style> tags too', async () => {
