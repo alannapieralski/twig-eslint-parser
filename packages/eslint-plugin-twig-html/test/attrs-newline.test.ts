@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
 async function lint(code: string, ruleOptions?: Record<string, unknown>) {
-  const rules: Linter.RulesRecord = ruleOptions ? { 'twig-html/attrs-newline': ['warn', ruleOptions] } : {};
+  const rules: Linter.RulesRecord = { 'twig-html/content-newline': 'off', ...(ruleOptions && { 'twig-html/attrs-newline': ['warn', ruleOptions] }) };
   const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
