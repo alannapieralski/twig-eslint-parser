@@ -53,7 +53,7 @@ export function loadCanaryExpectations(): Expectation[] {
 }
 
 export function discoverCanaries(): Template[] {
-  return globSync('*.twig', { cwd: canaryRoot }).sort().map((file) => ({ root: canaryRoot, path: join(canaryRoot, file), relativePath: file, source: readFileSync(join(canaryRoot, file), 'utf8') }));
+  return globSync('**/*.twig', { cwd: canaryRoot }).sort().map((file) => ({ root: canaryRoot, path: join(canaryRoot, file), relativePath: file, source: readFileSync(join(canaryRoot, file), 'utf8') }));
 }
 
 export function isCanary(template: Template): boolean {

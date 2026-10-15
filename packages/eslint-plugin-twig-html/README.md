@@ -31,7 +31,7 @@ export default [twigHtml.configs.recommended];
 ```
 
 `configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
-`twig-html/attrs-newline` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
+`twig-html/attrs-newline`, `twig-html/multiline-tag-content` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
 config, which uses the same parser.
 
 ## Rules
@@ -39,6 +39,7 @@ config, which uses the same parser.
 | Rule | Description | Recommended | Fixable |
 |---|---|---|---|
 | [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
+| [`multiline-tag-content`](docs/rules/multiline-tag-content.md) | Put the content of a tag on its own lines when the opening tag spans several lines | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
 ## Why not @html-eslint's rules

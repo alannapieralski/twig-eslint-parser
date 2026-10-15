@@ -77,6 +77,8 @@ It reports but does not fix:
 - an unquoted value holding anything other than plain text or a single Twig print, such as
   `data-a={{ theme }}{{ extra_attributes }}` or `class={% if a %}"a"{% else %}'b'{% endif %}`,
   since that Twig may print attributes or quotes of its own
+- an attribute in an open tag that swallowed the markup after it, such as `<li id=b<span>` with no
+  `>`, since the parser has misread where that tag ends
 - an unquoted value straight before a `/`, such as `href=a/b`, which the markup reader cuts short
   at the `/`
 

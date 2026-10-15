@@ -5,7 +5,7 @@ import twigHtml from '../src/index.js';
 type LintSettings = { fix?: boolean; extraConfig?: Linter.Config[] };
 
 async function lint(code: string, ruleOptions?: Record<string, unknown>, { fix = true, extraConfig = [] }: LintSettings = {}) {
-  const rules: Linter.RulesRecord = { 'twig-html/attrs-newline': 'off', ...(ruleOptions && { 'twig-html/quotes': ['warn', ruleOptions] }) };
+  const rules: Linter.RulesRecord = { 'twig-html/attrs-newline': 'off', 'twig-html/multiline-tag-content': 'off', ...(ruleOptions && { 'twig-html/quotes': ['warn', ruleOptions] }) };
   const eslint = new ESLint({ overrideConfigFile: true, fix, overrideConfig: [twigHtml.configs.recommended, ...extraConfig, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
@@ -67,6 +67,20 @@ describe('twig-html/quotes', () => {
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
       expect(messages.map((message) => message.messageId)).toEqual(['missingHtmlQuote', 'missingHtmlQuote', 'missingHtmlQuote']);
+    });
+
+    it('reports but does not fix an open tag that swallowed the markup after it', async () => {
+      const code = "<li class='a' id=b<span>x</span></li>";
+      const { output, messages } = await lint(code);
+      expect(output).toBe(code);
+      expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'missingHtmlQuote']);
+    });
+
+    it('reports but does not fix an open tag with no > before the end of the file', async () => {
+      const code = "<li class='a' id=\"b\"";
+      const { output, messages } = await lint(code);
+      expect(output).toBe(code);
+      expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote']);
     });
 
     it('does not wrap an unquoted value the markup reader may have cut short at a slash', async () => {
