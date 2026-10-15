@@ -53,7 +53,9 @@ The line breaks it inserts match the file: a template with Windows line endings 
 them.
 
 The fix only changes the whitespace between attributes. If anything else sits between two
-attributes, such as a Twig comment, the rule reports the tag but does not fix it.
+attributes, such as a Twig comment, the rule reports the tag but does not fix it. The same goes for an open tag that is missing its
+`>`, where the parser reads the markup after it as attributes: splitting those "attributes" onto
+separate lines would break the next tag.
 
 ## Options
 
@@ -88,7 +90,7 @@ The defaults match Vue's threshold.
 
 ## Testing
 
-- `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in `textarea` and the unfixable Twig-comment case.
+- `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in `textarea`, the unfixable Twig-comment case and open tags missing their `>`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
 

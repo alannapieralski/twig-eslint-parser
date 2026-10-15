@@ -94,6 +94,15 @@ describe('twig-html/attrs-newline', () => {
     expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);
   });
 
+  it.each([
+    ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
+    ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
+  ])('reports but does not fix %s, so the markup it swallowed is never split', async (_name, code) => {
+    const result = await lint(code);
+    expect(result.output).toBe(code);
+    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);
+  });
+
   it('checks <script> and <style> tags too', async () => {
     expect(await fixed('<script src="a.js" type="module" defer></script>')).toBe('<script\n  src="a.js"\n  type="module"\n  defer\n></script>');
   });

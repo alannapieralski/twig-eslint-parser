@@ -1,13 +1,16 @@
 import type { AST, Rule, SourceCode } from 'eslint';
 import { readTwigServices, type TwigBlockSummary } from 'twig-eslint-parser';
 
+const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
+const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
+
 type Range = readonly [number, number];
 type Token = { readonly range: Range; readonly value: string };
 type TagNode = {
   readonly name?: string;
   readonly openStart: Token;
   readonly openEnd: Token;
-  readonly attributes: readonly { readonly range: Range }[];
+  readonly attributes: readonly { readonly range: Range; readonly key?: { readonly range: Range } }[];
 };
 type Options = { ifAttrsMoreThan?: number; closeStyle?: 'newline' | 'sameline'; indent?: number; ignoreInside?: string[] };
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
@@ -52,6 +55,11 @@ function lineIndentation(text: string, offset: number): string {
 // Returns '\r\n' when the file uses Windows line endings, otherwise '\n'.
 function lineBreakUsedIn(text: string): string {
   return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
+function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
+  if (!tagEnds.has(node.openEnd.value)) return true;
+  return node.attributes.some((attribute) => attribute.key !== undefined && text.slice(...attribute.key.range).replace(twigSpan, '').includes('<'));
 }
 
 function describeGaps(node: TagNode, groups: readonly Range[], text: string, options: Required<Options>): Gap[] {
@@ -114,7 +122,7 @@ export const attrsNewline: Rule.RuleModule = {
       const firstWrong = wrongGaps[0];
       if (!firstWrong) return;
 
-      const isFixable = gaps.every((gap) => /^\s*$/.test(text.slice(...gap.range)));
+      const isFixable = gaps.every((gap) => /^\s*$/.test(text.slice(...gap.range))) && !isOpenTagSwallowingMarkup(node, text);
       const messageId = !firstWrong.isClosing ? 'attributeLine' : options.closeStyle === 'newline' ? 'closeOnOwnLine' : 'closeAfterLastAttribute';
       const reportedEnd = firstWrong.isClosing ? node.openEnd.range[1] : (groups.find(([start]) => start === firstWrong.range[1])?.[1] ?? firstWrong.range[1]);
       const loc: AST.SourceLocation = { start: context.sourceCode.getLocFromIndex(firstWrong.range[1]), end: context.sourceCode.getLocFromIndex(reportedEnd) };
