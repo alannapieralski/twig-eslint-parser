@@ -16,3 +16,16 @@ export function depthChangeWithin(range: readonly [number, number], blocks: read
   for (let index = firstBlockIndexFrom(range[0], blocks), block = blocks[index]; block && block.range[1] <= range[1]; block = blocks[++index]) depth += block.depthChange;
   return depth;
 }
+
+const branchContinuations: ReadonlySet<string> = new Set(['else', 'elseif']);
+
+// True when every Twig block that opens or branches within the range also closes within it.
+export function isTwigBalancedWithin(range: readonly [number, number], blocks: readonly TwigBlockSummary[]): boolean {
+  let depth = 0;
+  for (let index = firstBlockIndexFrom(range[0], blocks), block = blocks[index]; block && block.range[1] <= range[1]; block = blocks[++index]) {
+    if (depth === 0 && branchContinuations.has(block.tagName ?? '')) return false;
+    depth += block.depthChange;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
+}

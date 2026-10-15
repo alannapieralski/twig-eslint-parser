@@ -1,9 +1,13 @@
 import type { AST, Rule } from 'eslint';
+import { readTwigServices } from 'twig-eslint-parser';
 import { countLeadingHtmlWhitespace, countTrailingHtmlWhitespace, createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, layoutOptionDefaults, layoutOptionProperties, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
+import { isTwigBalancedWithin } from '../twig-blocks.js';
 
 type Options = { indent?: number; ignores?: string[]; ignoreWhenEmpty?: boolean; allowEmptyLines?: boolean };
 type MessageId = 'unexpectedAfterClosingBracket' | 'unexpectedBeforeOpeningBracket';
 type ContentEdge = { readonly range: Range; readonly messageId: MessageId; readonly indentationWhenMissing: string };
+
+const whitespaceSensitiveElements = ['pre', 'textarea'];
 
 const vueInlineNonVoidElements = [
   'a', 'abbr', 'audio', 'b', 'bdi', 'bdo', 'canvas', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'iframe', 'ins', 'kbd', 'label', 'map',
@@ -11,9 +15,16 @@ const vueInlineNonVoidElements = [
   'var', 'video',
 ];
 
+const elementsWithUnrenderedEdgeWhitespace: ReadonlySet<string> = new Set([
+  'address', 'article', 'aside', 'blockquote', 'body', 'button', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
+  'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',
+  'search', 'section', 'summary', 'ul', 'table', 'caption', 'colgroup', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+  'svg', 'g', 'defs', 'symbol', 'clippath', 'mask', 'pattern', 'marker', 'filter', 'lineargradient', 'radialgradient',
+]);
+
 const defaultOptions: Required<Options> = {
   indent: layoutOptionDefaults.indent,
-  ignores: ['pre', 'textarea', ...vueInlineNonVoidElements],
+  ignores: [...whitespaceSensitiveElements, ...vueInlineNonVoidElements],
   ignoreWhenEmpty: true,
   allowEmptyLines: false,
 };
@@ -57,7 +68,8 @@ export const multilineHtmlElementContentNewline: Rule.RuleModule = {
     const { sourceCode } = context;
     const text = sourceCode.text;
     const lineBreak = lineBreakUsedIn(text);
-    const isIgnored = createIgnoredInsideCheck(sourceCode, options.ignores);
+    const { blocks } = readTwigServices(sourceCode, context.id);
+    const isIgnored = createIgnoredInsideCheck(sourceCode, [...whitespaceSensitiveElements, ...options.ignores]);
     const isInvalidLineBreakCount = (lineBreaks: number) => options.allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
     const locate = ([start, end]: Range): AST.SourceLocation => ({ start: sourceCode.getLocFromIndex(start), end: sourceCode.getLocFromIndex(end) });
 
@@ -79,12 +91,15 @@ export const multilineHtmlElementContentNewline: Rule.RuleModule = {
     };
 
     const check = (node: TagNode) => {
-      const { close } = node;
-      if (!close) return;
-      if (!plainElementName.test(node.name ?? '') || isIgnored(node)) return;
-      if (!text.slice(node.openStart.range[0], close.range[0]).includes('\n')) return;
-      if (isOpenTagSwallowingMarkup(node, text)) return;
-      if (options.ignoreWhenEmpty && node.openEnd.range[1] === close.range[0]) return;
+      const { close, name } = node;
+      if (!close || name === undefined || !plainElementName.test(name)) return;
+      const contentRange: Range = [node.openEnd.range[1], close.range[0]];
+      const isSingleLine = text.lastIndexOf('\n', close.range[0] - 1) < node.openStart.range[0];
+      if (isSingleLine) return;
+      if (options.ignoreWhenEmpty && contentRange[0] === contentRange[1]) return;
+      if (isOpenTagSwallowingMarkup(node, text) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(node)) return;
+
+      const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());
 
       for (const edge of findContentEdges(node, close)) {
         const whitespace = text.slice(...edge.range);
@@ -95,8 +110,8 @@ export const multilineHtmlElementContentNewline: Rule.RuleModule = {
         context.report({
           loc: locate(edge.range),
           messageId: edge.messageId,
-          data: { name: node.name ?? '', actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
-          fix: (fixer) => fixer.replaceTextRange([...edge.range], `${lineBreak}${indentation}`),
+          data: { name, actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
+          ...(isFixable && { fix: (fixer: Rule.RuleFixer) => fixer.replaceTextRange([...edge.range], `${lineBreak}${indentation}`) }),
         });
       }
     };

@@ -86,7 +86,6 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
   };
 }
 
-
 type TagListener = (node: TagNode) => void;
 
 export function tagListeners(check: TagListener, selectors: readonly string[]): Rule.RuleListener {

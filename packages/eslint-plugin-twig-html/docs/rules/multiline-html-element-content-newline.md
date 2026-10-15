@@ -73,11 +73,19 @@ What it leaves alone:
   reduced to one line break, as in Vue, so `>\n\n</div>` becomes `>\n</div>`.
 - Elements in `ignores`, and everything inside them. By default that is `pre`, `textarea` and the inline elements
   Vue lists (`a`, `span`, `strong`, `label`, `svg` and the like), where a line break may render as a space.
+- `pre` and `textarea`, and everything inside them, even when `ignores` leaves them out, since their whitespace is content.
+- An element whose content starts or ends in a different Twig branch from the element, such as a wrapper opened in
+  `{% if wrap %}<div>{% endif %}` and closed in `{% if wrap %}</div>{% endif %}`. Moving the edges would move the
+  Twig tags with them. Twig blocks that open and close inside the content are fine.
 - Tags whose name is Twig, such as `<{{ element }}>` or `<h{{ level }}>`, since Twig may render them as an inline element.
   Vue has no equivalent.
 - `<script>` and `<style>`, which this rule does not check (`attrs-newline` does).
 - Tags with no closing tag, such as `<img>`.
 - An open tag that is missing its `>`, where the parser reads the markup after it as attributes.
+
+It only fixes elements known to be block-level, such as `div`, `p`, `li` and `table`, `button` and SVG containers.
+Other elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an
+inline element can render as a space.
 
 Vue's fix inserts a bare line break and leaves indentation to `vue/html-indent`. Twig has no such rule, so this fix
 indents too: content one step in from the line the tag starts on, the closing tag in line with it. When it removes
@@ -109,7 +117,7 @@ its output differs from Vue's. This rule follows Vue, so both kinds of template 
 
 ## Testing
 
-- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, ignored elements and their contents, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
+- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/multiline-html-element-content-newline` does the same for real templates.
 

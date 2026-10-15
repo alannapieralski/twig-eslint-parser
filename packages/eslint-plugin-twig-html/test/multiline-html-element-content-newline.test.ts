@@ -113,9 +113,10 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixed('<p\n  class="a"\n  id="b"\n>text</p>', { indent: 4 })).toBe('<p\n  class="a"\n  id="b"\n>\n    text\n</p>');
   });
 
-  it.each(['pre', 'textarea'])('never touches <%s>, where whitespace is content', async (name) => {
+  it.each(['pre', 'textarea'])('never touches <%s>, where whitespace is content, even when ignores leaves it out', async (name) => {
     const code = `<${name}\n  class="a"\n  id="b"\n>text</${name}>`;
     expect((await lint(code)).messages).toEqual([]);
+    expect((await lint(code, { ignores: ['span'] })).messages).toEqual([]);
   });
 
   it.each(['a', 'span', 'strong', 'label', 'ruby', 'video'])('ignores <%s> by default, like Vue', async (name) => {
@@ -123,8 +124,11 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it('lays out an inline element once it is taken out of ignores', async () => {
-    expect(await fixed('<span\n  class="a"\n>this</span>', { ignores: [] })).toBe('<span\n  class="a"\n>\n  this\n</span>');
+  it('reports an inline element taken out of ignores, but does not fix it', async () => {
+    const code = '<span\n  class="a"\n>this</span>';
+    const result = await lint(code, { ignores: [] });
+    expect(result.output).toBe(code);
+    expect(result.messages).toHaveLength(2);
   });
 
   it('never touches a tag inside an ignored element', async () => {
@@ -137,8 +141,29 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint(code)).messages).toEqual([]);
   });
 
-  it.each(['button', 'my-element', 'unknown'])('lays out <%s>, which Vue does not ignore', async (name) => {
-    expect(await fixed(`<${name}\n  class="a"\n>this</${name}>`)).toBe(`<${name}\n  class="a"\n>\n  this\n</${name}>`);
+  it.each(['my-element', 'unknown'])('reports <%s>, which Vue does not ignore, but does not fix it, since a line break inside it may render as a space', async (name) => {
+    const code = `<${name}\n  class="a"\n>new</${name}>`;
+    const result = await lint(code);
+    expect(result.output).toBe(code);
+    expect(result.messages.map((message) => message.messageId)).toEqual(['unexpectedAfterClosingBracket', 'unexpectedBeforeOpeningBracket']);
+  });
+
+  it('lays out <button>, which drops whitespace at the edges of its content', async () => {
+    expect(await fixed('<button\n  type="button"\n>Go</button>')).toBe('<button\n  type="button"\n>\n  Go\n</button>');
+  });
+
+  it.each([
+    ['a wrapper opened and closed in separate conditions', '{% if wrap %}<div class="wrapper">{% endif %}\n  {{ content }}\n{% if wrap %}</div>{% endif %}'],
+    ['an element whose content ends in another branch', '<div class="a">{% if x %}\n  a\n{% else %}\n  b</div>{% endif %}'],
+    ['an element whose content opens a block it does not close', '<div class="a">\n  {% for item in items %}<p>{{ item }}</p></div>{% endfor %}'],
+  ])('never touches %s, since its edges belong to Twig branches', async (_name, code) => {
+    const result = await lint(code);
+    expect(result.output).toBe(code);
+    expect(result.messages).toEqual([]);
+  });
+
+  it('still lays out an element whose Twig blocks open and close inside it', async () => {
+    expect(await fixed('<div class="a">{% if x %}\n  a\n{% else %}\n  b\n{% endif %}</div>')).toBe('<div class="a">\n  {% if x %}\n  a\n{% else %}\n  b\n{% endif %}\n</div>');
   });
 
   it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
