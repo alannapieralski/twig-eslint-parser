@@ -1,7 +1,6 @@
 import type { AST, Rule } from 'eslint';
+import { WHITESPACE_SENSITIVE_TAGS } from '../constants.js';
 import { createIgnoredInsideCheck, indentUnitFor, isOpenTagSwallowingMarkup, lineBreakUsedIn, lineIndentation, tagListeners, type Range, type TagNode } from '../tag-layout.js';
-
-const whitespaceSensitiveTags: ReadonlySet<string> = new Set(['pre', 'textarea']);
 
 type Options = { indent?: number; ignoreInside?: string[] };
 type ContentGap = { readonly range: Range; readonly expected: string; readonly messageId: 'contentOnOwnLine' | 'closeOnOwnLine'; readonly anchor: Range };
@@ -56,7 +55,7 @@ export const multilineTagContent: Rule.RuleModule = {
     const check = (node: TagNode) => {
       const { close } = node;
       if (!close) return;
-      if (whitespaceSensitiveTags.has(String(node.name ?? '').toLowerCase())) return;
+      if (WHITESPACE_SENSITIVE_TAGS.has(String(node.name ?? '').toLowerCase())) return;
       if (!text.slice(node.openStart.range[0], node.openEnd.range[1]).includes('\n')) return;
       if (isOpenTagSwallowingMarkup(node, text) || isIgnored(node)) return;
 

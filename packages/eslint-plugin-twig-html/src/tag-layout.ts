@@ -32,15 +32,47 @@ export function indentUnitFor(tagIndentation: string, indent: number): string {
   return tagIndentation.includes('\t') ? '\t' : ' '.repeat(indent);
 }
 
-export function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
-  if (!tagEnds.has(node.openEnd.value)) return true;
-  return node.attributes.some((attribute) => text.slice(...attribute.range).replace(twigSpan, '').replace(quotedValue, '').includes('<'));
+function endsWithClosingBracket(node: TagNode): boolean {
+  return tagEnds.has(node.openEnd.value);
 }
 
+function withoutTwigAndQuotedText(attributeText: string): string {
+  const withoutTwig = attributeText.replace(twigSpan, '');
+  return withoutTwig.replace(quotedValue, '');
+}
+
+function hasStrayOpeningBracket(attributeText: string): boolean {
+  return withoutTwigAndQuotedText(attributeText).includes('<');
+}
+
+// True when the parser read the markup after an unterminated open tag as part of that tag.
+export function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
+  if (!endsWithClosingBracket(node)) return true;
+
+  return node.attributes.some((attribute) => {
+    const attributeText = text.slice(...attribute.range);
+    return hasStrayOpeningBracket(attributeText);
+  });
+}
+
+function normaliseElementName(name: string | undefined): string {
+  return (name ?? '').toLowerCase();
+}
+
+// Builds a check for whether a tag is, or sits inside, one of the ignored elements.
 export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: readonly string[]): (node: TagNode) => boolean {
-  const ignoredElements = new Set(ignoreInside.map((name) => name.toLowerCase()));
-  return (node) => [...sourceCode.getAncestors(node as unknown as EslintNode), node as unknown as EslintNode]
-    .some((ancestor) => ignoredElements.has(String((ancestor as unknown as TagNode).name ?? '').toLowerCase()));
+  const ignoredElementNames = new Set(ignoreInside.map(normaliseElementName));
+
+  return (node) => {
+    const tagAsEslintNode = node as unknown as EslintNode;
+    const enclosingNodes = sourceCode.getAncestors(tagAsEslintNode);
+    const nodesToCheck = [...enclosingNodes, tagAsEslintNode];
+
+    return nodesToCheck.some((candidate) => {
+      const candidateName = (candidate as unknown as TagNode).name;
+      return ignoredElementNames.has(normaliseElementName(candidateName));
+    });
+  };
 }
 
 export type TagListener = (node: TagNode) => void;
