@@ -9,7 +9,7 @@ export function parse(chars: CharsBuffer, state: TokenizerState) {
     return parseWrapper(state);
   }
 
-  if (value === ">" || value === "/") {
+  if (value === ">") {
     return parseTagEnd(state);
   }
 

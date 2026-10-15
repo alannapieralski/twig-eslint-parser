@@ -57,6 +57,7 @@ with upstream's own strictness (`strict`), not this package's extra checks
 | EHP-05 | A tag or attributes print among attributes is an attribute of its own and ends any name it follows; comments are skipped | `{% if x %}class` and `{{ a }}{% if b %}` were read as single attribute names | `test/parser/parse-for-eslint.test.ts` |
 | EHP-06 | Close tags pair with open tags by a name key without whitespace or a trailing `/` | `</{{element}}>` did not close `<{{ element }}>`, and `</div/>` did not close `<div>` as it does in a browser | `test/parser/parse-for-eslint.test.ts` |
 | EHP-07 | A close tag that matches an open ancestor closes back to it (HTML's "any other end tag" step) | One never-closed element swallowed every later close tag | `test/parser/parse-for-eslint.test.ts`, upstream snapshot "Custom tag raw content" |
+| EHP-08 | `/` inside an unquoted attribute value is part of the value; only whitespace and `>` end it (HTML's "attribute value (unquoted)" state, as in htmlparser2). An unquoted value that runs to the end of the input is kept | `href=/home` lost its value and `href=a/b` was read as `href=a`. `<a href=/>` now has the value `/`, and `<div class=a/>` has the value `a/` and stays open, as in a browser | `test/parser/parse-for-eslint.test.ts` |
 
 ## Commands
 

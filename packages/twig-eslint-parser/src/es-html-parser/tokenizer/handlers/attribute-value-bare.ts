@@ -20,15 +20,15 @@ export function parseValueEnd(state: TokenizerState) {
 }
 
 export function parse(chars: CharsBuffer, state: TokenizerState) {
-  if (
-    isWhitespace(chars.value()) ||
-    chars.value() === ">" ||
-    chars.value() === "/"
-  ) {
+  if (isWhitespace(chars.value()) || chars.value() === ">") {
     return parseValueEnd(state);
   }
 
   state.accumulatedContent.concatBuffer(state.decisionBuffer);
   state.decisionBuffer.clear();
   state.sourceCode.next();
+}
+
+export function handleContentEnd(state: TokenizerState) {
+  if (state.accumulatedContent.length() > 0) parseValueEnd(state);
 }
