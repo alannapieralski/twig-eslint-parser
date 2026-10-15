@@ -5,7 +5,7 @@ import twigHtml from '../src/index.js';
 async function lint(code: string, ruleOptions?: Record<string, unknown>) {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
-    'twig-html/content-newline': ruleOptions ? ['warn', ruleOptions] : 'warn',
+    'twig-html/multiline-tag-content': ruleOptions ? ['warn', ruleOptions] : 'warn',
   };
   const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
@@ -17,7 +17,7 @@ async function fixed(code: string, ruleOptions?: Record<string, unknown>): Promi
   return (await lint(code, ruleOptions)).output;
 }
 
-describe('twig-html/content-newline', () => {
+describe('twig-html/multiline-tag-content', () => {
   it('moves text onto its own line when the opening tag spans several lines', async () => {
     expect(await fixed('<h2\n  id="system-breadcrumb"\n  class="sr-only"\n>You are here:</h2>')).toBe(
       '<h2\n  id="system-breadcrumb"\n  class="sr-only"\n>\n  You are here:\n</h2>',
@@ -104,9 +104,11 @@ describe('twig-html/content-newline', () => {
   it.each([
     ['an open tag missing its >', '<li\n  class="a"\n  id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li\n  class="a"\n  id="b"text</li>'],
+    ['an open tag whose unquoted value swallowed the next tag', '<li\n  class="a"\n  id=b<span>x</span></li>'],
+    ['an open tag with no > before the end of the file', '<li\n  class="a"\n  id="b"\n'],
   ])('does not report %s, so the markup it swallowed is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);
-    expect(result.messages.filter((message) => message.ruleId === 'twig-html/content-newline')).toEqual([]);
+    expect(result.messages.filter((message) => message.ruleId === 'twig-html/multiline-tag-content')).toEqual([]);
   });
 });

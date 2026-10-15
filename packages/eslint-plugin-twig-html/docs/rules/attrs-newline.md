@@ -54,7 +54,7 @@ them.
 
 The fix only changes the whitespace between attributes. If anything else sits between two
 attributes, such as a Twig comment, the rule reports the tag but does not fix it. The same goes for an open tag that is missing its
-`>`, where the parser reads the markup after it as attributes: splitting those "attributes" onto
+`>`, where the parser reads the markup after it as attributes (including when it ends up inside an unquoted value): splitting those "attributes" onto
 separate lines would break the next tag.
 
 ## Options

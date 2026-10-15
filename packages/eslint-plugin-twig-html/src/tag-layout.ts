@@ -2,6 +2,7 @@ import type { Rule, SourceCode } from 'eslint';
 
 const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
+const quotedValue = /"[^"]*"|'[^']*'/g;
 
 export type Range = readonly [number, number];
 export type Token = { readonly range: Range; readonly value: string };
@@ -10,8 +11,9 @@ export type TagNode = {
   readonly openStart: Token;
   readonly openEnd: Token;
   readonly close?: Token | null;
-  readonly attributes: readonly { readonly range: Range; readonly key?: { readonly range: Range } }[];
+  readonly attributes: readonly { readonly range: Range }[];
 };
+type ParsedTag = Omit<TagNode, 'openEnd'> & { readonly openEnd?: Token };
 export type LayoutOptions = { indent: number; ignoreInside: string[] };
 
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
@@ -32,7 +34,7 @@ export function indentUnitFor(tagIndentation: string, indent: number): string {
 
 export function isOpenTagSwallowingMarkup(node: TagNode, text: string): boolean {
   if (!tagEnds.has(node.openEnd.value)) return true;
-  return node.attributes.some((attribute) => attribute.key !== undefined && text.slice(...attribute.key.range).replace(twigSpan, '').includes('<'));
+  return node.attributes.some((attribute) => text.slice(...attribute.range).replace(twigSpan, '').replace(quotedValue, '').includes('<'));
 }
 
 export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: readonly string[]): (node: TagNode) => boolean {
@@ -43,6 +45,13 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
 
 export type TagListener = (node: TagNode) => void;
 
+function isTerminated(node: ParsedTag): node is TagNode {
+  return node.openEnd !== undefined;
+}
+
 export function tagListeners(check: TagListener, selectors: readonly string[]): Rule.RuleListener {
-  return Object.fromEntries(selectors.map((selector) => [selector, check])) as unknown as Rule.RuleListener;
+  const checkTerminated = (node: ParsedTag) => {
+    if (isTerminated(node)) check(node);
+  };
+  return Object.fromEntries(selectors.map((selector) => [selector, checkTerminated])) as unknown as Rule.RuleListener;
 }

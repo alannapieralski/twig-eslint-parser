@@ -1,4 +1,4 @@
-# twig-html/content-newline
+# twig-html/multiline-tag-content
 
 Put the content of a tag on its own lines when the opening tag already spans several lines.
 
@@ -67,7 +67,7 @@ tabs when the tag is indented with tabs.
 | `ignoreInside` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Set `[]` to lay SVG out too. |
 
 ```js
-'twig-html/content-newline': ['warn', { indent: 4 }],
+'twig-html/multiline-tag-content': ['warn', { indent: 4 }],
 ```
 
 ## Why not @html-eslint's `element-newline`
@@ -79,9 +79,9 @@ once it is multi-line, the content follows.
 
 ## Testing
 
-- `test/content-newline.test.ts` covers the layout, empty and whitespace-only tags, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, `pre` and `textarea`, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
+- `test/multiline-tag-content.test.ts` covers the layout, empty and whitespace-only tags, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, `pre` and `textarea`, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
-- `npm run corpus -- --rule twig-html/content-newline` does the same for real templates.
+- `npm run corpus -- --rule twig-html/multiline-tag-content` does the same for real templates.
 
 ## When not to use it
 

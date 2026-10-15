@@ -2,13 +2,13 @@ import { createRequire } from 'node:module';
 import type { ESLint, Linter } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { attrsNewline } from './rules/attrs-newline.js';
-import { contentNewline } from './rules/content-newline.js';
+import { multilineTagContent } from './rules/multiline-tag-content.js';
 
 const { name, version } = createRequire(import.meta.url)('../package.json') as { name: string; version: string };
 
 const plugin = {
   meta: { name, version },
-  rules: { 'attrs-newline': attrsNewline, 'content-newline': contentNewline },
+  rules: { 'attrs-newline': attrsNewline, 'multiline-tag-content': multilineTagContent },
   configs: {} as { recommended: Linter.Config },
 } satisfies ESLint.Plugin;
 
@@ -18,7 +18,7 @@ const recommended: Linter.Config = {
   ignores: ['**/*.svg.twig'],
   plugins: { 'twig-html': plugin },
   languageOptions: { parser: twigParser },
-  rules: { 'twig-html/attrs-newline': 'warn', 'twig-html/content-newline': 'warn' },
+  rules: { 'twig-html/attrs-newline': 'warn', 'twig-html/multiline-tag-content': 'warn' },
 };
 
 Object.assign(plugin.configs, { recommended });

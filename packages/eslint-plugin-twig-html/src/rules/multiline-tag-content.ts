@@ -24,12 +24,12 @@ function describeContentGaps(node: TagNode, close: NonNullable<TagNode['close']>
   ];
 }
 
-export const contentNewline: Rule.RuleModule = {
+export const multilineTagContent: Rule.RuleModule = {
   meta: {
     type: 'layout',
     docs: {
       description: 'Put the content of a tag whose opening tag spans several lines on its own lines',
-      url: 'https://github.com/alannapieralski/twig-eslint-parser/blob/main/packages/eslint-plugin-twig-html/docs/rules/content-newline.md',
+      url: 'https://github.com/alannapieralski/twig-eslint-parser/blob/main/packages/eslint-plugin-twig-html/docs/rules/multiline-tag-content.md',
     },
     fixable: 'whitespace',
     schema: [{
