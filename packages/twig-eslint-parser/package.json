@@ -58,7 +58,7 @@
     "eslint": "^9.0.0 || ^10.0.0"
   },
   "devDependencies": {
-    "@types/css-tree": "2.3.11",
+    "@types/css-tree": "3.2.0",
     "@types/tape": "5.8.1",
     "parse5": "8.0.1",
     "parse5-sax-parser": "8.0.0",
