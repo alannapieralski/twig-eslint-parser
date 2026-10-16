@@ -3,20 +3,19 @@ import { ESLint, type Linter } from 'eslint';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import type { ParserOptions } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind, { twigSelectors } from '../../src/index.js';
+import { createConfig, twigSelectors, type ClassSelector } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
-type LintSetup = { parserOptions?: ParserOptions; selectors?: readonly unknown[]; rules?: Linter.RulesRecord; fix?: boolean; withDrupal?: boolean };
+type LintSetup = { parserOptions?: ParserOptions; selectors?: readonly unknown[]; extraSelectors?: readonly ClassSelector[]; rules?: Linter.RulesRecord; fix?: boolean; withDrupal?: boolean };
 
-function linterOptions({ parserOptions, selectors, rules = {}, fix = false, withDrupal = true }: LintSetup): ESLint.Options {
+function linterOptions({ parserOptions, selectors, extraSelectors = [], rules = {}, fix = false, withDrupal = true }: LintSetup): ESLint.Options {
   return {
     cwd: fixturesDirectory,
     fix,
     overrideConfigFile: true,
     overrideConfig: [
-      twigTailwind.configs.recommended,
-      ...(withDrupal ? [twigTailwind.configs.drupal] : []),
+      createConfig({ drupal: withDrupal, selectors: extraSelectors }),
       {
         files: ['**/*.twig'],
         ...(parserOptions && { languageOptions: { parserOptions } }),
@@ -45,7 +44,7 @@ function describeMessages(messages: { ruleId: string | null; line: number; colum
   return messages.map((message) => `${message.line}:${message.column} ${message.ruleId} ${message.message.split('\n')[0]}`);
 }
 
-describe('configs.recommended with configs.drupal', () => {
+describe('createConfig({ drupal: true })', () => {
   it.each([
     ['{% set classes %} arrays', "{% set classes = ['gap-fl-sm', 'nope'] %}"],
     ['{% set grid_classes %} arrays', "{% set grid_classes = ['gap-fl-sm', 'nope'] %}"],
@@ -81,7 +80,7 @@ describe('configs.recommended with configs.drupal', () => {
     ['a class key nested in an include hash', "{% include 'x' with { attrs: { class: 'nope' } } %}"],
     ['the class key of any function', "{{ icon('arrow', { class: ['nope'] }) }}"],
     ['create_attribute()', "{% set image = create_attribute({'class': ['nope']}) %}"],
-  ])('lints %s with configs.recommended alone', async (_, code) => {
+  ])('lints %s without the drupal option', async (_, code) => {
     const result = await lint(code, { withDrupal: false });
     expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope')]);
   });
@@ -100,9 +99,23 @@ describe('configs.recommended with configs.drupal', () => {
     expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope')]);
   });
 
-  it('leaves addClass() alone until configs.drupal is added', async () => {
+  it('leaves addClass() alone without the drupal option', async () => {
     const result = await lint("<div{{ attributes.addClass('nope') }}>x</div>", { withDrupal: false });
     expect(result.messages).toEqual([]);
+  });
+
+  it('adds the selectors option to the built-in selectors', async () => {
+    const code = "{{ pattern('nope') }}{% set classes = ['nope2'] %}";
+    const result = await lint(code, { withDrupal: false, extraSelectors: [{ kind: 'callee', name: '^pattern$', match: [{ type: 'strings' }] }] });
+    expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope'), unknownClassAt(code, 'nope2')]);
+  });
+
+  it.each([
+    ['an unknown option', { drupl: true }],
+    ['a drupal option that is not a boolean', { drupal: 'yes' }],
+    ['a selectors option that is not an array', { selectors: {} }],
+  ])('throws on %s', (_, options) => {
+    expect(() => createConfig(options as never)).toThrow(TypeError);
   });
 
   it('lets a later selectors setting replace the Drupal selectors', async () => {

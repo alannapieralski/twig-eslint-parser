@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import { containsGroupDelimiter } from '../src/class-groups.js';
-import twigTailwind from '../src/index.js';
+import { createConfig } from '../src/index.js';
 
 describe('containsGroupDelimiter', () => {
   it.each([
@@ -23,7 +23,7 @@ describe('the recommended config on class lists with [ ] and | groups', () => {
       cwd: fixturesDirectory,
       fix,
       overrideConfigFile: true,
-      overrideConfig: [twigTailwind.configs.recommended, { files: ['**/*.twig'], settings: { 'better-tailwindcss': { entryPoint: 'tailwind/theme.css' } } }],
+      overrideConfig: [createConfig(), { files: ['**/*.twig'], settings: { 'better-tailwindcss': { entryPoint: 'tailwind/theme.css' } } }],
     });
     const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
     if (!result) throw new Error('ESLint returned no result.');

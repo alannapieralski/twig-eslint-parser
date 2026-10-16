@@ -1,6 +1,6 @@
 export type ClassSelector = {
-  readonly kind: 'callee' | 'variable';
+  readonly kind: 'attribute' | 'callee' | 'tag' | 'variable';
   readonly name?: string;
   readonly path?: string;
-  readonly match: readonly { readonly type: 'strings' | 'objectValues'; readonly path?: string }[];
+  readonly match?: readonly { readonly type: 'strings' | 'objectKeys' | 'objectValues'; readonly path?: string }[];
 };

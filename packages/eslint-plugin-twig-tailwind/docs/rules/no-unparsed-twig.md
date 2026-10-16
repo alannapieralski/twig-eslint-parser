@@ -2,7 +2,7 @@
 
 Report Twig blocks the parser could not read, so the classes inside them are not skipped silently.
 
-Enabled as an error in `configs.recommended`.
+Enabled as an error by `createConfig()`.
 
 ## Rule details
 

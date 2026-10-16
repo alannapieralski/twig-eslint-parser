@@ -32,8 +32,7 @@ The package is ESM only. `twig-eslint-parser` is installed with it.
 import twigTailwind from 'eslint-plugin-twig-tailwind';
 
 export default [
-  twigTailwind.configs.recommended,
-  twigTailwind.configs.drupal, // only for Drupal themes
+  twigTailwind.createConfig({ drupal: true }), // leave drupal out for plain Twig projects
   {
     files: ['**/*.twig'],
     settings: {
@@ -45,14 +44,21 @@ export default [
 
 If better-tailwindcss is not installed, loading the plugin fails with an error that names it.
 
-`configs.drupal` adds Drupal's selectors (see [What gets linted](#what-gets-linted)) on top of
-`configs.recommended`, so put it after it. Plain Twig projects leave it out.
+`createConfig()` takes two options, both optional:
 
-`configs.recommended` applies to `**/*.twig` and sets:
+| Option | Default | Effect |
+|---|---|---|
+| `drupal` | `false` | Adds `drupalSelectors`, so Drupal's `addClass()` and `removeClass()` are linted (see [What gets linted](#what-gets-linted)) |
+| `selectors` | `[]` | Extra [better-tailwindcss selectors](https://github.com/schoero/eslint-plugin-better-tailwindcss/blob/main/docs/configuration/advanced.md), added to the built-in ones instead of replacing them |
+
+An unknown option, or an option of the wrong type, throws when the config is built.
+
+The config applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
 - the `twig-tailwind/twig` processor (see [Interpolated strings](#interpolated-strings));
-- better-tailwindcss's selectors plus `twigSelectors`;
+- better-tailwindcss's selectors plus `twigSelectors`, then `drupalSelectors` and your `selectors`
+  when asked for;
 - better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
@@ -86,7 +92,7 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `class` or `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` |
 | `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `twigSelectors`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
 | `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable with such a name |
-| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`configs.drupal`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`drupal: true`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
 
 better-tailwindcss's default selector for variables named `style` or `styles` is left out, since
 in Twig those usually hold inline CSS or a variant name rather than classes.
@@ -94,27 +100,20 @@ in Twig those usually hold inline CSS or a variant name rather than classes.
 Not linted: `attributes.setAttribute('class', ...)`, because a selector cannot tell its `class` calls
 from every other attribute it sets.
 
-`configs.recommended` uses `twigSelectors` and `configs.drupal` adds `drupalSelectors`. Both are
-exported as plain better-tailwindcss selector objects. ESLint replaces arrays in `settings`
-instead of merging them, so a `selectors` setting of your own replaces the list from both configs:
+To lint classes in places of your own, such as a Twig function from a custom extension, pass
+them in `selectors`:
 
 ```js
-import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
-import twigTailwind, { drupalSelectors, twigSelectors } from 'eslint-plugin-twig-tailwind';
-
-export default [
-  twigTailwind.configs.recommended,
-  {
-    files: ['**/*.twig'],
-    settings: {
-      'better-tailwindcss': {
-        entryPoint: 'src/css/style.css',
-        selectors: [...getDefaultSelectors(), ...twigSelectors, ...drupalSelectors, myOwnSelector],
-      },
-    },
-  },
-];
+twigTailwind.createConfig({
+  drupal: true,
+  selectors: [{ kind: 'callee', name: '^pattern_classes$', match: [{ type: 'strings' }] }],
+}),
 ```
+
+Use the `selectors` option rather than a `selectors` setting of your own: ESLint replaces arrays
+in `settings` instead of merging them, so the setting would drop every built-in selector.
+`twigSelectors` and `drupalSelectors` are exported as plain better-tailwindcss selector objects for
+anyone who still wants to build the whole list by hand.
 
 ## Rules
 

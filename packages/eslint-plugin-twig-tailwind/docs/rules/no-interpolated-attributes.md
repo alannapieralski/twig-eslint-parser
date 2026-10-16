@@ -2,7 +2,7 @@
 
 Disallow Twig inside attribute values such as `class=""`, so every class stays visible to linting.
 
-Enabled as an error in `configs.recommended`.
+Enabled as an error by `createConfig()`.
 
 ## Rule details
 

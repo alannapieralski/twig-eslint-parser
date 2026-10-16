@@ -4,7 +4,7 @@ import { ESLint, type Linter } from 'eslint';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { parseForESLint } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind from '../../src/index.js';
+import { createConfig } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 const parserFixturesDirectory = new URL('../../../twig-eslint-parser/test/fixtures/twig/', import.meta.url);
@@ -23,7 +23,7 @@ function fixWith(rules: Linter.RulesRecord) {
     fix: true,
     overrideConfigFile: true,
     overrideConfig: [
-      twigTailwind.configs.recommended,
+      createConfig(),
       { files: ['**/*.twig'], settings: { 'better-tailwindcss': { entryPoint: 'tailwind/theme.css' } }, rules },
     ],
   });
