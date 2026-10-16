@@ -121,8 +121,21 @@ describe('createConfig({ drupal: true })', () => {
     ['a variable selector with only a path', { selectors: [{ kind: 'variable', path: '^x$' }] }],
     ['a selector whose name is not a string', { selectors: [{ kind: 'callee', name: /^x$/ }] }],
     ['a selector whose match is not an array', { selectors: [{ kind: 'callee', name: '^x$', match: 'strings' }] }],
+    ['a selector whose matcher is a bare string', { selectors: [{ kind: 'callee', name: '^x$', match: ['strings'] }] }],
+    ['a selector whose matcher has an unknown type', { selectors: [{ kind: 'callee', name: '^x$', match: [{ type: 'values' }] }] }],
+    ['a selector whose matcher path is not a string', { selectors: [{ kind: 'callee', name: '^x$', match: [{ type: 'objectValues', path: 1 }] }] }],
+    ['a selector whose name is not a valid regular expression', { selectors: [{ kind: 'callee', name: '[' }] }],
+    ['a selector whose matcher path is not a valid regular expression', { selectors: [{ kind: 'callee', name: '^x$', match: [{ type: 'objectValues', path: '(' }] }] }],
   ])('throws on %s', (_, options) => {
     expect(() => createConfig(options as never)).toThrow(TypeError);
+  });
+
+  it('accepts a selector with an anonymousFunctionReturn matcher', () => {
+    expect(() => createConfig({ selectors: [{ kind: 'callee', name: '^x$', match: [{ type: 'anonymousFunctionReturn', match: [{ type: 'strings' }] }] }] })).not.toThrow();
+  });
+
+  it('names the config after the drupal option', () => {
+    expect([createConfig().name, createConfig({ drupal: true }).name]).toEqual(['twig-tailwind/recommended', 'twig-tailwind/drupal']);
   });
 
   it('keeps configs.recommended and configs.drupal as built configs', () => {
