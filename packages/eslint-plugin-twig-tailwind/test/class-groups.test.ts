@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
-import { containsGroupDelimiter } from '../src/class-groups.js';
+import { containsGroupDelimiter } from '../src/processors/class-groups.js';
 import { createConfig } from '../src/index.js';
 
 describe('containsGroupDelimiter', () => {

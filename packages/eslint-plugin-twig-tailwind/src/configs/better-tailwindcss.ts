@@ -8,7 +8,7 @@ type BetterTailwindcss = {
   readonly getDefaultSelectors: DefaultsModule['getDefaultSelectors'];
 };
 
-const { peerDependencies } = createRequire(import.meta.url)('../package.json') as { peerDependencies: Record<string, string> };
+const { peerDependencies } = createRequire(import.meta.url)('../../package.json') as { peerDependencies: Record<string, string> };
 const supportedVersions = peerDependencies['eslint-plugin-better-tailwindcss'];
 
 async function loadBetterTailwindcss(): Promise<BetterTailwindcss> {

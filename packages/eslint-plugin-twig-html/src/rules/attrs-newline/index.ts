@@ -1,0 +1,40 @@
+import type { Rule } from 'eslint';
+import { readTwigServices } from 'twig-eslint-parser';
+import { docsUrlFor } from '../../shared/docs-url.js';
+import { createIgnoredInsideCheck } from '../../shared/ignored-inside.js';
+import { lineBreakUsedIn } from '../../shared/line-ending.js';
+import { reportProblems } from '../../shared/report-problems.js';
+import { balancedTagListeners } from '../../shared/tag-listeners.js';
+import { tagNodeTypes, type TagNode } from '../../shared/tag-node.js';
+import { findAttributeProblems } from './find-attribute-problems.js';
+import { messages } from './messages.js';
+import { optionsSchema, resolveOptions } from './options.js';
+
+export const attrsNewline: Rule.RuleModule = {
+  meta: {
+    type: 'layout',
+    docs: {
+      description: 'Put each attribute of a tag with many attributes on its own line, indented one step from the tag',
+      url: docsUrlFor('attrs-newline'),
+    },
+    fixable: 'whitespace',
+    schema: [optionsSchema],
+    messages,
+  },
+
+  create(context) {
+    const options = resolveOptions(context.options[0]);
+    const { text } = context.sourceCode;
+    const { blocks } = readTwigServices(context.sourceCode, context.id);
+    const source = {
+      text,
+      lineBreak: lineBreakUsedIn(text),
+      blocks,
+      isIgnored: createIgnoredInsideCheck(context.sourceCode, options.ignoreInside),
+    };
+
+    const checkTag = (tag: TagNode) => reportProblems(context, findAttributeProblems(tag, source, options));
+
+    return balancedTagListeners(checkTag, tagNodeTypes, blocks);
+  },
+};

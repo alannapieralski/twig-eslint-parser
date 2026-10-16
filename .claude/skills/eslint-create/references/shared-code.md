@@ -10,10 +10,6 @@ Before adding a function, type or constant, look for it in this order and use wh
    `readTwigServices`, `containsTwig`, `isAttributeNode`, `drupalClassMethods`).
 4. The other plugin's `src/shared/`.
 
-Until the repo is migrated to the target shape, shared code also sits in root files of each plugin's
-`src/` (and in `src/rules/*.ts` for logic that has not been extracted). Search those too, and move
-what a change touches into `shared/` files named for their concept.
-
 Useful searches:
 
 ```sh

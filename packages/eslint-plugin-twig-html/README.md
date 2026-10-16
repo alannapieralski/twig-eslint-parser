@@ -58,6 +58,14 @@ rebuilds the tag from the attributes it parsed, which drops a Twig comment writt
 attributes. `twig-html/attrs-newline` indents from the tag itself and only ever changes the
 whitespace between attributes.
 
+## Known limitations
+
+- **Elements opened or closed in different Twig branches** are left alone: the rules skip a tag when a
+  `{% if %}` opens or branches inside it, and never fix across a branch.
+- **Open tags missing their `>`** swallow the markup after them in the parser's tree, so the rules never fix them.
+- Other limits come from the parser: see
+  [its known limitations](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser#known-limitations).
+
 ## Licence
 
 Apache License 2.0. See [LICENSE](LICENSE).

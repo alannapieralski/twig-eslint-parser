@@ -20,14 +20,6 @@ do the work. Add one only where the logic is truly complex and cannot be simplif
   commit scope (`fix(twig-html): ...`). The parser's scope is `parser`.
 - **Rule id**: the kebab-case name, such as `attrs-newline`.
 
-## Status of the repo
-
-This skill describes the target shape. Existing rules and shared files were written before it and
-mostly do not match: rules are flat files, shared code sits in root files such as `tag-layout.ts`,
-and some logic lives inside `create`. When a rule is created or changed, build or move that rule to
-the target shape in the same change, including moving the shared code it uses into named files.
-Do not copy the old layout into new code. Run commands from the repository root.
-
 ## The shape in nine rules
 
 1. **A rule is a folder.** `src/rules/<rule-id>/index.ts` holds `meta` and `create` and nothing
@@ -75,8 +67,7 @@ Do not copy the old layout into new code. Run commands from the repository root.
 ## Workflow for changing a rule
 
 Follow the same steps from step 2: a failing test first, then the change, then the touchpoints that
-the change affects (docs page, options table, canary, corpus). Move the rule to the target shape as
-part of the change, as described under "Status of the repo".
+the change affects (docs page, options table, canary, corpus). Keep the rule in the target shape.
 
 ## Workflow for a new plugin
 

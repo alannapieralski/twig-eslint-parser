@@ -1,8 +1,7 @@
 # Plugin anatomy
 
 Use `packages/eslint-plugin-twig-html` and `packages/eslint-plugin-twig-tailwind` as the reference
-for package metadata, README, tests and wiring. Their `src/` layout predates this shape, so follow
-the layout below for the source.
+for package metadata, README, tests, source layout and wiring.
 
 ## Layout
 

@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 import type { ESLint } from 'eslint';
-import { createConfigFactory } from './config.js';
-import { createProcessor } from './processor.js';
-import { noInterpolatedAttributes } from './rules/no-interpolated-attributes.js';
-import { noUnparsedTwig } from './rules/no-unparsed-twig.js';
+import { createConfigFactory } from './configs/create-config.js';
+import { createProcessor } from './processors/twig-processor.js';
+import { noInterpolatedAttributes } from './rules/no-interpolated-attributes/index.js';
+import { noUnparsedTwig } from './rules/no-unparsed-twig/index.js';
 
 const { name, version } = createRequire(import.meta.url)('../package.json') as { name: string; version: string };
 
@@ -21,5 +21,5 @@ export const createConfig = createConfigFactory(plugin);
 export { drupalSelectors } from './selectors/drupal.js';
 export { twigSelectors } from './selectors/twig.js';
 export type { ClassSelector } from './selectors/class-selector.js';
-export type { ConfigOptions } from './config.js';
+export type { ConfigOptions } from './configs/config-options.js';
 export default Object.assign(plugin, { createConfig, configs: { recommended: createConfig(), drupal: createConfig({ drupal: true }) } });

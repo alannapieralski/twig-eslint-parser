@@ -31,6 +31,11 @@ Examples of **correct** code:
 Invalid Twig that stops tokenising altogether, such as an unclosed `{{`, is not reported by this
 rule: ESLint reports it as a parsing error.
 
+## Testing
+
+- `test/integration/recommended.test.ts` lints templates with the recommended config and checks the report for a block the parser could not convert.
+- `tools/corpus/canaries/twig-tailwind.html.twig` is a canary the rule must report on every corpus run.
+
 ## When not to use it
 
 If a template uses valid Twig that the parser cannot read yet, turn the rule off for that file and
