@@ -48,4 +48,4 @@ Describe findings generically. Fixtures must not copy Drupal core text (GPL).
 ### Adding a rule
 
 A rule exported from a plugin is picked up automatically. Add it to the `rules` map in that
-package's `test/corpus.ts` only to declare a stronger promise, such as `fixKeeps: 'whitespace'`.
+package's `test/corpus.ts` only to declare a stronger promise, such as `fixKeeps: 'layout'`.
