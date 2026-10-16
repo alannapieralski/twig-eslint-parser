@@ -1,0 +1,41 @@
+name: Latest better-tailwindcss
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install the latest better-tailwindcss
+        id: install
+        run: |
+          npm install --no-save eslint-plugin-better-tailwindcss@latest -w eslint-plugin-twig-tailwind
+          echo "version=$(npm ls eslint-plugin-better-tailwindcss -w eslint-plugin-twig-tailwind --json | jq -r '.. | .["eslint-plugin-better-tailwindcss"]?.version // empty' | head -1)" >> "$GITHUB_OUTPUT"
+      - run: npm run build -w twig-eslint-parser
+      - run: npm run typecheck -w eslint-plugin-twig-tailwind
+      - run: npm test -w eslint-plugin-twig-tailwind
+      - name: Open an issue
+        if: failure() && steps.install.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Tests fail on eslint-plugin-better-tailwindcss ${{ steps.install.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[].number')" ]; then
+            gh issue create --title "$TITLE" --body "The weekly run against the latest eslint-plugin-better-tailwindcss failed: $RUN_URL
+
+          Keep the peer range as it is until this is fixed or worked around."
+          fi
