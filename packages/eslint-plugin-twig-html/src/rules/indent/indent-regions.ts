@@ -3,7 +3,7 @@ import { whitespaceSensitiveElements } from '../../shared/html-elements.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
 import type { Token } from '../../shared/tag-node.js';
-import { findFrontMatter } from './front-matter.js';
+import { findYamlFrontMatter } from './yaml-front-matter.js';
 import { twigBlockEnd } from './twig-frames.js';
 import type { IndentLayout, MarkupNode, OpenTag, TwigSegment } from './types.js';
 
@@ -140,7 +140,7 @@ export function buildIndentLayout(document: MarkupNode, segments: readonly TwigS
 
   return {
     nestings: [...bodies, ...segments.map((segment) => segment.range)],
-    skipped: [...findFrontMatter(text), ...crossingSpans, ...tokenInteriors, ...findTwigInteriors(blocks, text), ...unindentedSegments, ...elementSkips],
+    skipped: [...findYamlFrontMatter(text), ...crossingSpans, ...tokenInteriors, ...findTwigInteriors(blocks, text), ...unindentedSegments, ...elementSkips],
     openTags: elements.map((element) => describeOpenTag(element, text)).filter(isDefined),
     closeTags: elements.flatMap((element) => (element.close ? [element.close.range] : [])),
   };
