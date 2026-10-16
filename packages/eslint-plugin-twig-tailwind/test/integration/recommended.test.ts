@@ -77,6 +77,8 @@ describe('createConfig({ drupal: true })', () => {
     ['a variable ending in _class', "{% set title_class = 'nope' %}"],
     ['a camelCase variable ending in Class', "{% set bgColorClass = 'nope' %}"],
     ['an include key ending in _classes', "{% include 'x' with { wrapper_classes: 'nope' } %}"],
+    ['a camelCase include key ending in Class', "{% include 'x' with { wrapperClass: 'nope' } %}"],
+    ['a merge into a camelCase classes variable', "{% set bgClasses = bgClasses|merge(['nope']) %}"],
     ['a class key nested in an include hash', "{% include 'x' with { attrs: { class: 'nope' } } %}"],
     ['the class key of any function', "{{ icon('arrow', { class: ['nope'] }) }}"],
     ['create_attribute()', "{% set image = create_attribute({'class': ['nope']}) %}"],
@@ -115,6 +117,10 @@ describe('createConfig({ drupal: true })', () => {
     ['a drupal option that is not a boolean', { drupal: 'yes' }],
     ['a selectors option that is not an array', { selectors: {} }],
     ['a selectors option holding a non-selector', { selectors: ['^pattern$'] }],
+    ['a callee selector with neither name nor path', { selectors: [{ kind: 'callee', match: [{ type: 'strings' }] }] }],
+    ['a variable selector with only a path', { selectors: [{ kind: 'variable', path: '^x$' }] }],
+    ['a selector whose name is not a string', { selectors: [{ kind: 'callee', name: /^x$/ }] }],
+    ['a selector whose match is not an array', { selectors: [{ kind: 'callee', name: '^x$', match: 'strings' }] }],
   ])('throws on %s', (_, options) => {
     expect(() => createConfig(options as never)).toThrow(TypeError);
   });

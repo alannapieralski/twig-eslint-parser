@@ -19,7 +19,24 @@ const selectorKinds: ReadonlySet<unknown> = new Set(['attribute', 'callee', 'tag
 const isStyleVariableSelector = (selector: DefaultSelector) =>
   selector.kind === 'variable' && ['style', 'styles'].some((variableName) => new RegExp(selector.name).test(variableName));
 
-const isSelector = (value: unknown) => typeof value === 'object' && value !== null && selectorKinds.has((value as { kind?: unknown }).kind);
+const kindsThatMatchByPath: ReadonlySet<unknown> = new Set(['callee', 'tag']);
+
+const isOptionalString = (value: unknown) => value === undefined || typeof value === 'string';
+
+function isSelector(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const { kind, name, path, match } = value as Partial<Record<keyof ClassSelector, unknown>>;
+
+  if (!selectorKinds.has(kind)) return false;
+  if (!isOptionalString(name) || !isOptionalString(path)) return false;
+  if (match !== undefined && !Array.isArray(match)) return false;
+
+  const hasName = name !== undefined;
+  const hasUsablePath = path !== undefined && kindsThatMatchByPath.has(kind);
+
+  return hasName || hasUsablePath;
+}
 
 function parseConfigOptions(options: unknown): Required<ConfigOptions> {
   if (typeof options !== 'object' || options === null || Array.isArray(options)) {
@@ -30,7 +47,7 @@ function parseConfigOptions(options: unknown): Required<ConfigOptions> {
 
   const { drupal = false, selectors = [] } = options as ConfigOptions;
   if (typeof drupal !== 'boolean') throw new TypeError('createConfig() option "drupal" must be true or false.');
-  if (!Array.isArray(selectors) || !selectors.every(isSelector)) throw new TypeError('createConfig() option "selectors" must be an array of better-tailwindcss selectors.');
+  if (!Array.isArray(selectors) || !selectors.every(isSelector)) throw new TypeError('createConfig() option "selectors" must be an array of better-tailwindcss selectors, each with a name pattern (or a path pattern for callee and tag) and an optional match array.');
   return { drupal, selectors };
 }
 
