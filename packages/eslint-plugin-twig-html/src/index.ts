@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import type { ESLint, Linter } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { attrsNewline } from './rules/attrs-newline/index.js';
+import { indent } from './rules/indent/index.js';
 import { multilineHtmlElementContentNewline } from './rules/multiline-html-element-content-newline/index.js';
 import { quotes } from './rules/quotes/index.js';
 
@@ -11,6 +12,7 @@ const plugin = {
   meta: { name, version },
   rules: {
     'attrs-newline': attrsNewline,
+    indent,
     'multiline-html-element-content-newline': multilineHtmlElementContentNewline,
     quotes,
   },
@@ -25,6 +27,7 @@ const recommended: Linter.Config = {
   languageOptions: { parser: twigParser },
   rules: {
     'twig-html/attrs-newline': 'warn',
+    'twig-html/indent': 'warn',
     'twig-html/multiline-html-element-content-newline': 'warn',
     'twig-html/quotes': 'warn',
   },

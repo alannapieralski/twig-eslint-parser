@@ -9,6 +9,12 @@ import type { TagSource } from '../../shared/tag-source.js';
 import type { Gap } from './types.js';
 
 const whitespaceOnly = /^\s*$/;
+const indentationOnly = /^[ \t]*$/;
+
+function isGapLaidOut(gapText: string, gap: Gap, lineBreak: string): boolean {
+  if (!gap.isLineBreak) return gapText === gap.expected;
+  return gapText.startsWith(lineBreak) && indentationOnly.test(gapText.slice(lineBreak.length));
+}
 
 function messageIdForGap(gap: Gap, closeStyle: CloseStyle): string {
   if (!gap.isClosing) return 'attributeLine';
@@ -27,8 +33,8 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   const groups = groupAttributes(tag.attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
 
-  const gaps = describeGaps(tag, groups, text, lineBreak, options);
-  const wrongGaps = gaps.filter((gap) => text.slice(...gap.range) !== gap.expected);
+  const gaps = describeGaps(tag, groups, lineBreak, options.closeStyle);
+  const wrongGaps = gaps.filter((gap) => !isGapLaidOut(text.slice(...gap.range), gap, lineBreak));
   const firstWrongGap = wrongGaps[0];
   if (!firstWrongGap) return [];
 

@@ -82,13 +82,11 @@ It only fixes elements known to be block-level, such as `div`, `p`, `li` and `ta
 Other elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an
 inline element can render as a space.
 
-The fix indents as well as breaking the line: content one step in from the line the tag starts on, the closing tag
-in line with it. When it removes blank lines it keeps the indentation already there. It does not re-indent content
-that is already on its own lines, or child tags it moves.
+The fix only places line breaks. A line break it adds has no indentation, and when it removes blank lines it keeps the
+indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix pass.
 
 The fix only changes HTML whitespace (space, tab, line feed, carriage return and form feed), so a non-breaking space at
-the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`) and indents with tabs when the
-tag is indented with tabs.
+the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`).
 
 ## Options
 
@@ -97,7 +95,6 @@ tag is indented with tabs.
 | `ignores` | `['pre', 'textarea', ...inline elements]` | Leave these elements, and everything inside them, alone. Setting it replaces the whole list. |
 | `ignoreWhenEmpty` | `true` | Leave elements with no content at all alone. When `false`, `></div>` becomes `>\n</div>`. |
 | `allowEmptyLines` | `false` | Allow blank lines around the content. Only a missing line break is reported. |
-| `indent` | `2` | Spaces per indent step for the fix. A tag indented with tabs gets its content indented with one more tab. |
 
 ```js
 'twig-html/multiline-html-element-content-newline': ['warn', { allowEmptyLines: true }],
@@ -111,7 +108,7 @@ multi-line element's content on its own lines, text included.
 
 ## Testing
 
-- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, indentation from the tag's line, tabs, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
+- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, the fix leaving indentation to `indent`, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/multiline-html-element-content-newline` does the same for real templates.
 

@@ -17,10 +17,17 @@ export type TwigBlockSummary = {
   readonly depthChange: -1 | 0 | 1;
 };
 
+const tagDelimiterTypes: ReadonlySet<TwigTokenType> = new Set(['TAG_START', 'TAG_END', 'WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER']);
+
+function isShortBlock(block: TwigBlock): boolean {
+  const contentTokens = block.tokens.filter((token) => !tagDelimiterTypes.has(token.type));
+  return block.tagName === 'block' && contentTokens.length > 2;
+}
+
 function opensNesting(block: TwigBlock, closedTagNames: ReadonlySet<string>): boolean {
   if (block.tagName === undefined || !closedTagNames.has(block.tagName)) return false;
   const isInlineSet = block.tagName === 'set' && block.tokens.some((token) => token.type === 'OPERATOR' && token.value === '=');
-  return !isInlineSet;
+  return !isInlineSet && !isShortBlock(block);
 }
 
 function nestingDepthChange(block: TwigBlock, closedTagNames: ReadonlySet<string>): TwigBlockSummary['depthChange'] {

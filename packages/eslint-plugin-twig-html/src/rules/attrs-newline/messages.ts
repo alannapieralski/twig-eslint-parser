@@ -1,5 +1,5 @@
 export const messages = {
-  attributeLine: 'Put each attribute on its own line, indented one step from the tag.',
+  attributeLine: 'Put each attribute on its own line.',
   closeAfterLastAttribute: 'Put "{{close}}" straight after the last attribute.',
-  closeOnOwnLine: 'Put "{{close}}" on its own line, in line with the tag.',
+  closeOnOwnLine: 'Put "{{close}}" on its own line.',
 } as const;

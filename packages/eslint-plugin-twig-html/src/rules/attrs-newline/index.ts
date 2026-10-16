@@ -14,7 +14,7 @@ export const attrsNewline: Rule.RuleModule = {
   meta: {
     type: 'layout',
     docs: {
-      description: 'Put each attribute of a tag with many attributes on its own line, indented one step from the tag',
+      description: 'Put each attribute of a tag with many attributes on its own line',
       url: docsUrlFor('attrs-newline'),
     },
     fixable: 'whitespace',

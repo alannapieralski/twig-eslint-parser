@@ -21,13 +21,13 @@ function describeEdgeProblem(edge: ContentEdge, name: string, source: TagSource,
   const lineBreaks = countLineBreaks(whitespace);
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
 
-  const indentation = lineBreaks === 0 ? edge.indentationWhenMissing : indentationAfterLastLineBreak(whitespace);
+  const keptIndentation = lineBreaks === 0 ? '' : indentationAfterLastLineBreak(whitespace);
 
   return {
     range: edge.range,
     messageId: edge.messageId,
     data: { name, actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
-    ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${indentation}` }] }),
+    ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${keptIndentation}` }] }),
   };
 }
 
@@ -47,7 +47,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   if (isUnsafeToCheck) return [];
 
   const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());
-  const edges = findContentEdges(tag, close, text, options.indent);
+  const edges = findContentEdges(tag, close, text);
   const problems = edges.map((edge) => describeEdgeProblem(edge, name, source, options, isFixable));
 
   return problems.filter((problem) => problem !== undefined);

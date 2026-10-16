@@ -368,6 +368,17 @@ describe('block form tags in block structure services', () => {
       ['endtrans', -1],
     ]);
   });
+
+  it('opens nesting for a block with a body but not for the short block form', () => {
+    const { services } = parse('{% block a %}{% block title page_title %}{%- block b -%}x{% endblock %}{% endblock %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['block', 1],
+      ['block', 0],
+      ['block', 1],
+      ['endblock', -1],
+      ['endblock', -1],
+    ]);
+  });
 });
 
 describe('readTwigServices', () => {

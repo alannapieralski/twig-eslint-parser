@@ -10,12 +10,15 @@ export type ClassRuleRoles = { readonly rewritesClasses?: ReadonlySet<string>; r
 type ClassList = { readonly delimiters: string; readonly groups: readonly (readonly string[])[]; readonly twig: readonly string[] };
 
 type Range = readonly [number, number];
-type Leaf = { readonly type: string; readonly range: Range };
+type Leaf = { readonly type: string; readonly range: Range; readonly isPreformatted: boolean };
 type ParsedTemplate = { readonly result: TwigParseResult } | { readonly error: string };
 
 const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
 const cubeDelimiters = new Set(['[', ']', '|', '][']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
+const indentationAfterLineBreak = /(\n)[ \t]+/g;
+const preformattedElements = new Set(['pre', 'textarea']);
+const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
 
 function parse(code: string): ParsedTemplate {
   try {
@@ -25,19 +28,42 @@ function parse(code: string): ParsedTemplate {
   }
 }
 
-function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<object>()): Leaf[] {
+function isPreformattedElement(node: Record<string, unknown>): boolean {
+  return node['type'] === 'Tag' && typeof node['name'] === 'string' && preformattedElements.has(node['name'].toLowerCase());
+}
+
+function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<object>(), isPreformatted = false): Leaf[] {
   if (typeof value !== 'object' || value === null || seen.has(value)) return leaves;
   seen.add(value);
   if (Array.isArray(value)) {
-    value.forEach((child) => collectLeaves(child, leaves, seen));
+    value.forEach((child) => collectLeaves(child, leaves, seen, isPreformatted));
     return leaves;
   }
   const node = value as Record<string, unknown>;
-  if (typeof node['type'] === 'string' && typeof node['value'] === 'string' && Array.isArray(node['range'])) leaves.push(node as unknown as Leaf);
+  if (typeof node['type'] === 'string' && typeof node['value'] === 'string' && Array.isArray(node['range'])) {
+    leaves.push({ type: node['type'], range: node['range'] as unknown as Range, isPreformatted });
+  }
+  const isChildPreformatted = isPreformatted || isPreformattedElement(node);
   for (const [key, child] of Object.entries(node)) {
-    if (!keysOutsideTheHtmlTree.has(key)) collectLeaves(child, leaves, seen);
+    if (!keysOutsideTheHtmlTree.has(key)) collectLeaves(child, leaves, seen, isChildPreformatted);
   }
   return leaves;
+}
+
+function withoutIndentationOutsideTwig(text: string): string {
+  let result = '';
+  let markupStart = 0;
+  for (const twig of text.matchAll(twigSpan)) {
+    result += text.slice(markupStart, twig.index).replace(indentationAfterLineBreak, '$1') + twig[0];
+    markupStart = twig.index + twig[0].length;
+  }
+  return result + text.slice(markupStart).replace(indentationAfterLineBreak, '$1');
+}
+
+function layoutTextOf(leaf: Leaf, text: string): string {
+  if (!leavesWithLooseEdges.has(leaf.type)) return text;
+  if (leaf.type !== 'Text' || leaf.isPreformatted) return text.trim();
+  return withoutIndentationOutsideTwig(text.trim());
 }
 
 function layoutTokens(code: string, result: TwigParseResult): Token[] {
@@ -45,7 +71,7 @@ function layoutTokens(code: string, result: TwigParseResult): Token[] {
     .sort((first, second) => first.range[0] - second.range[0])
     .map((leaf): Token => {
       const text = code.slice(...leaf.range);
-      return { text: leaf.type === 'Text' ? text.trim() : text, start: leaf.range[0] };
+      return { text: layoutTextOf(leaf, text), start: leaf.range[0] };
     })
     .filter((token) => token.text !== '');
 }
