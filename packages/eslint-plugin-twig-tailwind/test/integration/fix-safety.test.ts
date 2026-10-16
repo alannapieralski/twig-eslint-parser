@@ -4,7 +4,7 @@ import { ESLint, type Linter } from 'eslint';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { parseForESLint } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind from '../../src/index.js';
+import { createConfig } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 const parserFixturesDirectory = new URL('../../../twig-eslint-parser/test/fixtures/twig/', import.meta.url);
@@ -23,7 +23,7 @@ function fixWith(rules: Linter.RulesRecord) {
     fix: true,
     overrideConfigFile: true,
     overrideConfig: [
-      twigTailwind.configs.recommended,
+      createConfig(),
       { files: ['**/*.twig'], settings: { 'better-tailwindcss': { entryPoint: 'tailwind/theme.css' } }, rules },
     ],
   });
@@ -45,5 +45,14 @@ describe.each([
     expect(() => parseForESLint(output)).not.toThrow();
     expect(unconvertedBlockCount(output)).toBe(unconvertedBlockCount(code));
     expect(output.split('`').length).toBe(code.split('`').length);
+  });
+
+  it.each([
+    "{% set classes = ['card card-' ~ variant ~ ' card-' ~ size] %}",
+    "<div{{ attributes.addClass('flex ' ~ modifier) }}></div>",
+    "{% set classes = [prefix ~ ' flex'] %}",
+  ])('keeps the spaces that separate classes in %s', async (code) => {
+    const [result] = await fixWith(rules).lintText(code, { filePath: `${fixturesDirectory}/template.html.twig` });
+    expect(result?.output ?? code).toBe(code);
   });
 });

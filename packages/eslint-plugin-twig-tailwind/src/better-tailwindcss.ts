@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 type PluginModule = typeof import('eslint-plugin-better-tailwindcss');
 type DefaultsModule = typeof import('eslint-plugin-better-tailwindcss/defaults');
 
@@ -5,6 +7,9 @@ type BetterTailwindcss = {
   readonly plugin: PluginModule['default'];
   readonly getDefaultSelectors: DefaultsModule['getDefaultSelectors'];
 };
+
+const { peerDependencies } = createRequire(import.meta.url)('../package.json') as { peerDependencies: Record<string, string> };
+const supportedVersions = peerDependencies['eslint-plugin-better-tailwindcss'];
 
 async function loadBetterTailwindcss(): Promise<BetterTailwindcss> {
   try {
@@ -16,7 +21,7 @@ async function loadBetterTailwindcss(): Promise<BetterTailwindcss> {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ERR_MODULE_NOT_FOUND') throw error;
     throw new Error(
-      'eslint-plugin-twig-tailwind could not load eslint-plugin-better-tailwindcss, which it needs as a peer dependency. Install it with: npm install --save-dev eslint-plugin-better-tailwindcss',
+      `eslint-plugin-twig-tailwind could not load eslint-plugin-better-tailwindcss, which it needs as a peer dependency. Install it with: npm install --save-dev "eslint-plugin-better-tailwindcss@${supportedVersions}"`,
       { cause: error },
     );
   }

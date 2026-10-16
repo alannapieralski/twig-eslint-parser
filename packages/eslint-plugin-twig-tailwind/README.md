@@ -19,10 +19,10 @@ extra config, Drupal's), and rules that keep Twig out of class values.
 ## Installation
 
 ```sh
-npm install --save-dev eslint-plugin-twig-tailwind eslint eslint-plugin-better-tailwindcss tailwindcss
+npm install --save-dev eslint-plugin-twig-tailwind eslint eslint-plugin-better-tailwindcss@4.8.0 tailwindcss
 ```
 
-Requires Node.js 24 or later, ESLint 9 or 10 and eslint-plugin-better-tailwindcss 4.7 or later.
+Requires Node.js 24 or later, ESLint 9 or 10 and eslint-plugin-better-tailwindcss 4.8.0.
 The package is ESM only. `twig-eslint-parser` is installed with it.
 
 ## Usage
@@ -32,8 +32,7 @@ The package is ESM only. `twig-eslint-parser` is installed with it.
 import twigTailwind from 'eslint-plugin-twig-tailwind';
 
 export default [
-  twigTailwind.configs.recommended,
-  twigTailwind.configs.drupal, // only for Drupal themes
+  twigTailwind.createConfig({ drupal: true }), // leave drupal out for plain Twig projects
   {
     files: ['**/*.twig'],
     settings: {
@@ -45,20 +44,33 @@ export default [
 
 If better-tailwindcss is not installed, loading the plugin fails with an error that names it.
 
-`configs.drupal` adds Drupal's selectors (see [What gets linted](#what-gets-linted)) on top of
-`configs.recommended`, so put it after it. Plain Twig projects leave it out.
+Each release supports only the better-tailwindcss versions in its `peerDependencies`. A new
+better-tailwindcss release is added there once it has been tested, so a newer one may not be
+supported yet.
 
-`configs.recommended` applies to `**/*.twig` and sets:
+`createConfig()` takes two options, both optional:
+
+| Option | Default | Effect |
+|---|---|---|
+| `drupal` | `false` | Adds `drupalSelectors`, so Drupal's `addClass()` and `removeClass()` are linted (see [What gets linted](#what-gets-linted)) |
+| `selectors` | `[]` | Extra [better-tailwindcss selectors](https://github.com/schoero/eslint-plugin-better-tailwindcss/blob/main/docs/configuration/advanced.md), added to the built-in ones instead of replacing them |
+
+An unknown option, or an option of the wrong type, throws when the config is built.
+
+`twigTailwind.configs.recommended` and `twigTailwind.configs.drupal` are the same configs built
+with `createConfig()` and `createConfig({ drupal: true })`.
+
+The config applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
 - the `twig-tailwind/twig` processor (see [Interpolated strings](#interpolated-strings));
-- better-tailwindcss's selectors plus `twigSelectors`;
+- better-tailwindcss's selectors plus `twigSelectors`, then `drupalSelectors` and your `selectors`
+  when asked for;
 - better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
   into more array items by hand;
-- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md),
-  [`twig-tailwind/no-interpolated-classes`](docs/rules/no-interpolated-classes.md) and
+- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) and
   [`twig-tailwind/no-unparsed-twig`](docs/rules/no-unparsed-twig.md) as errors.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
@@ -84,43 +96,37 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | Twig | Selector |
 |---|---|
 | `class="..."` without Twig inside | better-tailwindcss defaults |
-| `{% set classes = [...] %}`, `{% set grid_classes = '...' %}` | `twigSelectors`: variables named `classes` or ending in `_classes` |
-| `{% include 'x' with { classes: [...] } %}`, `{% embed %}`, `include('x', { classes })` | `twigSelectors`: the `classes` value of the hash |
-| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable named `classes` or ending in `_classes` |
-| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`configs.drupal`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
-| `create_attribute({ 'class': [...] })` | `drupalSelectors` (`configs.drupal`) |
+| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `class` or `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` |
+| `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `twigSelectors`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
+| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable with such a name |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`drupal: true`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
+
+better-tailwindcss's default selector for variables named `style` or `styles` is left out, since
+in Twig those usually hold inline CSS or a variant name rather than classes.
 
 Not linted: `attributes.setAttribute('class', ...)`, because a selector cannot tell its `class` calls
 from every other attribute it sets.
 
-`configs.recommended` uses `twigSelectors` and `configs.drupal` adds `drupalSelectors`. Both are
-exported as plain better-tailwindcss selector objects. ESLint replaces arrays in `settings`
-instead of merging them, so a `selectors` setting of your own replaces the list from both configs:
+To lint classes in places of your own, such as a Twig function from a custom extension, pass
+them in `selectors`:
 
 ```js
-import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
-import twigTailwind, { drupalSelectors, twigSelectors } from 'eslint-plugin-twig-tailwind';
-
-export default [
-  twigTailwind.configs.recommended,
-  {
-    files: ['**/*.twig'],
-    settings: {
-      'better-tailwindcss': {
-        entryPoint: 'src/css/style.css',
-        selectors: [...getDefaultSelectors(), ...twigSelectors, ...drupalSelectors, myOwnSelector],
-      },
-    },
-  },
-];
+twigTailwind.createConfig({
+  drupal: true,
+  selectors: [{ kind: 'callee', name: '^pattern_classes$', match: [{ type: 'strings' }] }],
+}),
 ```
+
+Use the `selectors` option rather than a `selectors` setting of your own: ESLint replaces arrays
+in `settings` instead of merging them, so the setting would drop every built-in selector.
+`twigSelectors` and `drupalSelectors` are exported as plain better-tailwindcss selector objects for
+anyone who still wants to build the whole list by hand.
 
 ## Rules
 
 | Rule | Description | Recommended |
 |---|---|---|
 | [`no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) | Disallow Twig inside attribute values such as `class=""` | error |
-| [`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) | Disallow `#{ }` inside class strings | error |
 | [`no-unparsed-twig`](docs/rules/no-unparsed-twig.md) | Report Twig blocks the parser could not read | error |
 
 ## Interpolated strings
@@ -131,9 +137,9 @@ unknown class, and its class-order fix would move the interpolation around.
 
 The `twig-tailwind/twig` processor prevents this: it drops every better-tailwindcss message, and
 with it every fix, that starts inside a Twig string containing `#{ }`. Other strings in the file
-are linted and fixed as usual, and messages from other plugins are kept.
-[`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) then reports each such class
-string once, so it is not silently skipped. An ESLint config applies one processor per file, so
+are linted and fixed as usual, and messages from other plugins are kept. The classes inside an
+interpolated string are therefore not checked; use an array such as `['flex', modifier]` instead
+to keep them visible. An ESLint config applies one processor per file, so
 if you set your own processor for `.twig` files, these strings are no longer silenced.
 
 ## Class lists grouped with [ ] or |

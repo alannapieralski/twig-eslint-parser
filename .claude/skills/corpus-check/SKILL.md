@@ -11,6 +11,10 @@ description: Run the parser and every rule against the real Twig templates liste
 - Before a release: `npm run corpus -- --slow --strict` (adds the whole-config checks, about 15
   minutes, and fails on large swings against the last run).
 - For a fast pass while iterating: `npm run corpus -- --quick`.
+- On a Dependabot pull request that updates `eslint-plugin-better-tailwindcss`: run
+  `npm run corpus -w eslint-plugin-twig-tailwind` on `main`, then on the pull request branch, and
+  read "Changes since the last run". Only after that, raise the plugin's `peerDependencies` to the
+  new version in the same pull request.
 
 If `corpus.config.json` is missing, copy `corpus.config.example.json` and ask the user which project
 folders to list. Never write real project names or paths into a committed file.
