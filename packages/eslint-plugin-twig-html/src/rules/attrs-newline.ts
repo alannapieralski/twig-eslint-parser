@@ -93,6 +93,6 @@ export const attrsNewline: Rule.RuleModule = {
       });
     };
 
-    return tagListeners(check, ['Tag', 'ScriptTag', 'StyleTag']);
+    return tagListeners(check, ['Tag', 'ScriptTag', 'StyleTag'], blocks);
   },
 };

@@ -1,4 +1,6 @@
 import type { Rule, SourceCode } from 'eslint';
+import type { TwigBlockSummary } from 'twig-eslint-parser';
+import { isTwigBalancedWithin } from './twig-blocks.js';
 
 const tagEnds: ReadonlySet<string> = new Set(['>', '/>']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
@@ -88,10 +90,12 @@ export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: r
 
 type TagListener = (node: TagNode) => void;
 
-export function tagListeners(check: TagListener, selectors: readonly string[]): Rule.RuleListener {
+// Calls check for each terminated open tag that is the same on every Twig branch.
+export function tagListeners(check: TagListener, selectors: readonly string[], blocks: readonly TwigBlockSummary[]): Rule.RuleListener {
   const isTerminated = (node: ParsedTag): node is TagNode => node.openEnd !== undefined;
-  const checkTerminated = (node: ParsedTag) => {
-    if (isTerminated(node)) check(node);
+  const isSameOnEveryBranch = (node: TagNode) => isTwigBalancedWithin([node.openStart.range[0], node.openEnd.range[1]], blocks);
+  const checkLayoutSafe = (node: ParsedTag) => {
+    if (isTerminated(node) && isSameOnEveryBranch(node)) check(node);
   };
-  return Object.fromEntries(selectors.map((selector) => [selector, checkTerminated])) as unknown as Rule.RuleListener;
+  return Object.fromEntries(selectors.map((selector) => [selector, checkLayoutSafe])) as unknown as Rule.RuleListener;
 }
