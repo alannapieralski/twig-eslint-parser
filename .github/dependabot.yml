@@ -11,6 +11,8 @@ updates:
         dependency-type: development
         exclude-patterns:
           - eslint-plugin-better-tailwindcss
+          - es-html-parser-upstream
+          - twig-lexer-upstream
   - package-ecosystem: github-actions
     directory: /
     schedule:
