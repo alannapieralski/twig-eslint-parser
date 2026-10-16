@@ -2,8 +2,13 @@ import { ESLint, type Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
-async function lint(code: string, ruleOptions?: Record<string, unknown>) {
-  const rules: Linter.RulesRecord = { 'twig-html/multiline-html-element-content-newline': 'off', 'twig-html/quotes': 'off', ...(ruleOptions && { 'twig-html/attrs-newline': ['warn', ruleOptions] }) };
+async function lint(code: string, ruleOptions?: Record<string, unknown>, indentRule: Linter.RuleEntry = 'warn') {
+  const rules: Linter.RulesRecord = {
+    'twig-html/indent': indentRule,
+    'twig-html/multiline-html-element-content-newline': 'off',
+    'twig-html/quotes': 'off',
+    ...(ruleOptions && { 'twig-html/attrs-newline': ['warn', ruleOptions] }),
+  };
   const eslint = new ESLint({ overrideConfigFile: true, fix: true, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
@@ -14,6 +19,10 @@ async function fixed(code: string, ruleOptions?: Record<string, unknown>): Promi
   return (await lint(code, ruleOptions)).output;
 }
 
+async function fixedAlone(code: string, ruleOptions?: Record<string, unknown>): Promise<string> {
+  return (await lint(code, ruleOptions, 'off')).output;
+}
+
 describe('twig-html/attrs-newline', () => {
   it('puts each of three attributes on its own line, indented one step from the tag, with > back at the tag', async () => {
     expect(await fixed('<button type="button" class="flex" data-js-toggle>x</button>')).toBe(
@@ -21,8 +30,12 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
-  it('indents a top-level tag with tabs when the rest of the file is indented with tabs', async () => {
-    expect(await fixed('<div class="a" id="b"></div>\n<section>\n\t<p>x</p>\n</section>')).toBe('<div\n\tclass="a"\n\tid="b"\n></div>\n<section>\n\t<p>x</p>\n</section>');
+  it('only breaks lines, leaving indentation to twig-html/indent', async () => {
+    expect(await fixedAlone('  <button type="button" class="flex" data-js-toggle>x</button>')).toBe('  <button\ntype="button"\nclass="flex"\ndata-js-toggle\n>x</button>');
+  });
+
+  it('accepts attributes on their own lines at any indentation', async () => {
+    expect((await lint('\t<a\n\t\t\thref="#"\n class="a"\n  id="b"\n>x</a>', undefined, 'off')).messages).toEqual([]);
   });
 
   it('leaves tags with one attribute alone', async () => {
@@ -34,10 +47,10 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed('<a href="{{ url }}" class="flex">x</a>')).toBe('<a\n  href="{{ url }}"\n  class="flex"\n>x</a>');
   });
 
-  it('indents from the line the tag starts on, inside Twig blocks', async () => {
+  it('lays out a tag inside Twig blocks', async () => {
     const code = '{% for item in items %}\n    <li class="a" id="{{ item.id }}" role="listitem">{{ item }}</li>\n{% endfor %}';
     expect(await fixed(code)).toBe(
-      '{% for item in items %}\n    <li\n      class="a"\n      id="{{ item.id }}"\n      role="listitem"\n    >{{ item }}</li>\n{% endfor %}',
+      '{% for item in items %}\n  <li\n    class="a"\n    id="{{ item.id }}"\n    role="listitem"\n  >{{ item }}</li>\n{% endfor %}',
     );
   });
 
@@ -86,7 +99,7 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe('<p\n  class="a\n  b"\n  id="c"\n  role="d"\n>x</p>');
   });
 
-  it('fixes attributes that are on their own lines but aligned rather than indented', async () => {
+  it('moves the first attribute off the tag line, so aligned attributes end up indented', async () => {
     const code = '<button type="button"\n        class="flex"\n        data-js-toggle>x</button>';
     expect(await fixed(code)).toBe('<button\n  type="button"\n  class="flex"\n  data-js-toggle\n>x</button>');
   });
@@ -161,13 +174,8 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed('<img src="a" alt="" loading="lazy" />', { closeStyle: 'sameline' })).toBe('<img\n  src="a"\n  alt=""\n  loading="lazy" />');
   });
 
-  it('can change the attribute threshold and the indent size', async () => {
+  it('can change the attribute threshold', async () => {
     expect((await lint('<a href="#" class="a" id="b">x</a>', { ifAttrsMoreThan: 3 })).messages).toEqual([]);
-    expect(await fixed('<a href="#" class="a" id="b">x</a>', { indent: 4 })).toBe('<a\n    href="#"\n    class="a"\n    id="b"\n>x</a>');
-  });
-
-  it('indents with tabs when the tag is indented with tabs', async () => {
-    expect(await fixed('\t<a href="#" class="a" id="b">x</a>')).toBe('\t<a\n\t\thref="#"\n\t\tclass="a"\n\t\tid="b"\n\t>x</a>');
   });
 
   it('leaves tags inside an inline SVG alone', async () => {

@@ -1,0 +1,205 @@
+import { ESLint, type Linter } from 'eslint';
+import { describe, expect, it } from 'vitest';
+import twigHtml from '../src/index.js';
+
+async function lint(code: string, ruleOptions: unknown[] = [], fix = true) {
+  const rules: Linter.RulesRecord = {
+    'twig-html/attrs-newline': 'off',
+    'twig-html/multiline-html-element-content-newline': 'off',
+    'twig-html/quotes': 'off',
+    'twig-html/indent': ['warn', ...ruleOptions],
+  };
+  const eslint = new ESLint({ overrideConfigFile: true, fix, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
+  const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
+  if (!result) throw new Error('ESLint returned no result.');
+  return { output: result.output ?? code, messages: result.messages };
+}
+
+async function fixed(code: string, ruleOptions: unknown[] = []): Promise<string> {
+  return (await lint(code, ruleOptions)).output;
+}
+
+async function messagesFor(code: string, ruleOptions: unknown[] = []) {
+  return (await lint(code, ruleOptions, false)).messages;
+}
+
+async function expectUntouched(code: string, ruleOptions: unknown[] = []) {
+  expect(await messagesFor(code, ruleOptions)).toEqual([]);
+}
+
+describe('twig-html/indent', () => {
+  describe('HTML', () => {
+    it('indents children one step from their parent and closing tags in line with the opening tag', async () => {
+      expect(await fixed('<div>\n<ul>\n<li>a</li>\n</ul>\n</div>')).toBe('<div>\n  <ul>\n    <li>a</li>\n  </ul>\n</div>');
+    });
+
+    it('accepts a correctly indented tree', async () => {
+      await expectUntouched('<div>\n  <ul>\n    <li>a</li>\n  </ul>\n</div>\n');
+    });
+
+    it('fixes a deep tree in one pass', async () => {
+      const code = '<a>\n<b>\n<c>\n<d>\n<e>\nx\n</e>\n</d>\n</c>\n</b>\n</a>';
+      const messages = await messagesFor(code);
+      expect(messages).toHaveLength(9);
+      expect(await fixed(code)).toBe('<a>\n  <b>\n    <c>\n      <d>\n        <e>\n          x\n        </e>\n      </d>\n    </c>\n  </b>\n</a>');
+    });
+
+    it('removes indentation from top-level content', async () => {
+      expect(await fixed('  <p>a</p>\n    <p>b</p>')).toBe('<p>a</p>\n<p>b</p>');
+    });
+
+    it('indents every line of multi-line text at the child indent', async () => {
+      expect(await fixed('<p>\nSome text\n      that wraps\n</p>')).toBe('<p>\n  Some text\n  that wraps\n</p>');
+    });
+
+    it('indents the continuation of text that starts on the opening line', async () => {
+      expect(await fixed('<p>Some text\nthat wraps</p>')).toBe('<p>Some text\n  that wraps</p>');
+    });
+
+    it('skips blank and whitespace-only lines', async () => {
+      await expectUntouched('<div>\n\n  <p>a</p>\n   \n</div>');
+    });
+
+    it('reports the expected and found indentation', async () => {
+      const [message] = await messagesFor('<div>\n<p>a</p>\n</div>');
+      expect(message).toMatchObject({ ruleId: 'twig-html/indent', messageId: 'wrongIndentation', line: 2, message: 'Expected indentation of 2 spaces but found 0 spaces.' });
+    });
+
+    it('indents comments like other content and leaves their inner lines alone', async () => {
+      expect(await fixed('<div>\n<!-- a\n      b -->\n{# c\n      d #}\n</div>')).toBe('<div>\n  <!-- a\n      b -->\n  {# c\n      d #}\n</div>');
+    });
+
+    it('leaves YAML front matter alone', async () => {
+      await expectUntouched('---\nlabel: Help\nrelated:\n  - a.b\n---\n<p>x</p>');
+    });
+
+    it('keeps the file\'s line endings', async () => {
+      expect(await fixed('<div>\r\n<p>a</p>\r\n</div>')).toBe('<div>\r\n  <p>a</p>\r\n</div>');
+    });
+  });
+
+  describe('Twig', () => {
+    it('indents the body of Twig blocks and keeps else and end tags in line with the opening tag', async () => {
+      const code = '{% if a %}\n<p>a</p>\n    {% elseif b %}\n<p>b</p>\n{% else %}\n<p>c</p>\n  {% endif %}';
+      expect(await fixed(code)).toBe('{% if a %}\n  <p>a</p>\n{% elseif b %}\n  <p>b</p>\n{% else %}\n  <p>c</p>\n{% endif %}');
+    });
+
+    it('nests Twig blocks and HTML together', async () => {
+      const code = '<ul>\n{% for item in items %}\n<li>\n{{ item }}\n</li>\n{% else %}\n<li>none</li>\n{% endfor %}\n</ul>';
+      expect(await fixed(code)).toBe('<ul>\n  {% for item in items %}\n    <li>\n      {{ item }}\n    </li>\n  {% else %}\n    <li>none</li>\n  {% endfor %}\n</ul>');
+    });
+
+    it('indents block, embed and block-form set bodies', async () => {
+      const code = '{% extends "a" %}\n{% block content %}\n{% embed "b" %}\n{% block c %}\n<p>x</p>\n{% endblock %}\n{% endembed %}\n{% set d %}\n<i>y</i>\n{% endset %}\n{% endblock %}';
+      expect(await fixed(code)).toBe(
+        '{% extends "a" %}\n{% block content %}\n  {% embed "b" %}\n    {% block c %}\n      <p>x</p>\n    {% endblock %}\n  {% endembed %}\n  {% set d %}\n    <i>y</i>\n  {% endset %}\n{% endblock %}',
+      );
+    });
+
+    it('does not nest after an inline set or a short block', async () => {
+      await expectUntouched('{% block a %}\n  {% set b = 1 %}\n  {% block title page_title %}\n  <p>x</p>\n{% endblock %}');
+    });
+
+    it('handles whitespace control on Twig tags', async () => {
+      expect(await fixed('{%- if a -%}\n<p>a</p>\n{%- endif -%}')).toBe('{%- if a -%}\n  <p>a</p>\n{%- endif -%}');
+    });
+
+    it('leaves the inner lines of a multi-line Twig tag or print alone', async () => {
+      await expectUntouched('<div>\n  {{ include("a", {\n        b: 1,\n  }) }}\n  {% set c = {\n      d: 2,\n    } %}\n</div>');
+    });
+
+    it('leaves verbatim and raw bodies alone', async () => {
+      await expectUntouched('{% verbatim %}\n<p>\n      {{ a }}\n</p>\n{% endverbatim %}');
+    });
+
+    it('leaves everything after an open tag with no > alone', async () => {
+      await expectUntouched('<div>\n  <li\n  class="a"\n      id="b"\n');
+    });
+
+    it('reports nothing when Twig tags do not pair up', async () => {
+      await expectUntouched('<div>\n<p>a</p>\n{% endif %}\n</div>');
+      await expectUntouched('{% if a %}\n<p>a</p>\n{% endfor %}');
+    });
+
+    it('leaves the content of an element opened and closed in different Twig branches alone', async () => {
+      const code = '<div>\n  {% if url %}<a href="{{ url }}">{% endif %}\n<span>x</span>\n  {% if url %}</a>{% endif %}\n<p>b</p>\n</div>';
+      expect(await fixed(code)).toBe('<div>\n  {% if url %}<a href="{{ url }}">{% endif %}\n<span>x</span>\n  {% if url %}</a>{% endif %}\n  <p>b</p>\n</div>');
+    });
+
+    it('leaves the Twig tags of a conditional wrapper in line with each other', async () => {
+      const code = '<div>\n{% if error %}\n<div role="alert">\n    {% endif %}\n<p>x</p>\n    {% if error %}\n</div>\n{% endif %}\n</div>';
+      expect(await fixed(code)).toBe(code);
+    });
+
+    it('leaves an element split across branches alone', async () => {
+      const code = '{% if a %}\n  <div class="a">\n{% else %}\n  <div class="b">\n{% endif %}\n<p>x</p>\n</div>\n<p>y</p>';
+      const { messages } = await lint(code, [], false);
+      expect(messages.map((message) => message.line)).toEqual([]);
+    });
+  });
+
+  describe('attributes', () => {
+    it('aligns attributes with the first one when it is on the tag line', async () => {
+      expect(await fixed('<div class="a"\n  id="b"\n    data-c>\n</div>')).toBe('<div class="a"\n     id="b"\n     data-c>\n</div>');
+    });
+
+    it('indents attributes one step from the tag when the first one is on its own line', async () => {
+      expect(await fixed('  <div>\n<input\nclass="a"\n        id="b"\n>\n  </div>')).toBe('<div>\n  <input\n    class="a"\n    id="b"\n  >\n</div>');
+    });
+
+    it('indents attributes one step when alignAttributesVertically is off', async () => {
+      expect(await fixed('<div class="a"\n     id="b">\n</div>', [2, { alignAttributesVertically: false }])).toBe('<div class="a"\n  id="b">\n</div>');
+    });
+
+    it('uses the attribute option for the attribute step', async () => {
+      expect(await fixed('<div\nclass="a"\n>\n</div>', [2, { attribute: 2 }])).toBe('<div\n    class="a"\n>\n</div>');
+    });
+
+    it('puts a closing bracket on its own line in line with the tag by default', async () => {
+      expect(await fixed('<div\n  class="a"\n    >\n<img\n  src="b"\n    />\n</div>')).toBe('<div\n  class="a"\n>\n  <img\n    src="b"\n  />\n</div>');
+    });
+
+    it('uses closeBracket for closing brackets on their own line', async () => {
+      expect(await fixed('<div\n  class="a"\n>\n<img\n  src="b"\n/>\n</div>', [2, { closeBracket: 1 }])).toBe('<div\n  class="a"\n  >\n  <img\n    src="b"\n    />\n</div>');
+      expect(await fixed('<img\n  src="b"\n/>', [2, { closeBracket: { selfClosingTag: 1 } }])).toBe('<img\n  src="b"\n  />');
+    });
+
+    it('nests Twig blocks between attributes', async () => {
+      expect(await fixed('<div\n  {% if a %}\n  class="a"\n  {% endif %}\n>\n</div>')).toBe('<div\n  {% if a %}\n    class="a"\n  {% endif %}\n>\n</div>');
+    });
+
+    it('leaves the inside of a multi-line attribute value alone', async () => {
+      await expectUntouched('<div\n  class="\n        a\n     b\n"\n>\n</div>');
+    });
+  });
+
+  describe('elements whose content is left alone', () => {
+    it('leaves pre, textarea, script and style content alone and indents their closing tags', async () => {
+      const code = '<div>\n<pre>\n    a\n</pre>\n<textarea>\n    b\n</textarea>\n<script>\n    c();\n</script>\n<style>\n    .d {}\n</style>\n</div>';
+      expect(await fixed(code)).toBe('<div>\n  <pre>\n    a\n</pre>\n  <textarea>\n    b\n</textarea>\n  <script>\n    c();\n  </script>\n  <style>\n    .d {}\n  </style>\n</div>');
+    });
+
+    it('leaves raw-text elements such as title alone, closing tag included', async () => {
+      expect(await fixed('<head>\n<title>\n<b>a</b>\n  </title>\n</head>')).toBe('<head>\n  <title>\n<b>a</b>\n  </title>\n</head>');
+    });
+
+    it('leaves the content of elements named in ignores alone', async () => {
+      expect(await fixed('<div>\n<svg>\n      <path/>\n</svg>\n</div>', [2, { ignores: ['svg'] }])).toBe('<div>\n  <svg>\n      <path/>\n  </svg>\n</div>');
+    });
+  });
+
+  describe('options', () => {
+    it('indents with the given number of spaces', async () => {
+      expect(await fixed('<div>\n<p>a</p>\n</div>', [4])).toBe('<div>\n    <p>a</p>\n</div>');
+    });
+
+    it('indents with tabs', async () => {
+      expect(await fixed('<div>\n  <p>\n    a\n  </p>\n</div>', ['tab'])).toBe('<div>\n\t<p>\n\t\ta\n\t</p>\n</div>');
+    });
+
+    it('describes tabs in the message', async () => {
+      const [message] = await messagesFor('<div>\n<p>a</p>\n</div>', ['tab']);
+      expect(message?.message).toBe('Expected indentation of 1 tab but found 0 tabs.');
+    });
+  });
+});

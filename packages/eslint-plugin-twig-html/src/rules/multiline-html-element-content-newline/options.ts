@@ -1,10 +1,8 @@
 import { whitespaceSensitiveElements, inlineNonVoidElements } from '../../shared/html-elements.js';
-import { layoutOptionDefaults, layoutOptionProperties } from '../../shared/layout-options.js';
 
-export type Options = { indent?: number; ignores?: string[]; ignoreWhenEmpty?: boolean; allowEmptyLines?: boolean };
+export type Options = { ignores?: string[]; ignoreWhenEmpty?: boolean; allowEmptyLines?: boolean };
 
 const defaultOptions: Required<Options> = {
-  indent: layoutOptionDefaults.indent,
   ignores: [...whitespaceSensitiveElements, ...inlineNonVoidElements],
   ignoreWhenEmpty: true,
   allowEmptyLines: false,
@@ -16,7 +14,6 @@ export const optionsSchema = {
     allowEmptyLines: { type: 'boolean' },
     ignoreWhenEmpty: { type: 'boolean' },
     ignores: { type: 'array', items: { type: 'string' }, uniqueItems: true },
-    indent: layoutOptionProperties.indent,
   },
   additionalProperties: false,
 } as const;

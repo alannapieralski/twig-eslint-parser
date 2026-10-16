@@ -2,24 +2,30 @@ import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
-import { describeGaps } from './describe-gaps.js';
+import { describeSeparators } from './describe-separators.js';
 import { groupAttributes } from './group-attributes.js';
 import type { CloseStyle, Options } from './options.js';
 import type { TagSource } from '../../shared/tag-source.js';
-import type { Gap } from './types.js';
+import type { AttributeSeparator } from './types.js';
 
 const whitespaceOnly = /^\s*$/;
+const ignoredIndentation = /^[ \t]*$/;
 
-function messageIdForGap(gap: Gap, closeStyle: CloseStyle): string {
-  if (!gap.isClosing) return 'attributeLine';
+function isSeparatorCorrect(separatorText: string, separator: AttributeSeparator, lineBreak: string): boolean {
+  if (!separator.isLineBreak) return separatorText === separator.expected;
+  return separatorText.startsWith(lineBreak) && ignoredIndentation.test(separatorText.slice(lineBreak.length));
+}
+
+function messageIdForSeparator(separator: AttributeSeparator, closeStyle: CloseStyle): string {
+  if (!separator.isClosing) return 'attributeLine';
   return closeStyle === 'newline' ? 'closeOnOwnLine' : 'closeAfterLastAttribute';
 }
 
-function findReportedEnd(gap: Gap, tag: TagNode, groups: readonly Range[]): number {
-  if (gap.isClosing) return tag.openEnd.range[1];
+function findReportedEnd(separator: AttributeSeparator, tag: TagNode, groups: readonly Range[]): number {
+  if (separator.isClosing) return tag.openEnd.range[1];
 
-  const groupAfterGap = groups.find(([start]) => start === gap.range[1]);
-  return groupAfterGap?.[1] ?? gap.range[1];
+  const groupAfterSeparator = groups.find(([start]) => start === separator.range[1]);
+  return groupAfterSeparator?.[1] ?? separator.range[1];
 }
 
 export function findAttributeProblems(tag: TagNode, source: TagSource, options: Required<Options>): Problem[] {
@@ -27,18 +33,18 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   const groups = groupAttributes(tag.attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
 
-  const gaps = describeGaps(tag, groups, text, lineBreak, options);
-  const wrongGaps = gaps.filter((gap) => text.slice(...gap.range) !== gap.expected);
-  const firstWrongGap = wrongGaps[0];
-  if (!firstWrongGap) return [];
+  const separators = describeSeparators(tag, groups, lineBreak, options.closeStyle);
+  const wrongSeparators = separators.filter((separator) => !isSeparatorCorrect(text.slice(...separator.range), separator, lineBreak));
+  const firstWrongSeparator = wrongSeparators[0];
+  if (!firstWrongSeparator) return [];
 
-  const areAllGapsWhitespace = gaps.every((gap) => whitespaceOnly.test(text.slice(...gap.range)));
-  const isFixable = areAllGapsWhitespace && !isOpenTagSwallowingMarkup(tag, text);
+  const areAllSeparatorsWhitespace = separators.every((separator) => whitespaceOnly.test(text.slice(...separator.range)));
+  const isFixable = areAllSeparatorsWhitespace && !isOpenTagSwallowingMarkup(tag, text);
 
   return [{
-    range: [firstWrongGap.range[1], findReportedEnd(firstWrongGap, tag, groups)],
-    messageId: messageIdForGap(firstWrongGap, options.closeStyle),
+    range: [firstWrongSeparator.range[1], findReportedEnd(firstWrongSeparator, tag, groups)],
+    messageId: messageIdForSeparator(firstWrongSeparator, options.closeStyle),
     data: { close: tag.openEnd.value },
-    ...(isFixable && { edits: wrongGaps.map((gap) => ({ range: gap.range, text: gap.expected })) }),
+    ...(isFixable && { edits: wrongSeparators.map((separator) => ({ range: separator.range, text: separator.expected })) }),
   }];
 }

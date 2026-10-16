@@ -2,9 +2,10 @@ import { ESLint, type Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
-async function lint(code: string, ruleOptions?: Record<string, unknown>, fix = true) {
+async function lint(code: string, ruleOptions?: Record<string, unknown>, fix = true, indentRule: Linter.RuleEntry = 'warn') {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
+    'twig-html/indent': indentRule,
     'twig-html/quotes': 'off',
     'twig-html/multiline-html-element-content-newline': ruleOptions ? ['warn', ruleOptions] : 'warn',
   };
@@ -16,6 +17,10 @@ async function lint(code: string, ruleOptions?: Record<string, unknown>, fix = t
 
 async function fixed(code: string, ruleOptions?: Record<string, unknown>): Promise<string> {
   return (await lint(code, ruleOptions)).output;
+}
+
+async function fixedAlone(code: string, ruleOptions?: Record<string, unknown>): Promise<string> {
+  return (await lint(code, ruleOptions, true, 'off')).output;
 }
 
 describe('twig-html/multiline-html-element-content-newline', () => {
@@ -37,11 +42,11 @@ describe('twig-html/multiline-html-element-content-newline', () => {
 
   it('reduces whitespace-only content to one line break', async () => {
     expect(await fixed('<div\n  class="a"\n  id="b"\n>\n\n</div>')).toBe('<div\n  class="a"\n  id="b"\n>\n</div>');
-    expect(await fixed('  <div\n    class="a"\n  >\n\n  </div>')).toBe('  <div\n    class="a"\n  >\n  </div>');
+    expect(await fixedAlone('  <div\n    class="a"\n  >\n\n  </div>')).toBe('  <div\n    class="a"\n  >\n  </div>');
   });
 
   it('breaks an empty tag when ignoreWhenEmpty is off', async () => {
-    expect(await fixed('  <div\n    class="a"\n  ></div>', { ignoreWhenEmpty: false })).toBe('  <div\n    class="a"\n  >\n  </div>');
+    expect(await fixed('<div\n  class="a"\n></div>', { ignoreWhenEmpty: false })).toBe('<div\n  class="a"\n>\n</div>');
   });
 
   it('leaves an element on one line alone, whatever it contains', async () => {
@@ -54,7 +59,7 @@ describe('twig-html/multiline-html-element-content-newline', () => {
   });
 
   it('removes blank lines around the content, keeping its indentation', async () => {
-    expect(await fixed('<div class="a">\n\n    text\n\n</div>')).toBe('<div class="a">\n    text\n</div>');
+    expect(await fixedAlone('<div class="a">\n\n    text\n\n</div>')).toBe('<div class="a">\n    text\n</div>');
   });
 
   it('allows blank lines around the content when allowEmptyLines is on', async () => {
@@ -86,9 +91,10 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint('<p\n  class="a"\n  id="b"\n>\n      text\n</p>')).messages).toEqual([]);
   });
 
-  it('indents from the line the tag starts on', async () => {
+  it('only breaks lines, leaving indentation to twig-html/indent', async () => {
     const code = '{% if x %}\n    <p\n      class="a"\n      id="b"\n    >{{ text }}</p>\n{% endif %}';
-    expect(await fixed(code)).toBe('{% if x %}\n    <p\n      class="a"\n      id="b"\n    >\n      {{ text }}\n    </p>\n{% endif %}');
+    expect(await fixedAlone(code)).toBe('{% if x %}\n    <p\n      class="a"\n      id="b"\n    >\n{{ text }}\n</p>\n{% endif %}');
+    expect(await fixed(code)).toBe('{% if x %}\n  <p\n    class="a"\n    id="b"\n  >\n    {{ text }}\n  </p>\n{% endif %}');
   });
 
   it('works with attrs-newline: one pass lays out the attributes, the next the content', async () => {
@@ -103,14 +109,6 @@ describe('twig-html/multiline-html-element-content-newline', () => {
 
   it('keeps Windows line endings', async () => {
     expect(await fixed('<p\r\n  class="a"\r\n  id="b"\r\n>text</p>')).toBe('<p\r\n  class="a"\r\n  id="b"\r\n>\r\n  text\r\n</p>');
-  });
-
-  it('indents with tabs when the tag is indented with tabs', async () => {
-    expect(await fixed('\t<p\n\t\tclass="a"\n\t\tid="b"\n\t>text</p>')).toBe('\t<p\n\t\tclass="a"\n\t\tid="b"\n\t>\n\t\ttext\n\t</p>');
-  });
-
-  it('can change the indent size', async () => {
-    expect(await fixed('<p\n  class="a"\n  id="b"\n>text</p>', { indent: 4 })).toBe('<p\n  class="a"\n  id="b"\n>\n    text\n</p>');
   });
 
   it.each(['pre', 'textarea'])('never touches <%s>, where whitespace is content, even when ignores leaves it out', async (name) => {
@@ -163,7 +161,7 @@ describe('twig-html/multiline-html-element-content-newline', () => {
   });
 
   it('still lays out an element whose Twig blocks open and close inside it', async () => {
-    expect(await fixed('<div class="a">{% if x %}\n  a\n{% else %}\n  b\n{% endif %}</div>')).toBe('<div class="a">\n  {% if x %}\n  a\n{% else %}\n  b\n{% endif %}\n</div>');
+    expect(await fixedAlone('<div class="a">{% if x %}\n  a\n{% else %}\n  b\n{% endif %}</div>')).toBe('<div class="a">\n{% if x %}\n  a\n{% else %}\n  b\n{% endif %}\n</div>');
   });
 
   it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
@@ -186,9 +184,10 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixed(code, { ignores: ['pre', 'textarea'] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 1 1"\n>\n  <path d="M0 0"/>\n</svg>');
   });
 
-  it('does not re-indent child tags it moves', async () => {
+  it('moves child tags onto their own lines, and twig-html/indent indents them', async () => {
     const code = '<div\n  class="a"\n  id="b"\n><p\n  class="c"\n  id="d"\n>text</p></div>';
-    expect(await fixed(code)).toBe('<div\n  class="a"\n  id="b"\n>\n  <p\n  class="c"\n  id="d"\n>\n  text\n</p>\n</div>');
+    expect(await fixedAlone(code)).toBe('<div\n  class="a"\n  id="b"\n>\n<p\n  class="c"\n  id="d"\n>\ntext\n</p>\n</div>');
+    expect(await fixed(code)).toBe('<div\n  class="a"\n  id="b"\n>\n  <p\n    class="c"\n    id="d"\n  >\n    text\n  </p>\n</div>');
   });
 
   it('does not report tags without a closing tag, such as void elements', async () => {

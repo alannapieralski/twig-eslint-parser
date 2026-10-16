@@ -1,0 +1,24 @@
+<ul class="menu">
+  {% for item in items %}
+    <li class="menu__item">
+      <a href="{{ item.url }}">{{ item.title }}</a>
+    </li>
+  {% else %}
+    <li>{{ 'Nothing here'|t }}</li>
+  {% endfor %}
+</ul>
+{% if image %}
+  <img
+    src="{{ image.src }}"
+    alt=""
+  />
+{% endif %}
+<div class="card"
+     id="card-{{ id }}">
+  <pre>
+    kept as written
+  </pre>
+</div>
+{% if url %}<a href="{{ url }}">{% endif %}
+      <span>{{ label }}</span>
+{% if url %}</a>{% endif %}

@@ -2,13 +2,13 @@
   id="system-breadcrumb"
   class="sr-only"
 >
-  You are here:
+You are here:
 </h2>
 <ul
   class="list"
   id="menu"
 >
-  <li>{{ item }}</li>
+<li>{{ item }}</li>
 </ul>
 <div
   class="swiper-pagination"
@@ -16,7 +16,7 @@
 ></div>
 <h2 id="a" class="b">Short tags stay as they are</h2>
 <p>
-  See <a
+See <a
   href="/one"
   class="link"
 >this link</a>.
@@ -29,7 +29,7 @@
   class="a"
   id="b"
 >
-   kept 
+ kept 
 </p>
 <script
   src="a.js"

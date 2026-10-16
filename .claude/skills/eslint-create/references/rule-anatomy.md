@@ -37,7 +37,7 @@ export const attrsNewline: Rule.RuleModule = {
   meta: {
     type: 'layout',
     docs: {
-      description: 'Put each attribute of a tag with many attributes on its own line, indented one step from the tag',
+      description: 'Put each attribute of a tag with many attributes on its own line',
       url: docsUrlFor('attrs-newline'),
     },
     fixable: 'whitespace',
@@ -94,8 +94,8 @@ export function resolveOptions(rawOptions: unknown): Required<Options> {
 
 ```ts
 export const messages = {
-  attributeLine: 'Put each attribute on its own line, indented one step from the tag.',
-  closeOnOwnLine: 'Put "{{close}}" on its own line, in line with the tag.',
+  attributeLine: 'Put each attribute on its own line.',
+  closeOnOwnLine: 'Put "{{close}}" on its own line.',
 } as const;
 ```
 

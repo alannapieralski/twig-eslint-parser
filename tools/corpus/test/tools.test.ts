@@ -57,6 +57,19 @@ describe('describeFixProblems', () => {
     ]);
   });
 
+  it('accepts re-indented lines of text and Twig when the rule promises layout only', () => {
+    expect(describeFixProblems('<div>\n{% if a %}\n<b>x</b> y\nz\n{% endif %}\n</div>', '<div>\n  {% if a %}\n    <b>x</b> y\n    z\n  {% endif %}\n</div>', 'layout')).toEqual([]);
+  });
+
+  it('accepts a re-indented closing script tag when the rule promises layout only', () => {
+    expect(describeFixProblems('<div>\n<script>\n  a();\n</script>\n</div>', '<div>\n  <script>\n  a();\n  </script>\n</div>', 'layout')).toEqual([]);
+  });
+
+  it('rejects re-indented lines inside pre, textarea or a Twig span when the rule promises layout only', () => {
+    expect(describeFixProblems('<pre>\na\n  b</pre>', '<pre>\na\nb</pre>', 'layout')).toHaveLength(1);
+    expect(describeFixProblems('<p>\n{{ "a\n  b" }}\n</p>', '<p>\n{{ "a\nb" }}\n</p>', 'layout')).toHaveLength(1);
+  });
+
   it('rejects a change to text when the rule promises layout only', () => {
     expect(describeFixProblems('<a href="x">y</a>', '<a href="x">z</a>', 'layout')).toEqual([
       'the fix changes more than the whitespace between tokens: "y" became "z"',

@@ -30,7 +30,7 @@ Review speed is the goal. Code here is longer than it could be so it reads in on
   whose header does the work.
 - Prefer returning new values over mutating arguments or outer variables. Local accumulation inside
   a small function is fine.
-- Types name the shapes that move between functions (`Gap`, `ContentEdge`, `Problem`).
+- Types name the shapes that move between functions (`AttributeSeparator`, `ContentEdge`, `Problem`).
 - A function that does not fit on one screen is split. A file that needs "and" to describe it is
   split (see `shared-code.md`).
 
@@ -55,8 +55,8 @@ const messageId = !firstWrong.isClosing ? 'attributeLine' : options.closeStyle =
 ```
 
 ```ts
-function messageIdForGap(gap: Gap, closeStyle: CloseStyle): MessageId {
-  if (!gap.isClosing) return 'attributeLine';
+function messageIdForSeparator(separator: AttributeSeparator, closeStyle: CloseStyle): MessageId {
+  if (!separator.isClosing) return 'attributeLine';
   return closeStyle === 'newline' ? 'closeOnOwnLine' : 'closeAfterLastAttribute';
 }
 ```

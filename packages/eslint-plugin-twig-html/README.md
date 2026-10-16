@@ -31,14 +31,15 @@ export default [twigHtml.configs.recommended];
 ```
 
 `configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
-`twig-html/attrs-newline`, `twig-html/multiline-html-element-content-newline` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
+`twig-html/attrs-newline`, `twig-html/indent`, `twig-html/multiline-html-element-content-newline` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
 config, which uses the same parser.
 
 ## Rules
 
 | Rule | Description | Recommended | Fixable |
 |---|---|---|---|
-| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line, indented one step from the tag | warn | yes |
+| [`attrs-newline`](docs/rules/attrs-newline.md) | Put each attribute of a tag with more than 1 attribute on its own line | warn | yes |
+| [`indent`](docs/rules/indent.md) | Indent HTML and Twig blocks one step per level of nesting | warn | yes |
 | [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
@@ -48,15 +49,22 @@ config, which uses the same parser.
 `ignores`. `ignores` replaces the default list, so copy in any defaults you want to keep. It now also checks elements whose
 opening tag fits on one line, once their content spans several lines.
 
+## Upgrading: indentation moved to `indent`
+
+`attrs-newline` and `multiline-html-element-content-newline` no longer indent and no longer take an `indent` option.
+Their fixes insert bare line breaks, and `twig-html/indent` (on in `configs.recommended`) indents them. Move an `indent`
+size to that rule: `'twig-html/indent': ['warn', 4]`, or `['warn', 'tab']`.
+
 ## Why not @html-eslint's rules
 
-[`@html-eslint/eslint-plugin`](https://html-eslint.org) has an `attrs-newline` rule, and it runs on
-Twig through this parser. Its fix only adds line breaks and leaves indentation to its `indent`
-rule, so attributes end up at column 0. That `indent` rule does not know about Twig blocks: it
-removes the indentation `{% if %}` and `{% for %}` add to the HTML inside them. Its fix also
-rebuilds the tag from the attributes it parsed, which drops a Twig comment written between two
-attributes. `twig-html/attrs-newline` indents from the tag itself and only ever changes the
-whitespace between attributes.
+[`@html-eslint/eslint-plugin`](https://html-eslint.org) has `attrs-newline` and `indent` rules, and
+they run on Twig through this parser. This plugin splits the work the same way: the layout rules
+only place line breaks and `twig-html/indent` owns indentation. The difference is Twig: html-eslint's
+`indent` rule does not know about Twig blocks, so it removes the indentation `{% if %}` and
+`{% for %}` add to the HTML inside them, and its `attrs-newline` fix rebuilds the tag from the
+attributes it parsed, which drops a Twig comment written between two attributes.
+`twig-html/indent` indents the body of every Twig block, and `twig-html/attrs-newline` only ever
+changes the whitespace between attributes.
 
 ## Known limitations
 
