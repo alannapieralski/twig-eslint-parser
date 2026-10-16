@@ -46,4 +46,13 @@ describe.each([
     expect(unconvertedBlockCount(output)).toBe(unconvertedBlockCount(code));
     expect(output.split('`').length).toBe(code.split('`').length);
   });
+
+  it.each([
+    "{% set classes = ['card card-' ~ variant ~ ' card-' ~ size] %}",
+    "<div{{ attributes.addClass('flex ' ~ modifier) }}></div>",
+    "{% set classes = [prefix ~ ' flex'] %}",
+  ])('keeps the spaces that separate classes in %s', async (code) => {
+    const [result] = await fixWith(rules).lintText(code, { filePath: `${fixturesDirectory}/template.html.twig` });
+    expect(result?.output ?? code).toBe(code);
+  });
 });

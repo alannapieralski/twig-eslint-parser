@@ -19,10 +19,10 @@ extra config, Drupal's), and rules that keep Twig out of class values.
 ## Installation
 
 ```sh
-npm install --save-dev eslint-plugin-twig-tailwind eslint eslint-plugin-better-tailwindcss tailwindcss
+npm install --save-dev eslint-plugin-twig-tailwind eslint eslint-plugin-better-tailwindcss@4.8.0 tailwindcss
 ```
 
-Requires Node.js 24 or later, ESLint 9 or 10 and eslint-plugin-better-tailwindcss 4.7 or later.
+Requires Node.js 24 or later, ESLint 9 or 10 and eslint-plugin-better-tailwindcss 4.8.0.
 The package is ESM only. `twig-eslint-parser` is installed with it.
 
 ## Usage
@@ -43,6 +43,10 @@ export default [
 ```
 
 If better-tailwindcss is not installed, loading the plugin fails with an error that names it.
+
+Each release supports only the better-tailwindcss versions in its `peerDependencies`. A new
+better-tailwindcss release is added there once it has been tested, so a newer one may not be
+supported yet.
 
 `createConfig()` takes two options, both optional:
 
