@@ -7,7 +7,7 @@ const { recommended, drupal } = twigTailwind.configs;
 export default {
   package: 'eslint-plugin-twig-tailwind',
   checks: [
-    ...ruleChecks({ plugin: twigTailwind, prefix: 'twig-tailwind', rules: { 'no-interpolated-classes': { settings: drupal.settings } } }),
+    ...ruleChecks({ plugin: twigTailwind, prefix: 'twig-tailwind' }),
     ...configChecks({
       prefix: 'twig-tailwind',
       configs: { recommended: [recommended], drupal: [recommended, drupal] },

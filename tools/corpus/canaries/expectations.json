@@ -17,7 +17,6 @@
     { "check": "parser/output-matches-source", "noFailures": "all" }
   ],
   "twig-tailwind.html.twig": [
-    { "check": "twig-tailwind/no-interpolated-classes", "reports": [1] },
     { "check": "twig-tailwind/no-interpolated-attributes", "reports": [2] },
     { "check": "twig-tailwind/no-unparsed-twig", "reports": [3] },
     { "check": "parser/converts-every-block", "failures": [3] },

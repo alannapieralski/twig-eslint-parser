@@ -4,7 +4,6 @@ import twigParser from 'twig-eslint-parser';
 import { betterTailwindcss } from './better-tailwindcss.js';
 import { createProcessor } from './processor.js';
 import { noInterpolatedAttributes } from './rules/no-interpolated-attributes.js';
-import { noInterpolatedClasses } from './rules/no-interpolated-classes.js';
 import { noUnparsedTwig } from './rules/no-unparsed-twig.js';
 import { drupalSelectors } from './selectors/drupal.js';
 import { twigSelectors } from './selectors/twig.js';
@@ -15,7 +14,6 @@ const plugin = {
   meta: { name, version },
   rules: {
     'no-interpolated-attributes': noInterpolatedAttributes,
-    'no-interpolated-classes': noInterpolatedClasses,
     'no-unparsed-twig': noUnparsedTwig,
   },
   processors: { twig: createProcessor({ name, version }) },
@@ -23,7 +21,8 @@ const plugin = {
 } satisfies ESLint.Plugin;
 
 const { getDefaultSelectors } = betterTailwindcss;
-const classSelectors = [...getDefaultSelectors(), ...twigSelectors];
+const isStyleVariableSelector = (selector: ReturnType<typeof getDefaultSelectors>[number]) => 'name' in selector && selector.name === '^styles?$';
+const classSelectors = [...getDefaultSelectors().filter((selector) => !isStyleVariableSelector(selector)), ...twigSelectors];
 const attributeSelectors = getDefaultSelectors().filter((selector) => selector.kind === 'attribute');
 
 const recommended: Linter.Config = {
@@ -42,7 +41,6 @@ const recommended: Linter.Config = {
     ...betterTailwindcss.plugin.configs.recommended.rules,
     'better-tailwindcss/enforce-consistent-line-wrapping': ['warn', { selectors: attributeSelectors }],
     'twig-tailwind/no-interpolated-attributes': 'error',
-    'twig-tailwind/no-interpolated-classes': 'error',
     'twig-tailwind/no-unparsed-twig': 'error',
   },
 };

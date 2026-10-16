@@ -57,8 +57,7 @@ If better-tailwindcss is not installed, loading the plugin fails with an error t
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
   into more array items by hand;
-- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md),
-  [`twig-tailwind/no-interpolated-classes`](docs/rules/no-interpolated-classes.md) and
+- [`twig-tailwind/no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) and
   [`twig-tailwind/no-unparsed-twig`](docs/rules/no-unparsed-twig.md) as errors.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
@@ -84,11 +83,13 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | Twig | Selector |
 |---|---|
 | `class="..."` without Twig inside | better-tailwindcss defaults |
-| `{% set classes = [...] %}`, `{% set grid_classes = '...' %}` | `twigSelectors`: variables named `classes` or ending in `_classes` |
-| `{% include 'x' with { classes: [...] } %}`, `{% embed %}`, `include('x', { classes })` | `twigSelectors`: the `classes` value of the hash |
-| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable named `classes` or ending in `_classes` |
+| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `class` or `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` |
+| `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `twigSelectors`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
+| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable with such a name |
 | `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`configs.drupal`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
-| `create_attribute({ 'class': [...] })` | `drupalSelectors` (`configs.drupal`) |
+
+better-tailwindcss's default selector for variables named `style` or `styles` is left out, since
+in Twig those usually hold inline CSS or a variant name rather than classes.
 
 Not linted: `attributes.setAttribute('class', ...)`, because a selector cannot tell its `class` calls
 from every other attribute it sets.
@@ -120,7 +121,6 @@ export default [
 | Rule | Description | Recommended |
 |---|---|---|
 | [`no-interpolated-attributes`](docs/rules/no-interpolated-attributes.md) | Disallow Twig inside attribute values such as `class=""` | error |
-| [`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) | Disallow `#{ }` inside class strings | error |
 | [`no-unparsed-twig`](docs/rules/no-unparsed-twig.md) | Report Twig blocks the parser could not read | error |
 
 ## Interpolated strings
@@ -131,9 +131,9 @@ unknown class, and its class-order fix would move the interpolation around.
 
 The `twig-tailwind/twig` processor prevents this: it drops every better-tailwindcss message, and
 with it every fix, that starts inside a Twig string containing `#{ }`. Other strings in the file
-are linted and fixed as usual, and messages from other plugins are kept.
-[`no-interpolated-classes`](docs/rules/no-interpolated-classes.md) then reports each such class
-string once, so it is not silently skipped. An ESLint config applies one processor per file, so
+are linted and fixed as usual, and messages from other plugins are kept. The classes inside an
+interpolated string are therefore not checked; use an array such as `['flex', modifier]` instead
+to keep them visible. An ESLint config applies one processor per file, so
 if you set your own processor for `.twig` files, these strings are no longer silenced.
 
 ## Class lists grouped with [ ] or |
