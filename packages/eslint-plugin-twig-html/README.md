@@ -60,8 +60,11 @@ whitespace between attributes.
 
 ## Known limitations
 
-- **Elements opened or closed in different Twig branches** are left alone: the rules skip a tag when a
-  `{% if %}` opens or branches inside it, and never fix across a branch.
+- **Elements opened or closed in different Twig branches** are never fixed across a branch.
+  `attrs-newline` and `multiline-html-element-content-newline` skip a tag when a Twig block opens or
+  branches inside it without closing there. `quotes` fixes an attribute only when every Twig block in
+  its value also closes in that value, and does not see attributes in a later branch of an open tag
+  split across branches.
 - **Open tags missing their `>`** swallow the markup after them in the parser's tree, so the rules never fix them.
 - Other limits come from the parser: see
   [its known limitations](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser#known-limitations).

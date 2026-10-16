@@ -18,20 +18,20 @@ function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]
   return low;
 }
 
-function findBlocksWithin(range: Range, blocks: readonly TwigBlockSummary[]): TwigBlockSummary[] {
-  const found: TwigBlockSummary[] = [];
-
+function* findBlocksWithin(range: Range, blocks: readonly TwigBlockSummary[]): Generator<TwigBlockSummary> {
   for (let index = firstBlockIndexFrom(range[0], blocks); index < blocks.length; index += 1) {
     const block = blocks[index];
-    if (!block || block.range[1] > range[1]) break;
-    found.push(block);
+    if (!block || block.range[1] > range[1]) return;
+    yield block;
   }
-
-  return found;
 }
 
 export function depthChangeWithin(range: Range, blocks: readonly TwigBlockSummary[]): number {
-  return findBlocksWithin(range, blocks).reduce((depth, block) => depth + block.depthChange, 0);
+  let depth = 0;
+
+  for (const block of findBlocksWithin(range, blocks)) depth += block.depthChange;
+
+  return depth;
 }
 
 export function isTwigBalancedWithin(range: Range, blocks: readonly TwigBlockSummary[]): boolean {

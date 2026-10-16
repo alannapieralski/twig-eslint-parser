@@ -24,11 +24,11 @@ export const noInterpolatedAttributes: Rule.RuleModule = {
     const { omittedAttributes } = readTwigServices(context.sourceCode, context.id);
 
     const checkTag = (tag: TagWithAttributes) => reportProblems(context, findInterpolatedAttributeProblems(tag, options));
-    const tagListeners = Object.fromEntries(tagNodeTypes.map((nodeType) => [nodeType, checkTag]));
+    const checkTagByNodeType = Object.fromEntries(tagNodeTypes.map((nodeType) => [nodeType, checkTag]));
 
     return {
       Program: () => reportProblems(context, findOmittedAttributeProblems(omittedAttributes, options)),
-      ...tagListeners,
+      ...checkTagByNodeType,
     } as Rule.RuleListener;
   },
 };

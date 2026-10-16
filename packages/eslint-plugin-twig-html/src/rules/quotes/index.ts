@@ -4,7 +4,7 @@ import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { tagListeners } from '../../shared/tag-listeners.js';
 import { tagNodeTypes } from '../../shared/tag-node.js';
-import { findProgramProblems } from './find-program-problems.js';
+import { findFileLevelProblems } from './find-file-level-problems.js';
 import { findTagProblems } from './find-tag-problems.js';
 import { groupOmittedAttributes } from './group-omitted-attributes.js';
 import { messages } from './messages.js';
@@ -34,7 +34,7 @@ export const quotes: Rule.RuleModule = {
     const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, ownedByTag, source));
 
     return {
-      Program: () => reportProblems(context, findProgramProblems(unowned, strings, source)),
+      Program: () => reportProblems(context, findFileLevelProblems(unowned, strings, source)),
       ...tagListeners(checkTag, tagNodeTypes),
     };
   },
