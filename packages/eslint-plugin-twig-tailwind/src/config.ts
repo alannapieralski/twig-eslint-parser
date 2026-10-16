@@ -14,7 +14,12 @@ type DefaultSelector = ReturnType<typeof betterTailwindcss.getDefaultSelectors>[
 
 const knownOptionNames: ReadonlySet<string> = new Set(['drupal', 'selectors']);
 
-const isStyleVariableSelector = (selector: DefaultSelector) => 'name' in selector && selector.name === '^styles?$';
+const selectorKinds: ReadonlySet<unknown> = new Set(['attribute', 'callee', 'tag', 'variable']);
+
+const isStyleVariableSelector = (selector: DefaultSelector) =>
+  selector.kind === 'variable' && ['style', 'styles'].some((variableName) => new RegExp(selector.name).test(variableName));
+
+const isSelector = (value: unknown) => typeof value === 'object' && value !== null && selectorKinds.has((value as { kind?: unknown }).kind);
 
 function parseConfigOptions(options: unknown): Required<ConfigOptions> {
   if (typeof options !== 'object' || options === null || Array.isArray(options)) {
@@ -25,7 +30,7 @@ function parseConfigOptions(options: unknown): Required<ConfigOptions> {
 
   const { drupal = false, selectors = [] } = options as ConfigOptions;
   if (typeof drupal !== 'boolean') throw new TypeError('createConfig() option "drupal" must be true or false.');
-  if (!Array.isArray(selectors)) throw new TypeError('createConfig() option "selectors" must be an array of better-tailwindcss selectors.');
+  if (!Array.isArray(selectors) || !selectors.every(isSelector)) throw new TypeError('createConfig() option "selectors" must be an array of better-tailwindcss selectors.');
   return { drupal, selectors };
 }
 

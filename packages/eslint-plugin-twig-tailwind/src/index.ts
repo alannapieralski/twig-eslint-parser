@@ -22,4 +22,4 @@ export { drupalSelectors } from './selectors/drupal.js';
 export { twigSelectors } from './selectors/twig.js';
 export type { ClassSelector } from './selectors/class-selector.js';
 export type { ConfigOptions } from './config.js';
-export default Object.assign(plugin, { createConfig });
+export default Object.assign(plugin, { createConfig, configs: { recommended: createConfig(), drupal: createConfig({ drupal: true }) } });

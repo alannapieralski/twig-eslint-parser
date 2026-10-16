@@ -3,7 +3,7 @@ import { ESLint, type Linter } from 'eslint';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import type { ParserOptions } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import { createConfig, twigSelectors, type ClassSelector } from '../../src/index.js';
+import twigTailwind, { createConfig, twigSelectors, type ClassSelector } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
@@ -114,8 +114,13 @@ describe('createConfig({ drupal: true })', () => {
     ['an unknown option', { drupl: true }],
     ['a drupal option that is not a boolean', { drupal: 'yes' }],
     ['a selectors option that is not an array', { selectors: {} }],
+    ['a selectors option holding a non-selector', { selectors: ['^pattern$'] }],
   ])('throws on %s', (_, options) => {
     expect(() => createConfig(options as never)).toThrow(TypeError);
+  });
+
+  it('keeps configs.recommended and configs.drupal as built configs', () => {
+    expect(twigTailwind.configs).toEqual({ recommended: createConfig(), drupal: createConfig({ drupal: true }) });
   });
 
   it('lets a later selectors setting replace the Drupal selectors', async () => {

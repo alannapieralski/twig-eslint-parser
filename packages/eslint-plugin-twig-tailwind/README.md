@@ -53,6 +53,9 @@ If better-tailwindcss is not installed, loading the plugin fails with an error t
 
 An unknown option, or an option of the wrong type, throws when the config is built.
 
+`twigTailwind.configs.recommended` and `twigTailwind.configs.drupal` are the same configs built
+with `createConfig()` and `createConfig({ drupal: true })`.
+
 The config applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
