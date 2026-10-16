@@ -102,6 +102,6 @@ export const multilineHtmlElementContentNewline: Rule.RuleModule = {
       }
     };
 
-    return tagListeners(check, ['Tag']);
+    return tagListeners(check, ['Tag'], blocks);
   },
 };

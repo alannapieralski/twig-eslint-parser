@@ -95,6 +95,17 @@ describe('twig-html/attrs-newline', () => {
     expect((await lint('  <button\n    type="button"\n    class="flex"\n    data-js-toggle\n  >x</button>')).messages).toEqual([]);
   });
 
+  it('leaves a tag alone when its > is inside one branch of a Twig block', async () => {
+    const code = '<div class="a" id="b" {% if x %}data-x>{% else %}>{% endif %}\n</div>';
+    expect(await lint(code)).toEqual({ output: code, messages: [] });
+  });
+
+  it('still lays out a tag whose Twig block opens and closes between its attributes', async () => {
+    expect(await fixed('<div class="a" {% if x %}data-x{% else %}data-y{% endif %} id="b">x</div>')).toBe(
+      '<div\n  class="a"\n  {% if x %}data-x{% else %}data-y{% endif %}\n  id="b"\n>x</div>',
+    );
+  });
+
   it('reports but does not fix a tag with a Twig comment between attributes, so the comment is never lost', async () => {
     const code = '<div class="a" {# note #} id="b" role="c">x</div>';
     const result = await lint(code);
