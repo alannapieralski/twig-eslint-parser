@@ -91,6 +91,7 @@ function provesTheCheckWorks(expectation: Expectation): boolean {
 }
 
 export function evaluateCanaries(expectations: readonly Expectation[], check: string, outcome: CheckOutcome): CanaryResult {
+  if (outcome.skipped !== undefined) return { missed: [], stillPending: [], nowPassing: [] };
   const missed: string[] = [];
   const stillPending: string[] = [];
   const nowPassing: string[] = [];

@@ -5,7 +5,7 @@ import type { Rule } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/canaries.js';
-import { findingKey, findStaleBaselineKeys, keepBaselineKeysOutsideTheRun } from '../src/baseline.js';
+import { baselineCoverageOf, findingKey, findStaleBaselineKeys, updateBaselineKeys } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
 import { describeFixProblems, reviewFix, type FixKeeps } from '../src/fix-invariants.js';
@@ -224,6 +224,13 @@ describe('config and discovery', () => {
     expect(discoverTemplates(config, { quick: false }).map((found) => found.relativePath)).toEqual(['a.twig', 'sub/b.html.twig']);
   });
 
+  it('says whether the roots came from TWIG_CORPUS, which makes every run partial', () => {
+    const root = createCorpusDirectory({ 'a.twig': 'a' });
+    expect(loadConfig(tmpdir(), { TWIG_CORPUS: root }).isFromEnvironment).toBe(true);
+    const configured = createCorpusDirectory({ 'corpus.config.json': JSON.stringify({ roots: [root] }) });
+    expect(loadConfig(configured, {}).isFromEnvironment).toBe(false);
+  });
+
   it('fails loudly when a root does not exist', () => {
     expect(() => loadConfig(tmpdir(), { TWIG_CORPUS: '/definitely/not/here' })).toThrow('do not exist');
   });
@@ -321,6 +328,15 @@ describe('run history', () => {
     expect(comparison?.added).toHaveLength(1);
   });
 
+  it('keeps the last results of a check that was skipped, so the next run compares with them', () => {
+    const a = template('a.twig');
+    const skipped = recordRun([a], [{ id: 'c', outcome: { findings: [], stats: {}, skipped: 'needs PHP' } }]);
+    const merged = mergeHistory(run([a], [report(a)]), skipped);
+    const [comparison] = compareRuns(merged, run([a], [report(a)]));
+    expect(comparison).toMatchObject({ before: { report: 1 }, after: { report: 1 }, wasSkipped: false });
+    expect(describeStrictViolations(compareRuns(merged, run([a], [report(a)])))).toEqual([]);
+  });
+
   it('keeps earlier results for templates a partial run did not cover', () => {
     const [a, b] = [template('a.twig'), template('b.twig')];
     const merged = mergeHistory(run([a, b], [report(a), report(b)]), run([a], []));
@@ -410,15 +426,44 @@ function comparisons<Item>(comparison: Item | undefined): Item[] {
 describe('baseline hygiene', () => {
   const key = (check: string, hash: string) => `${check}|${hash}|message`;
 
-  it('finds baseline entries that no longer happen', () => {
-    const baseline = new Set([key('c', 'aaa'), key('c', 'bbb'), key('other', 'ccc')]);
-    expect(findStaleBaselineKeys(baseline, new Set(['c']), new Set([key('c', 'aaa')]), new Set(['aaa']), true)).toEqual([key('c', 'bbb')]);
-    expect(findStaleBaselineKeys(baseline, new Set(['c']), new Set([key('c', 'aaa')]), new Set(['aaa']), false)).toEqual([]);
+  const template = (source: string): Template => ({ root: '/r', path: `/r/${source}`, relativePath: source, source });
+  const hashOf = (source: string) => findingKey({ check: 'c', severity: 'failure', message: 'message', template: template(source) }).split('|')[1] as string;
+  const [aaa, bbb, ccc] = [hashOf('aaa'), hashOf('bbb'), hashOf('ccc')];
+  const coverage = (runs: Parameters<typeof baselineCoverageOf>[0], isFullRun: boolean, sources = ['aaa']) => baselineCoverageOf(runs, sources.map(template), isFullRun);
+  const ran = (id: string, findings: readonly Finding[] = []) => ({ id, outcome: { findings, stats: {} } });
+  const skippedCheck = (id: string) => ({ id, outcome: { findings: [], stats: {}, skipped: 'needs PHP' } });
+
+  it('finds entries that no longer happen, and on a full run entries whose template is gone', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb), key('other', ccc)]);
+    expect(findStaleBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], true))).toEqual([key('c', bbb)]);
+    expect(findStaleBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], false))).toEqual([]);
   });
 
-  it('keeps entries for checks and templates outside a partial run when updating', () => {
-    const baseline = new Set([key('c', 'aaa'), key('c', 'bbb'), key('other', 'aaa')]);
-    expect(keepBaselineKeysOutsideTheRun(baseline, new Set(['c']), new Set(['aaa']))).toEqual([key('c', 'bbb'), key('other', 'aaa')]);
+  it('drops exactly the stale entries when updating, and adds the recorded ones', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb), key('other', ccc)]);
+    const recorded = new Set([key('c', aaa), key('c', `${aaa}-new`)]);
+    const runCoverage = coverage([ran('c')], true);
+    const updated = updateBaselineKeys(baseline, recorded, runCoverage);
+    expect(updated).toEqual([key('c', aaa), key('other', ccc), key('c', `${aaa}-new`)]);
+    expect(findStaleBaselineKeys(new Set(updated), recorded, runCoverage)).toEqual([]);
+  });
+
+  it('keeps entries for templates outside a partial run when updating', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb)]);
+    expect(updateBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], false))).toEqual([key('c', aaa), key('c', bbb)]);
+  });
+
+  it('keeps every entry of a check that was skipped', () => {
+    const baseline = new Set([key('parity', aaa), key('parity', bbb)]);
+    const runCoverage = coverage([skippedCheck('parity')], true);
+    expect(findStaleBaselineKeys(baseline, new Set(), runCoverage)).toEqual([]);
+    expect(updateBaselineKeys(baseline, new Set(), runCoverage)).toEqual([key('parity', aaa), key('parity', bbb)]);
+  });
+
+  it('keeps the entries of a template that a check skipped', () => {
+    const skippedTemplate: Finding = { check: 'c', severity: 'skipped', message: 'no Tailwind', template: template('aaa') };
+    const baseline = new Set([key('c', aaa)]);
+    expect(updateBaselineKeys(baseline, new Set(), coverage([ran('c', [skippedTemplate])], true))).toEqual([key('c', aaa)]);
   });
 
   it('keys a failure without the numbers in its message', () => {
@@ -456,6 +501,11 @@ describe('canaries', () => {
     expect(silent.nowPassing).toEqual([]);
     expect(silent.stillPending).toEqual([expect.stringContaining('cannot be trusted')]);
     expect(evaluateCanaries(entries, 'c', outcomeOf([finding('report', 1)])).nowPassing).toHaveLength(1);
+  });
+
+  it('judges no canary of a check that was skipped', () => {
+    const skipped: CheckOutcome = { findings: [], stats: {}, skipped: 'needs PHP' };
+    expect(evaluateCanaries(expect_({ kind: 'reports', lines: [1] }), 'c', skipped)).toEqual({ missed: [], stillPending: [], nowPassing: [] });
   });
 
   it('treats failures on a pending or deliberately failing canary as expected', () => {

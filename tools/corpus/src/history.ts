@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { formatScore, scoreOf, templatesToScore } from './coverage.js';
+import { writeFileAtomically } from './files.js';
 import type { CheckOutcome, Finding, FixChange, Template } from './types.js';
 
 type Severity = Finding['severity'] | 'fix';
@@ -54,7 +55,7 @@ export function loadHistory(path: string): RunHistory {
 }
 
 export function writeHistory(path: string, history: RunHistory): void {
-  writeFileSync(path, `${JSON.stringify(history)}\n`);
+  writeFileAtomically(path, `${JSON.stringify(history)}\n`);
 }
 
 function fingerprintOf(finding: Finding): string {
@@ -91,6 +92,7 @@ export function mergeHistory(previous: RunHistory, current: RunHistory): RunHist
       checks[id] = check;
       continue;
     }
+    if (check.skipped !== undefined) continue;
     const rerun = new Set(check.templates);
     const keptFingerprints = Object.fromEntries(Object.entries(earlier.fingerprints).filter(([template]) => !rerun.has(template)));
     const keptCoverage = Object.fromEntries(Object.entries(earlier.coverage ?? {}).filter(([template]) => !rerun.has(template)));

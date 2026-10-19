@@ -1,22 +1,66 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import type { Finding } from './types.js';
+import { existsSync, readFileSync } from 'node:fs';
+import { writeFileAtomically } from './files.js';
+import type { CheckOutcome, Finding, Template } from './types.js';
+
+export type BaselineCoverage = {
+  readonly isFullRun: boolean;
+  readonly checksRun: ReadonlySet<string>;
+  readonly templateHashesRun: ReadonlySet<string>;
+  readonly skippedTemplates: ReadonlySet<string>;
+};
+
+type RunOfCheck = { readonly id: string; readonly outcome: CheckOutcome };
+
+function hashOfTemplate(template: Template): string {
+  return createHash('sha256').update(template.source).digest('hex').slice(0, 12);
+}
 
 export function findingKey(finding: Finding): string {
-  const templateHash = createHash('sha256').update(finding.template.source).digest('hex').slice(0, 12);
-  return `${finding.check}|${templateHash}|${finding.message.replace(/\d+/g, '#')}`;
+  return `${finding.check}|${hashOfTemplate(finding.template)}|${finding.message.replace(/\d+/g, '#')}`;
 }
 
 export function templateHashOfKey(key: string): string {
   return key.split('|', 2)[1] ?? '';
 }
 
-export function findStaleBaselineKeys(baseline: ReadonlySet<string>, checksRun: ReadonlySet<string>, recordedKeys: ReadonlySet<string>, templateHashesRun: ReadonlySet<string>, isFullRun: boolean): string[] {
-  return [...baseline].filter((key) => checksRun.has(checkOfKey(key)) && !recordedKeys.has(key) && (isFullRun || templateHashesRun.has(templateHashOfKey(key))));
+export function checkOfKey(key: string): string {
+  return key.split('|', 1)[0] ?? key;
 }
 
-export function keepBaselineKeysOutsideTheRun(baseline: ReadonlySet<string>, checksRun: ReadonlySet<string>, templateHashesRun: ReadonlySet<string>): string[] {
-  return [...baseline].filter((key) => !checksRun.has(checkOfKey(key)) || !templateHashesRun.has(templateHashOfKey(key)));
+function checkAndTemplateOf(key: string): string {
+  return `${checkOfKey(key)}|${templateHashOfKey(key)}`;
+}
+
+function checkAndTemplateOfFinding(finding: Finding): string {
+  return `${finding.check}|${hashOfTemplate(finding.template)}`;
+}
+
+export function baselineCoverageOf(runs: readonly RunOfCheck[], templates: readonly Template[], isFullRun: boolean): BaselineCoverage {
+  const completedRuns = runs.filter(({ outcome }) => outcome.skipped === undefined);
+  const skippedFindings = completedRuns.flatMap(({ outcome }) => outcome.findings.filter((finding) => finding.severity === 'skipped'));
+
+  return {
+    isFullRun,
+    checksRun: new Set(completedRuns.map(({ id }) => id)),
+    templateHashesRun: new Set(templates.map(hashOfTemplate)),
+    skippedTemplates: new Set(skippedFindings.map(checkAndTemplateOfFinding)),
+  };
+}
+
+function isKeyCoveredByTheRun(key: string, coverage: BaselineCoverage): boolean {
+  if (!coverage.checksRun.has(checkOfKey(key))) return false;
+  if (coverage.skippedTemplates.has(checkAndTemplateOf(key))) return false;
+  return coverage.isFullRun || coverage.templateHashesRun.has(templateHashOfKey(key));
+}
+
+export function findStaleBaselineKeys(baseline: ReadonlySet<string>, recordedKeys: ReadonlySet<string>, coverage: BaselineCoverage): string[] {
+  return [...baseline].filter((key) => !recordedKeys.has(key) && isKeyCoveredByTheRun(key, coverage));
+}
+
+export function updateBaselineKeys(baseline: ReadonlySet<string>, recordedKeys: ReadonlySet<string>, coverage: BaselineCoverage): string[] {
+  const stale = new Set(findStaleBaselineKeys(baseline, recordedKeys, coverage));
+  return [...new Set([...[...baseline].filter((key) => !stale.has(key)), ...recordedKeys])];
 }
 
 export function loadBaseline(baselinePath: string): Set<string> {
@@ -27,9 +71,5 @@ export function loadBaseline(baselinePath: string): Set<string> {
 }
 
 export function writeBaseline(baselinePath: string, keys: Iterable<string>): void {
-  writeFileSync(baselinePath, `${JSON.stringify([...new Set(keys)].sort(), null, 2)}\n`);
-}
-
-export function checkOfKey(key: string): string {
-  return key.split('|', 1)[0] ?? key;
+  writeFileAtomically(baselinePath, `${JSON.stringify([...new Set(keys)].sort(), null, 2)}\n`);
 }
