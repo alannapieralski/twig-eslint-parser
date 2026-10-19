@@ -148,7 +148,7 @@ function checkTreeShape(tags: readonly TagNode[], report: ReportIssue): void {
     children.forEach((child, index) => {
       const previous = children[index - 1];
       if (previous && child.range[0] < previous.range[1]) report('html: siblings in source order', `${child.type} after ${previous.type} in <${tag.name}>`, child.range);
-      if (tag.close && (child.range[0] < tag.range[0] || child.range[1] > tag.range[1])) report('html: child inside parent', `${child.type} outside <${tag.name}>`, child.range);
+      if (child.range[0] < tag.range[0] || child.range[1] > tag.range[1]) report('html: child inside parent', `${child.type} outside <${tag.name}>`, child.range);
     });
     const attributes = tag.attributes ?? [];
     attributes.forEach((attribute, index) => {

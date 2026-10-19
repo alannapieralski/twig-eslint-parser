@@ -621,6 +621,24 @@ describe('Twig as part of the markup structure', () => {
     expect(sourceOf(code, namedTag(code, 'html')['close'] as Node)).toBe('</html>');
   });
 
+  it('ends elements that an ancestor\'s close tag closes where their content ends', () => {
+    const code = '<ul>\n  <li>a\n  <li>b\n</ul>';
+    const [outer, inner] = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag' && node['name'] === 'li');
+    expect([sourceOf(code, outer as Node), sourceOf(code, inner as Node)]).toEqual(['<li>a\n  <li>b\n', '<li>b\n']);
+    expect((outer as Node)['loc']).toEqual({ start: { line: 2, column: 2 }, end: { line: 4, column: 0 } });
+  });
+
+  it('ends elements left open at the end of the file where their content ends', () => {
+    const code = '<div>\n  <p>a <b>b</b>';
+    const tags = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => sourceOf(code, tag))).toEqual([code, '<p>a <b>b</b>', '<b>b</b>']);
+  });
+
+  it('keeps an element left open without content as its open tag', () => {
+    const code = '<p>a</p><br-like>';
+    expect(sourceOf(code, namedTag(code, 'br-like'))).toBe('<br-like>');
+  });
+
   it('pairs a close tag that ends in a stray slash, as a browser does', () => {
     const code = '<{{ title_tag }}>t</{{ title_tag }}/><p>after</p>';
     expect(sourceOf(code, namedTag(code, '{{ title_tag }}')['close'] as Node)).toBe('</{{ title_tag }}/>');

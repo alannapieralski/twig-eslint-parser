@@ -22,6 +22,7 @@ import {
   closeTagNameOf,
   createNodeFrom,
   cloneLocation,
+  extendNodeEndToLastChild,
   initChildrenIfNone,
   tagNameKey,
 } from "../../utils/index.js";
@@ -81,6 +82,7 @@ function handleCloseTag(
       return state;
     }
 
+    extendNodeEndToLastChild(state.currentNode);
     state.currentNode = state.currentNode.parentRef as ContextualTagNode;
     state.currentContext = state.currentContext.parentRef.parentRef;
     return state;
