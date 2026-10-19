@@ -596,6 +596,22 @@ describe('Twig as part of the markup structure', () => {
     expect(sourceOf(code, element['close'] as Node)).toBe('</{{element}}>');
   });
 
+  it.each([
+    ['before markup', '</><p>x</p>'],
+    ['in text', 'Use a</> here<p>x</p>'],
+    ['at the end', '<p>x</p>a</>'],
+    ['spaced', '<p>x</p></ >'],
+  ])('drops an empty close tag at the top of the document (%s)', (_, code) => {
+    const { result } = parse(code);
+    const tags = collectNodes(result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => sourceOf(code, tag))).toEqual(['<p>x</p>']);
+  });
+
+  it('drops an empty close tag inside an element without closing it', () => {
+    const code = '<div>a</>b</div>';
+    expect(sourceOf(code, namedTag(code, 'div')['close'] as Node)).toBe('</div>');
+  });
+
   it('closes back to the open element when a never-closed element sits inside it', () => {
     const code = '<html><head><head-placeholder token="x"><title>t</title></head><body><p>x</p></body></html>';
     const head = namedTag(code, 'head');

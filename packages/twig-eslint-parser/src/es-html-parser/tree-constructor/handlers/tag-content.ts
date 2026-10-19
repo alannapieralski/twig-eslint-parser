@@ -52,6 +52,10 @@ function handleOpenTagStart(
   return state;
 }
 
+function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: string): boolean {
+  return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
+}
+
 function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
   for (
     let ancestor = node as ContextualTagNode | undefined;
@@ -71,7 +75,7 @@ function handleCloseTag(
 ) {
   const closeTagName = tagNameKey(closeTagNameOf(token));
 
-  if (closeTagName !== tagNameKey(state.currentNode.name ?? "")) {
+  if (!isClosedBy(state.currentNode, closeTagName)) {
     if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
       state.caretPosition++;
       return state;

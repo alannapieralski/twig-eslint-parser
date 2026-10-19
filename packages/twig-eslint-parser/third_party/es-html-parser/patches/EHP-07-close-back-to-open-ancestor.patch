@@ -63,11 +63,11 @@ index 2961559..8d83be7 100644
    ],
    "loc": {
 diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
-index 45a8a4f..c83d6a6 100644
+index 127b5bf..877a603 100644
 --- a/src/tree-constructor/handlers/tag-content.ts
 +++ b/src/tree-constructor/handlers/tag-content.ts
-@@ -52,6 +52,19 @@ function handleOpenTagStart(
-   return state;
+@@ -56,6 +56,19 @@ function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: stri
+   return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
  }
  
 +function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
@@ -86,10 +86,10 @@ index 45a8a4f..c83d6a6 100644
  function handleCloseTag(
    state: ConstructTreeState<ContextualTagNode>,
    token: AnyToken
-@@ -59,8 +72,13 @@ function handleCloseTag(
+@@ -63,8 +76,13 @@ function handleCloseTag(
    const closeTagName = tagNameKey(closeTagNameOf(token));
  
-   if (closeTagName !== tagNameKey(state.currentNode.name ?? "")) {
+   if (!isClosedBy(state.currentNode, closeTagName)) {
 -    state.caretPosition++;
 +    if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
 +      state.caretPosition++;
