@@ -1,7 +1,7 @@
 # eslint-plugin-twig-html
 
 ESLint rules for the HTML layout and quoting in Twig templates. The rules read the markup through
-[`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser)
+[`twig-eslint-parser`](https://github.com/alannapieralski/twig-lint/tree/main/packages/twig-eslint-parser)
 and understand Twig blocks, so their fixes keep Twig nesting and Twig inside tags intact.
 
 ```twig
@@ -75,7 +75,7 @@ changes the whitespace between attributes.
   split across branches.
 - **Open tags missing their `>`** swallow the markup after them in the parser's tree, so the rules never fix them.
 - Other limits come from the parser: see
-  [its known limitations](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser#known-limitations).
+  [its known limitations](https://github.com/alannapieralski/twig-lint/tree/main/packages/twig-eslint-parser#known-limitations).
 
 ## Licence
 

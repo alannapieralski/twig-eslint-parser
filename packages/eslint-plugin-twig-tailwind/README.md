@@ -3,7 +3,7 @@
 Lint Tailwind CSS classes in Twig and Drupal templates. This plugin does nothing without
 [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
 which it needs as a peer dependency: it is the glue between
-[`twig-eslint-parser`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/twig-eslint-parser),
+[`twig-eslint-parser`](https://github.com/alannapieralski/twig-lint/tree/main/packages/twig-eslint-parser),
 which reads Twig, and
 [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss),
 which checks the classes. It adds the selectors that find classes inside Twig expressions (and, with an
