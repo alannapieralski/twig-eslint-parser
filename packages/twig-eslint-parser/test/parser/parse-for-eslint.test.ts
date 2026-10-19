@@ -691,7 +691,7 @@ describe('Twig as part of the markup structure', () => {
   });
 
   it('says so when markup is nested too deeply for the call stack', () => {
-    expect(() => parse('<div>'.repeat(500_000))).toThrow(/nested too deeply/);
+    expect(() => parse('<div>'.repeat(50_000))).toThrow(/nested too deeply/);
   });
 
   it('drops 20,000 stray close tags inside deep nesting', () => {
