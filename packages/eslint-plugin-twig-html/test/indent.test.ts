@@ -188,9 +188,9 @@ describe('twig-html/indent', () => {
       expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n  <meta charset="utf-8">\n  <link\n    rel="a"\n    href="b"\n  >\n</head>');
     });
 
-    it('indents a multi-line title after a Drupal placeholder element, leaving its raw text alone', async () => {
+    it('indents the text of a multi-line title after a Drupal placeholder element', async () => {
       const code = '<head>\n<head-placeholder token="x">\n<title>\n  a\n</title>\n</head>';
-      expect(await fixed(code)).toBe('<head>\n  <head-placeholder token="x">\n  <title>\n  a\n</title>\n</head>');
+      expect(await fixed(code)).toBe('<head>\n  <head-placeholder token="x">\n  <title>\n    a\n  </title>\n</head>');
     });
 
     it('indents the attributes of a tag inside an element split across Twig branches from the tag line as written', async () => {
