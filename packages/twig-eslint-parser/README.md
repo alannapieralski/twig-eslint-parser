@@ -189,8 +189,8 @@ Two upstream projects are kept as forks, each the same way: the upstream files b
 `third_party/<name>/pristine`, every change a separate patch with a
 [DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header in `third_party/<name>/patches`, and
 `third_party/<name>/UPSTREAM.md` listing each change and the test that proves it.
-`npm run vendor:check` fails if the shipped copy ever differs from pristine plus patches; run it in
-CI.
+`npm run vendor:check` fails if the shipped copy ever differs from pristine plus patches. CI runs it,
+and both upstream test suites, on every pull request.
 
 - **twig-lexer 1.0.0** (`src/lexer`), a TypeScript port of Twig's lexer that has not been released
   since April 2024, brought up to Twig 3.28. See

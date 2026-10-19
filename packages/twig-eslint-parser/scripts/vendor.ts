@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -90,16 +90,15 @@ function readPatchSeries(unit: VendoredUnit): string[] {
 function applyPatch(unit: VendoredUnit, patchName: string, targetDirectory: string): void {
   const patchPath = join(vendorRootOf(unit), 'patches', patchName);
   if (!existsSync(patchPath)) throw new Error(`Patch "${patchName}" is listed in ${unit.name}/patches/series but ${patchPath} does not exist.`);
-  try {
-    execFileSync('git', ['apply', '--whitespace=error-all', patchPath], { cwd: targetDirectory, stdio: 'pipe' });
-  } catch (error) {
-    const stderr = error instanceof Error && 'stderr' in error ? String(error.stderr) : String(error);
-    throw new Error(`Patch "${patchName}" no longer applies cleanly:\n${stderr}`);
-  }
+  const result = spawnSync('git', ['apply', '--verbose', '--whitespace=error-all', patchPath], { cwd: targetDirectory, encoding: 'utf8' });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`Patch "${patchName}" no longer applies cleanly:\n${result.stderr}`);
+  if (result.stderr.includes('Skipped patch')) throw new Error(`git apply skipped part of patch "${patchName}":\n${result.stderr}`);
 }
 
 function materialisePatchedUpstream(unit: VendoredUnit, targetDirectory: string): void {
   cpSync(join(vendorRootOf(unit), 'pristine'), targetDirectory, { recursive: true });
+  execFileSync('git', ['init', '-q'], { cwd: targetDirectory, stdio: 'pipe' });
   for (const patchName of readPatchSeries(unit)) applyPatch(unit, patchName, targetDirectory);
 }
 
@@ -154,7 +153,6 @@ function createPatchWorkspace(unit: VendoredUnit, workspaceDirectory: string): v
   if (existsSync(workspaceDirectory)) throw new Error(`${workspaceDirectory} already exists; choose an empty path.`);
   materialisePatchedUpstream(unit, workspaceDirectory);
   const git = (...args: string[]) => execFileSync('git', args, { cwd: workspaceDirectory, stdio: 'pipe' });
-  git('init', '-q');
   git('add', '-A');
   git('-c', 'user.name=vendor', '-c', 'user.email=vendor@localhost', 'commit', '-q', '-m', 'pristine + current patches');
   console.log(`Workspace ready at ${workspaceDirectory}. Edit it, then save a new patch with:\n`
