@@ -1,4 +1,4 @@
-# twig-eslint-parser
+# Twig Lint
 
 ESLint for Twig templates, with Tailwind CSS and HTML linting for Drupal themes.
 
