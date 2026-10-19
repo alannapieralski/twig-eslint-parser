@@ -1,16 +1,17 @@
 import { ContextualDocumentNode, DocumentNode } from "../types/index.js";
 
 export function clearParent(ast: ContextualDocumentNode): DocumentNode {
-  const cleanAst = ast;
+  const pending: any[] = [ast];
 
-  delete cleanAst.parentRef;
+  for (let node = pending.pop(); node; node = pending.pop()) {
+    delete node.parentRef;
 
-  if (Array.isArray(ast.children)) {
-    // @ts-ignore
-    ast.children.forEach((node: any) => {
-      clearParent(node);
-    });
+    if (Array.isArray(node.children)) {
+      for (const child of node.children) {
+        pending.push(child);
+      }
+    }
   }
 
-  return cleanAst as DocumentNode;
+  return ast as DocumentNode;
 }

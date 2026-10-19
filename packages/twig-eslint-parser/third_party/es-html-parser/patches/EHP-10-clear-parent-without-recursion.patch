@@ -1,0 +1,41 @@
+Description: Clear parent references without recursion
+ clearParent called itself once per level of nesting, so a document nested
+ about 16,000 elements deep (for example thousands of "<li>" without their
+ close tags) overflowed the call stack. It now walks the tree with a list
+ of pending nodes and visits the same nodes.
+Author: Numiko
+Origin: vendor
+Forwarded: no
+Test: test/parser/parse-for-eslint.test.ts ("parses 20,000 elements left open inside each other, closed back by one close tag"); upstream snapshots unchanged
+Last-Update: 2026-10-19
+---
+diff --git a/src/utils/clear-parent.ts b/src/utils/clear-parent.ts
+index a0fe8ac..815b9fc 100644
+--- a/src/utils/clear-parent.ts
++++ b/src/utils/clear-parent.ts
+@@ -1,16 +1,17 @@
+ import { ContextualDocumentNode, DocumentNode } from "../types/index.js";
+ 
+ export function clearParent(ast: ContextualDocumentNode): DocumentNode {
+-  const cleanAst = ast;
++  const pending: any[] = [ast];
+ 
+-  delete cleanAst.parentRef;
++  for (let node = pending.pop(); node; node = pending.pop()) {
++    delete node.parentRef;
+ 
+-  if (Array.isArray(ast.children)) {
+-    // @ts-ignore
+-    ast.children.forEach((node: any) => {
+-      clearParent(node);
+-    });
++    if (Array.isArray(node.children)) {
++      for (const child of node.children) {
++        pending.push(child);
++      }
++    }
+   }
+ 
+-  return cleanAst as DocumentNode;
++  return ast as DocumentNode;
+ }

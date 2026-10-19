@@ -53,21 +53,32 @@ function handleOpenTagStart(
   return state;
 }
 
-function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: string): boolean {
-  return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
+const nameKeys = new WeakMap<ContextualTagNode, string>();
+
+function nameKeyOf(tag: ContextualTagNode): string {
+  const cached = nameKeys.get(tag);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const nameKey = tagNameKey(tag.name ?? "");
+  nameKeys.set(tag, nameKey);
+  return nameKey;
 }
 
-function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
+function findOpenTagClosedBy(
+  node: ContextualTagNode,
+  closeTagName: string
+): ContextualTagNode | undefined {
   for (
-    let ancestor = node as ContextualTagNode | undefined;
-    ancestor?.type === NodeTypes.Tag;
-    ancestor = ancestor.parentRef as ContextualTagNode | undefined
+    let open: ContextualTagNode | undefined = node;
+    open?.type === NodeTypes.Tag;
+    open = open.parentRef as ContextualTagNode | undefined
   ) {
-    if (tagNameKey(ancestor.name ?? "") === nameKey) {
-      return true;
+    if (nameKeyOf(open) === closeTagName) {
+      return open;
     }
   }
-  return false;
+  return undefined;
 }
 
 function handleCloseTag(
@@ -75,17 +86,17 @@ function handleCloseTag(
   token: AnyToken
 ) {
   const closeTagName = tagNameKey(closeTagNameOf(token));
+  const closedTag = findOpenTagClosedBy(state.currentNode, closeTagName);
 
-  if (!isClosedBy(state.currentNode, closeTagName)) {
-    if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
-      state.caretPosition++;
-      return state;
-    }
+  if (!closedTag) {
+    state.caretPosition++;
+    return state;
+  }
 
+  while (state.currentNode !== closedTag) {
     extendNodeEndToLastChild(state.currentNode);
     state.currentNode = state.currentNode.parentRef as ContextualTagNode;
     state.currentContext = state.currentContext.parentRef.parentRef;
-    return state;
   }
 
   state.currentContext = state.currentContext.parentRef;

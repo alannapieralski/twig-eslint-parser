@@ -4,12 +4,15 @@ Description: Let a close tag close back to a matching open ancestor
  swallowed every later close tag and nested the rest of the document inside
  it. Following HTML's "any other end tag" step, a close tag that matches an
  open ancestor now leaves the elements in between unclosed and closes the
- ancestor. A close tag that matches nothing open is still dropped.
+ ancestor. A close tag that matches nothing open is still dropped. The
+ ancestor is found with one walk up the open elements, each element's name
+ key is computed once, and every element in between is closed in the same
+ step, so closing back over thousands of open elements stays linear.
 Author: Numiko
 Origin: vendor
 Forwarded: no
-Test: test/parser/parse-for-eslint.test.ts ("Twig as part of the markup structure"); upstream snapshot "Custom tag raw content" updated: </markdown> now closes <markdown>
-Last-Update: 2026-10-14
+Test: test/parser/parse-for-eslint.test.ts ("Twig as part of the markup structure", "parses 20,000 elements left open inside each other, closed back by one close tag", "drops 20,000 stray close tags inside deep nesting"); upstream snapshot "Custom tag raw content" updated: </markdown> now closes <markdown>
+Last-Update: 2026-10-19
 ---
 diff --git a/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json b/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
 index 2961559..8d83be7 100644
@@ -63,41 +66,62 @@ index 2961559..8d83be7 100644
    ],
    "loc": {
 diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
-index 127b5bf..877a603 100644
+index 127b5bf..d157a07 100644
 --- a/src/tree-constructor/handlers/tag-content.ts
 +++ b/src/tree-constructor/handlers/tag-content.ts
-@@ -56,6 +56,19 @@ function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: stri
-   return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
+@@ -52,8 +52,32 @@ function handleOpenTagStart(
+   return state;
  }
  
-+function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
-+  for (
-+    let ancestor = node as ContextualTagNode | undefined;
-+    ancestor?.type === NodeTypes.Tag;
-+    ancestor = ancestor.parentRef as ContextualTagNode | undefined
-+  ) {
-+    if (tagNameKey(ancestor.name ?? "") === nameKey) {
-+      return true;
-+    }
+-function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: string): boolean {
+-  return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
++const nameKeys = new WeakMap<ContextualTagNode, string>();
++
++function nameKeyOf(tag: ContextualTagNode): string {
++  const cached = nameKeys.get(tag);
++  if (cached !== undefined) {
++    return cached;
 +  }
-+  return false;
++  const nameKey = tagNameKey(tag.name ?? "");
++  nameKeys.set(tag, nameKey);
++  return nameKey;
 +}
 +
- function handleCloseTag(
-   state: ConstructTreeState<ContextualTagNode>,
-   token: AnyToken
-@@ -63,8 +76,13 @@ function handleCloseTag(
-   const closeTagName = tagNameKey(closeTagNameOf(token));
- 
-   if (!isClosedBy(state.currentNode, closeTagName)) {
--    state.caretPosition++;
-+    if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
-+      state.caretPosition++;
-+      return state;
++function findOpenTagClosedBy(
++  node: ContextualTagNode,
++  closeTagName: string
++): ContextualTagNode | undefined {
++  for (
++    let open: ContextualTagNode | undefined = node;
++    open?.type === NodeTypes.Tag;
++    open = open.parentRef as ContextualTagNode | undefined
++  ) {
++    if (nameKeyOf(open) === closeTagName) {
++      return open;
 +    }
++  }
++  return undefined;
+ }
  
-+    state.currentNode = state.currentNode.parentRef as ContextualTagNode;
-+    state.currentContext = state.currentContext.parentRef.parentRef;
+ function handleCloseTag(
+@@ -61,13 +85,18 @@ function handleCloseTag(
+   token: AnyToken
+ ) {
+   const closeTagName = tagNameKey(closeTagNameOf(token));
++  const closedTag = findOpenTagClosedBy(state.currentNode, closeTagName);
+ 
+-  if (!isClosedBy(state.currentNode, closeTagName)) {
++  if (!closedTag) {
+     state.caretPosition++;
+-
      return state;
    }
  
++  while (state.currentNode !== closedTag) {
++    state.currentNode = state.currentNode.parentRef as ContextualTagNode;
++    state.currentContext = state.currentContext.parentRef.parentRef;
++  }
++
+   state.currentContext = state.currentContext.parentRef;
+ 
+   return state;

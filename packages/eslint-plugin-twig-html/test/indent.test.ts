@@ -188,6 +188,13 @@ describe('twig-html/indent', () => {
     });
   });
 
+  describe('large templates', () => {
+    it('checks 3,000 elements left open inside each other as quickly as 3', async () => {
+      const linesReportedFor = async (count: number) => (await messagesFor(`<ul>\n${'<li>x\n'.repeat(count)}</ul>\n`)).map((message) => message.line);
+      expect(await linesReportedFor(3_000)).toEqual(await linesReportedFor(3));
+    });
+  });
+
   describe('options', () => {
     it('indents with the given number of spaces', async () => {
       expect(await fixed('<div>\n<p>a</p>\n</div>', [4])).toBe('<div>\n    <p>a</p>\n</div>');

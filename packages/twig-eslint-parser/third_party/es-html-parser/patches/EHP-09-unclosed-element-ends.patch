@@ -67,7 +67,7 @@ index 78adfab..d617db6 100644
    tokens: AnyToken[],
    state: ConstructTreeState<any>,
 diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
-index 877a603..3023b2f 100644
+index d157a07..e46386a 100644
 --- a/src/tree-constructor/handlers/tag-content.ts
 +++ b/src/tree-constructor/handlers/tag-content.ts
 @@ -22,6 +22,7 @@ import {
@@ -78,14 +78,14 @@ index 877a603..3023b2f 100644
    initChildrenIfNone,
    tagNameKey,
  } from "../../utils/index.js";
-@@ -81,6 +82,7 @@ function handleCloseTag(
-       return state;
-     }
+@@ -93,6 +94,7 @@ function handleCloseTag(
+   }
  
+   while (state.currentNode !== closedTag) {
 +    extendNodeEndToLastChild(state.currentNode);
      state.currentNode = state.currentNode.parentRef as ContextualTagNode;
      state.currentContext = state.currentContext.parentRef.parentRef;
-     return state;
+   }
 diff --git a/src/utils/update-node-end.ts b/src/utils/update-node-end.ts
 index 9a01b2c..2bd38ac 100644
 --- a/src/utils/update-node-end.ts

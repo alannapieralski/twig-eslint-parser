@@ -639,6 +639,25 @@ describe('Twig as part of the markup structure', () => {
     expect(sourceOf(code, namedTag(code, 'br-like'))).toBe('<br-like>');
   });
 
+  it('parses 20,000 elements left open inside each other, closed back by one close tag', () => {
+    const code = `<ul>${'<li>x'.repeat(20_000)}</ul><p>after</p>`;
+    const [document] = parse(code).result.ast.body as unknown as Node[];
+    const [list, paragraph] = (document as Node)['children'] as Node[];
+    expect(sourceOf(code, (list as Node)['close'] as Node)).toBe('</ul>');
+    expect(sourceOf(code, list as Node)).toBe(code.slice(0, -'<p>after</p>'.length));
+    expect((paragraph as Node)['name']).toBe('p');
+  });
+
+  it('drops 20,000 stray close tags inside deep nesting', () => {
+    const code = `${'<div>'.repeat(500)}${'</span>'.repeat(20_000)}${'</div>'.repeat(500)}`;
+    expect(collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag' && node['close'] !== undefined)).toHaveLength(500);
+  });
+
+  it('leaves out interpolated attributes from 5,000 nested elements', () => {
+    const code = `<ul>${'<li class="a {{ b }}">x'.repeat(5_000)}</ul>`;
+    expect(parse(code, { ignoreInterpolatedAttributes: ['class'] }).services.omittedAttributes).toHaveLength(5_000);
+  });
+
   it('pairs a close tag that ends in a stray slash, as a browser does', () => {
     const code = '<{{ title_tag }}>t</{{ title_tag }}/><p>after</p>';
     expect(sourceOf(code, namedTag(code, '{{ title_tag }}')['close'] as Node)).toBe('</{{ title_tag }}/>');

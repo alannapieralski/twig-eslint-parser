@@ -27,7 +27,15 @@ function isDefined<Value>(value: Value | undefined): value is Value {
 }
 
 function flattenMarkup(nodes: readonly MarkupNode[]): MarkupNode[] {
-  return nodes.flatMap((node) => [node, ...flattenMarkup(node.children ?? [])]);
+  const flattened: MarkupNode[] = [];
+  const pending = [...nodes].reverse();
+
+  for (let node = pending.pop(); node; node = pending.pop()) {
+    flattened.push(node);
+    for (const child of [...(node.children ?? [])].reverse()) pending.push(child);
+  }
+
+  return flattened;
 }
 
 function isElement(node: MarkupNode): node is Element {
@@ -46,11 +54,6 @@ function bodyOf(element: Element): Range | undefined {
 function extentOf(element: Element): Range {
   const lastToken = element.close ?? element.openEnd ?? element.openStart;
   return [element.openStart.range[0], lastToken.range[1]];
-}
-
-function endOfLastDescendant(node: MarkupNode): number {
-  const descendantEnds = flattenMarkup(node.children ?? []).map((descendant) => descendant.range[1]);
-  return Math.max(node.range[1], ...descendantEnds);
 }
 
 function nameOf(element: Element): string {
@@ -72,7 +75,7 @@ function findSkippedInElement(element: Element, text: string, attributes: readon
   if (isSwallowingMarkup) return [[openStart.range[1], element.range[1]]];
 
   const hasUnclosedChildren = !close && (element.children ?? []).length > 0;
-  if (hasUnclosedChildren) return [...attributeInteriors, [openEnd.range[1], endOfLastDescendant(element)]];
+  if (hasUnclosedChildren) return [...attributeInteriors, [openEnd.range[1], element.range[1]]];
   if (!close) return attributeInteriors;
 
   if (isContentWhitespaceSensitive(element)) return [...attributeInteriors, [openEnd.range[1], close.range[1]]];
