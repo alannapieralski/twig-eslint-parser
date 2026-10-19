@@ -33,8 +33,6 @@ export const includeKeywordsToBlank: ReadonlySet<string> = new Set(['only', 'ign
 
 export const twigDelimiters = /\{\{|\}\}|\{%|%\}|\{#|#\}/g;
 
-export const tagsThatScopeBranches: ReadonlySet<string> = new Set(['for', 'block', 'macro', 'embed', 'autoescape', 'sandbox', 'with']);
-
 export const convertedTags: ReadonlySet<string> = new Set(['set', 'block', 'for', ...expressionTags, ...includeTags]);
 
 export const tagsLeftUnconverted: ReadonlySet<string> = new Set([

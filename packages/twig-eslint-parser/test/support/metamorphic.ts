@@ -11,7 +11,7 @@ type Edit = { readonly at: number; readonly remove: number; readonly insert: str
 type Entry = { readonly depth: number; readonly description: string; readonly offset: number };
 type Tree = { readonly html: readonly Entry[]; readonly twig: readonly Entry[] };
 
-const keysNeverCompared = new Set(['parent', 'loc', 'range', 'start', 'end', 'raw', 'parts', 'stylesheet', 'tokens', 'comments', 'branchSegments', 'branchControlRanges', 'openStart', 'openEnd', 'close', 'startWrapper', 'endWrapper', 'open']);
+const keysNeverCompared = new Set(['parent', 'loc', 'range', 'start', 'end', 'raw', 'parts', 'stylesheet', 'tokens', 'comments', 'openStart', 'openEnd', 'close', 'startWrapper', 'endWrapper', 'open']);
 const delimiterNeighbours = /[-~{}%#]/;
 const attributeNameCharacter = /[\w:@.-]/;
 

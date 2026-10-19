@@ -518,13 +518,6 @@ describe('Drupal attributes printed straight after a tag name', () => {
     expect(sourceOf(code, li['close'] as Node)).toBe('</li>');
   });
 
-  it('keeps the Twig branch ranges pointing at the original template', () => {
-    const code = '{% if a %}<div{{ attributes }}>x</div>{% else %}<p>y</p>{% endif %}';
-    const ast = parse(code).result.ast as unknown as { branchSegments: { start: number; end: number }[]; branchControlRanges: [number, number][] };
-    expect(ast.branchSegments.map(({ start, end }) => code.slice(start, end))).toEqual(['<div{{ attributes }}>x</div>', '<p>y</p>']);
-    expect(ast.branchControlRanges.map((range) => code.slice(...range))).toEqual(['{% if a %}', '{% else %}', '{% endif %}']);
-  });
-
   it('leaves Twig that is part of a tag name alone', () => {
     const code = '<h{{ level }} id="a">x</h{{ level }}>';
     const [heading] = tagsOf(code);

@@ -1,6 +1,5 @@
 import { createOffsetLocator } from '../source-text.js';
-import { summariseTwigBlocks, type TwigBlock } from '../twig/blocks.js';
-import { annotateBranches } from './branches.js';
+import type { TwigBlock } from '../twig/blocks.js';
 import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './program.js';
 import { HtmlSyntaxError } from './syntax-error.js';
 import { templateInfosOf } from './template-infos.js';
@@ -22,7 +21,7 @@ export function parseMarkup(source: string, blocks: readonly TwigBlock[], rawCon
   };
   let result: HtmlParseResult;
   try {
-    result = { ast: parseHtmlProgram(verbatim.text, parseOptions, annotateBranches(summariseTwigBlocks(blocks))), visitorKeys };
+    result = { ast: parseHtmlProgram(verbatim.text, parseOptions), visitorKeys };
   } catch (error) {
     if (!isPositionedSyntaxError(error)) throw error;
     const position = createOffsetLocator(source)(error.pos);

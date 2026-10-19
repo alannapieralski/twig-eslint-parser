@@ -1,7 +1,6 @@
 import { parse as parseCss, toPlainObject, type CssNodePlain } from 'css-tree';
 import { parse as parseMarkupTree, TokenTypes } from '../es-html-parser/index.js';
 import type { TemplateInfo } from '../es-html-parser/types/index.js';
-import type { BranchAnnotations } from './branches.js';
 import { cssVisitorKeys, htmlVisitorKeys } from './visitor-keys.js';
 
 type Position = { line: number; column: number };
@@ -9,7 +8,7 @@ type Node = { type: string; range: [number, number]; loc: { start: Position; end
 type CssNode = { type: string; range?: [number, number]; loc?: { start: Position & { offset: number }; end: Position & { offset: number } } | null; [key: string]: unknown };
 type Comment = { readonly type: string; readonly range: [number, number]; readonly loc: Node['loc']; readonly value: unknown };
 
-export type HtmlProgram = BranchAnnotations & {
+export type HtmlProgram = {
   readonly type: 'Program';
   readonly body: unknown[];
   readonly range: [number, number];
@@ -54,7 +53,7 @@ function parseStylesheet(content: Node): CssNodePlain {
   return stylesheet;
 }
 
-export function parseHtmlProgram(text: string, options: HtmlParseOptions, branches: BranchAnnotations): HtmlProgram {
+export function parseHtmlProgram(text: string, options: HtmlParseOptions): HtmlProgram {
   const { ast, tokens } = parseMarkupTree(text, {
     templateInfos: [...options.templateInfos],
     ...(options.rawContentTags && { rawContentTags: [...options.rawContentTags] }),
@@ -72,7 +71,6 @@ export function parseHtmlProgram(text: string, options: HtmlParseOptions, branch
     loc: document.loc,
     tokens: tokens.filter((token) => !commentTokenTypes.has(token.type)),
     comments,
-    ...branches,
   };
 }
 
