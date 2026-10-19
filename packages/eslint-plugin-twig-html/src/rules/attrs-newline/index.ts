@@ -23,11 +23,11 @@ export const attrsNewline: Rule.RuleModule = {
 
   create(context) {
     const options = resolveOptions(context.options[0]);
-    const { blocks } = readTwigServices(context.sourceCode, context.id);
-    const source = createTagSource(context.sourceCode, blocks, options.ignoreInside);
+    const services = readTwigServices(context.sourceCode, context.id);
+    const source = createTagSource(context.sourceCode, services, options.ignoreInside);
 
     const checkTag = (tag: TagNode) => reportProblems(context, findAttributeProblems(tag, source, options));
 
-    return balancedTagListeners(checkTag, tagNodeTypes, blocks);
+    return balancedTagListeners(checkTag, tagNodeTypes, services.blocks);
   },
 };

@@ -35,7 +35,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const { close, name } = tag;
   if (!close || name === undefined || !plainElementName.test(name)) return [];
 
-  const { text, blocks, isIgnored } = source;
+  const { text, blocks, attributesOf, isIgnored } = source;
   const contentRange: Range = [tag.openEnd.range[1], close.range[0]];
   const isSingleLine = text.lastIndexOf('\n', close.range[0] - 1) < tag.openStart.range[0];
   if (isSingleLine) return [];
@@ -43,7 +43,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isEmpty = contentRange[0] === contentRange[1];
   if (options.ignoreWhenEmpty && isEmpty) return [];
 
-  const isUnsafeToCheck = isOpenTagSwallowingMarkup(tag, text) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
+  const isUnsafeToCheck = isOpenTagSwallowingMarkup({ openEnd: tag.openEnd, attributes: attributesOf(tag) }, text) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
   if (isUnsafeToCheck) return [];
 
   const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());

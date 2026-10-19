@@ -107,6 +107,25 @@ describe('ruleChecks', () => {
     expect(checks.map((check) => check.id)).toEqual(['fake/one', 'fake/two']);
   });
 
+  it('runs a variant of every rule under its own check id, with the variant\'s parser options', async () => {
+    const reportsHiddenClasses: Rule.RuleModule = {
+      meta: { type: 'problem', schema: [] },
+      create: (context) => ({
+        Program: (node) => {
+          const parserOptions = context.languageOptions.parserOptions as { ignoreInterpolatedAttributes?: readonly string[] } | undefined;
+          if (parserOptions?.ignoreInterpolatedAttributes?.includes('class')) context.report({ node, message: 'hides class' });
+        },
+      }),
+    };
+    const variant = { name: 'hidden-class', languageOptions: { parserOptions: { ignoreInterpolatedAttributes: ['class'] } } };
+    const [check] = ruleChecks({ plugin: pluginWith({ hides: reportsHiddenClasses }), prefix: 'fake', variant });
+    if (!check) throw new Error('No check was created.');
+    expect([check.id, check.rule]).toEqual(['fake/hides [hidden-class]', 'fake/hides']);
+    const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
+    const { findings } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['report', 'hides class']]);
+  });
+
   it('fails loudly when the settings name a rule the plugin does not have', () => {
     expect(() => ruleChecks({ plugin: pluginWith({ one: fixingRule((s) => s) }), prefix: 'fake', rules: { missing: {} } })).toThrow('missing');
   });

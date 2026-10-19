@@ -2,11 +2,11 @@ import type { Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
+import { createAttributesOf } from '../../shared/tag-attributes.js';
 import { tagListeners } from '../../shared/tag-listeners.js';
 import { tagNodeTypes } from '../../shared/tag-node.js';
-import { findFileLevelProblems } from './find-file-level-problems.js';
 import { findTagProblems } from './find-tag-problems.js';
-import { groupOmittedAttributes } from './group-omitted-attributes.js';
+import { findTwigStringProblems } from './find-twig-string-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
 import { quotesFor } from './quote-style.js';
@@ -29,12 +29,12 @@ export const quotes: Rule.RuleModule = {
     const { sourceCode } = context;
     const { blocks, strings, omittedAttributes } = readTwigServices(sourceCode, context.id);
     const source = { text: sourceCode.text, blocks, ...quotesFor(options) };
-    const { unowned, ownedByTag } = groupOmittedAttributes(omittedAttributes, (index) => sourceCode.getNodeByRangeIndex(index));
+    const attributesOf = createAttributesOf(omittedAttributes);
 
-    const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, ownedByTag, source));
+    const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, attributesOf, source));
 
     return {
-      Program: () => reportProblems(context, findFileLevelProblems(unowned, strings, source)),
+      Program: () => reportProblems(context, findTwigStringProblems(strings, source)),
       ...tagListeners(checkTag, tagNodeTypes),
     };
   },

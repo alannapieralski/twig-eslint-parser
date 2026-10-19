@@ -32,7 +32,8 @@ export default [twigHtml.configs.recommended];
 
 `configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
 `twig-html/attrs-newline`, `twig-html/indent`, `twig-html/multiline-html-element-content-newline` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
-config, which uses the same parser.
+config, which uses the same parser. That config leaves `class` attributes containing Twig out of the tree; every `twig-html` rule
+still counts them, checks their quotes and leaves their values alone.
 
 ## Rules
 

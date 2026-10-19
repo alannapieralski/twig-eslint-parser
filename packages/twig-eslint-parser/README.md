@@ -84,7 +84,7 @@ silently.
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
 | `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short form `{% block title page_title %}`. `twig-html/attrs-newline` uses it to keep attributes wrapped in a Twig block together. |
-| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range and the `Attribute` node itself. `twig-tailwind/no-interpolated-attributes` reports them, and `twig-html/quotes` still checks their quotes. |
+| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range, the `Attribute` node itself and its `owner`, the `Tag`, `ScriptTag` or `StyleTag` node it was taken from. `twig-tailwind/no-interpolated-attributes` reports them, and every `twig-html` rule puts them back in their place among the owner's attributes. |
 | `strings` | Every Twig string literal, read from the lexer, with its range (quotes included), its `quote` (`'` or `"`) and whether it interpolates `#{ }`. It covers tags that never become JavaScript nodes, such as `{% extends %}` and `{% trans %}`, and blocks that fail to convert. `twig-html/quotes` uses it. |
 
 Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag missing its `>`, are reported by ESLint as a

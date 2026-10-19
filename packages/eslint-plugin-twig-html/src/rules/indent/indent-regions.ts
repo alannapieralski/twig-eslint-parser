@@ -2,6 +2,7 @@ import type { TwigBlockSummary } from 'twig-eslint-parser';
 import { whitespaceSensitiveElements } from '../../shared/html-elements.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
+import type { AttributesOf } from '../../shared/tag-attributes.js';
 import type { Token } from '../../shared/tag-node.js';
 import { findYamlFrontMatter } from './yaml-front-matter.js';
 import { twigBlockEnd } from './twig-frames.js';
@@ -12,6 +13,7 @@ type Element = MarkupNode & { readonly openStart: Token };
 type LayoutSource = {
   readonly text: string;
   readonly blocks: readonly TwigBlockSummary[];
+  readonly attributesOf: AttributesOf;
   readonly ignores: readonly string[];
 };
 
@@ -60,13 +62,13 @@ function isContentWhitespaceSensitive(element: Element): boolean {
   return hasRawContent || whitespaceSensitiveElements.includes(nameOf(element));
 }
 
-function findSkippedInElement(element: Element, text: string, ignoredNames: ReadonlySet<string>): Range[] {
+function findSkippedInElement(element: Element, text: string, attributes: readonly { readonly range: Range }[], ignoredNames: ReadonlySet<string>): Range[] {
   const { openStart, openEnd, close } = element;
-  const attributeInteriors = (element.attributes ?? []).map((attribute) => interiorOf(attribute.range));
+  const attributeInteriors = attributes.map((attribute) => interiorOf(attribute.range));
 
   if (!openEnd) return [[openStart.range[1], Infinity]];
 
-  const isSwallowingMarkup = isOpenTagSwallowingMarkup({ openEnd, attributes: element.attributes ?? [] }, text);
+  const isSwallowingMarkup = isOpenTagSwallowingMarkup({ openEnd, attributes }, text);
   if (isSwallowingMarkup) return [[openStart.range[1], element.range[1]]];
 
   const hasUnclosedChildren = !close && (element.children ?? []).length > 0;
@@ -81,11 +83,11 @@ function findSkippedInElement(element: Element, text: string, ignoredNames: Read
   return attributeInteriors;
 }
 
-function describeOpenTag(element: Element, text: string): OpenTag | undefined {
+function describeOpenTag(element: Element, text: string, attributes: readonly { readonly range: Range }[]): OpenTag | undefined {
   if (!element.openEnd) return undefined;
 
   const tagStart = element.openStart.range[0];
-  const firstAttribute = element.attributes?.[0];
+  const firstAttribute = attributes[0];
   const isFirstAttributeOnTagLine = firstAttribute !== undefined && !text.slice(tagStart, firstAttribute.range[0]).includes('\n');
 
   return {
@@ -126,7 +128,7 @@ function findTwigInteriors(blocks: readonly TwigBlockSummary[], text: string): R
 }
 
 export function buildIndentLayout(document: MarkupNode, segments: readonly TwigSegment[], source: LayoutSource): IndentLayout {
-  const { text, blocks } = source;
+  const { text, blocks, attributesOf } = source;
   const ignoredNames = new Set(source.ignores.map((name) => name.toLowerCase()));
   const markupNodes = flattenMarkup(document.children ?? []);
   const elements = markupNodes.filter(isElement);
@@ -136,12 +138,12 @@ export function buildIndentLayout(document: MarkupNode, segments: readonly TwigS
 
   const tokenInteriors = markupNodes.filter((node) => singleTokenNodeTypes.has(node.type)).map((node) => interiorOf(node.range));
   const unindentedSegments = segments.filter((segment) => unindentedTwigFrames.has(segment.frameName)).map((segment) => segment.range);
-  const elementSkips = elements.flatMap((element) => findSkippedInElement(element, text, ignoredNames));
+  const elementSkips = elements.flatMap((element) => findSkippedInElement(element, text, attributesOf(element), ignoredNames));
 
   return {
     nestings: [...bodies, ...segments.map((segment) => segment.range)],
     skipped: [...findYamlFrontMatter(text), ...crossingSpans, ...tokenInteriors, ...findTwigInteriors(blocks, text), ...unindentedSegments, ...elementSkips],
-    openTags: elements.map((element) => describeOpenTag(element, text)).filter(isDefined),
+    openTags: elements.map((element) => describeOpenTag(element, text, attributesOf(element))).filter(isDefined),
     closeTags: elements.flatMap((element) => (element.close ? [element.close.range] : [])),
   };
 }

@@ -329,6 +329,14 @@ describe('markup and options', () => {
     expect(services.omittedAttributes[0]?.attribute).toMatchObject({ type: 'Attribute', key: { value: 'class' } });
   });
 
+  it('names the tag each left-out attribute belonged to, as the node in the tree', () => {
+    const code = '<ul><li class="a {{ b }}">x</li></ul><script class="{{ c }}"></script>';
+    const { result, services } = parse(code, { ignoreInterpolatedAttributes: ['class'] });
+    const ownerTags = [...collectNodes(result.ast.body, (node) => node.type === 'Tag' && node['name'] === 'li'), ...collectNodes(result.ast.body, (node) => node.type === 'ScriptTag')];
+    expect(services.omittedAttributes.map((attribute) => attribute.owner)).toEqual(ownerTags);
+    expect(services.omittedAttributes.every((attribute, index) => (attribute.owner as object) === ownerTags[index])).toBe(true);
+  });
+
   it('keeps interpolated attributes unless asked to leave them out', () => {
     expect(parse('<p class="a {{ b }}">x</p>').services.omittedAttributes).toEqual([]);
   });
