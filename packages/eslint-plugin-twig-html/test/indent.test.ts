@@ -37,6 +37,12 @@ describe('twig-html/indent', () => {
       await expectUntouched('<div>\n  <ul>\n    <li>a</li>\n  </ul>\n</div>\n');
     });
 
+    it('indents the text of a title but not the content of a textarea', async () => {
+      expect(await fixed('<head>\n<title>\n{{ head_title }}\n</title>\n<textarea>\n  a\n</textarea>\n</head>')).toBe(
+        '<head>\n  <title>\n    {{ head_title }}\n  </title>\n  <textarea>\n  a\n</textarea>\n</head>',
+      );
+    });
+
     it('fixes a deep tree in one pass', async () => {
       const code = '<a>\n<b>\n<c>\n<d>\n<e>\nx\n</e>\n</d>\n</c>\n</b>\n</a>';
       const messages = await messagesFor(code);
@@ -179,8 +185,8 @@ describe('twig-html/indent', () => {
       expect(await fixed(code)).toBe('<div>\n  <pre>\n    a\n</pre>\n  <textarea>\n    b\n</textarea>\n  <script>\n    c();\n  </script>\n  <style>\n    .d {}\n  </style>\n</div>');
     });
 
-    it('leaves raw-text elements such as title alone, closing tag included', async () => {
-      expect(await fixed('<head>\n<title>\n<b>a</b>\n  </title>\n</head>')).toBe('<head>\n  <title>\n<b>a</b>\n  </title>\n</head>');
+    it('leaves raw-text elements such as textarea alone, closing tag included', async () => {
+      expect(await fixed('<div>\n<textarea>\n<b>a</b>\n  </textarea>\n</div>')).toBe('<div>\n  <textarea>\n<b>a</b>\n  </textarea>\n</div>');
     });
 
     it('leaves the content of elements named in ignores alone', async () => {

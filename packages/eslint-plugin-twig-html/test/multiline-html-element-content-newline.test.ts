@@ -30,6 +30,10 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     );
   });
 
+  it('moves a title\'s text onto its own line, since browsers trim it', async () => {
+    expect(await fixed('<title\n  id="t"\n  class=""\n>{{ head_title }}</title>')).toBe('<title\n  id="t"\n  class=""\n>\n  {{ head_title }}\n</title>');
+  });
+
   it('leaves an empty tag as >< when its opening tag spans several lines', async () => {
     const code = '<div\n  class="swiper-pagination"\n  data-js-gallery-pagination\n></div>';
     expect((await lint(code)).messages).toEqual([]);

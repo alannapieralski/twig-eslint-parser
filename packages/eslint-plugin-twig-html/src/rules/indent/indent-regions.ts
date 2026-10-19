@@ -56,7 +56,7 @@ function nameOf(element: Element): string {
 }
 
 function isContentWhitespaceSensitive(element: Element): boolean {
-  const hasRawContent = (element.children ?? []).some((child) => child.type === 'RawContent');
+  const hasRawContent = nameOf(element) !== 'title' && (element.children ?? []).some((child) => child.type === 'RawContent');
   return hasRawContent || whitespaceSensitiveElements.includes(nameOf(element));
 }
 
