@@ -10,7 +10,7 @@ import type { IndentLayout, LineStart, MarkupNode } from './types.js';
 
 export type MarkupProgram = { readonly body: readonly MarkupNode[] };
 
-export type IndentSource = { readonly text: string; readonly blocks: readonly TwigBlockSummary[] };
+export type IndentSource = { readonly text: string; readonly blocks: readonly TwigBlockSummary[]; readonly rawContentTags: readonly string[] };
 
 function findLineProblem(line: LineStart, layout: IndentLayout, text: string, options: ResolvedOptions): Problem[] {
   const actual = text.slice(line.lineStart, line.contentStart);
@@ -31,14 +31,14 @@ function findLineProblem(line: LineStart, layout: IndentLayout, text: string, op
 }
 
 export function findIndentProblems(program: MarkupProgram, source: IndentSource, options: ResolvedOptions): Problem[] {
-  const { text, blocks } = source;
+  const { text, blocks, rawContentTags } = source;
   const [document] = program.body;
   if (!document) return [];
 
   const segments = findTwigSegments(blocks, text);
   if (!segments) return [];
 
-  const layout = buildIndentLayout(document, segments, { text, blocks, ignores: options.ignores });
+  const layout = buildIndentLayout(document, segments, { text, blocks, ignores: options.ignores, rawContentTags });
   const checkedLines = findLineStarts(text).filter((line) => !isSkipped(line.contentStart, layout));
 
   return checkedLines.flatMap((line) => findLineProblem(line, layout, text, options));
