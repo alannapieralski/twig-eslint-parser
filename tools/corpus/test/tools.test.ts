@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { Rule } from 'eslint';
+import { dirname, join } from 'node:path';
+import type { Linter, Rule } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/canaries.js';
@@ -9,7 +10,7 @@ import { baselineCoverageOf, findingKey, findStaleBaselineKeys, updateBaselineKe
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
 import { describeFixProblems, reviewFix, type FixKeeps } from '../src/fix-invariants.js';
-import type { AppliedFix } from '../src/fixing.js';
+import { applyOnePass, type AppliedFix } from '../src/fixing.js';
 import { compareRuns, describeStrictViolations, mergeHistory, recordRun, renderComparison } from '../src/history.js';
 import { createProgressReporter } from '../src/progress.js';
 import { ruleChecks, type CorpusPlugin } from '../src/rule-checks.js';
@@ -88,6 +89,29 @@ describe('describeFixProblems', () => {
     const problems = describeFixProblems('<p>x</p>', '<p>{{ </p>', 'code');
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('no longer parses');
+  });
+});
+
+describe('applyOnePass', () => {
+  const requireFromHere = createRequire(import.meta.url);
+  const eslintFixerPath = join(dirname(requireFromHere.resolve('eslint/package.json')), 'lib/linter/source-code-fixer.js');
+  const eslintFixer = requireFromHere(eslintFixerPath) as { applyFixes: (text: string, messages: readonly Linter.LintMessage[]) => { output: string } };
+  const fixAt = (start: number, end: number, replacement: string): Linter.LintMessage => ({ ruleId: 'r', message: 'm', severity: 1, line: 1, column: 1, fix: { range: [start, end], text: replacement } });
+
+  it.each([
+    ['two inserts at the same offset', 'ab', [fixAt(1, 1, '\n'), fixAt(1, 1, '\n')]],
+    ['a fix starting where the previous one ends', 'ab', [fixAt(0, 1, 'X'), fixAt(1, 2, 'Y')]],
+    ['overlapping fixes', 'abcd', [fixAt(1, 3, 'X'), fixAt(2, 4, 'Y')]],
+    ['fixes given out of order', 'abcd', [fixAt(3, 4, 'Y'), fixAt(0, 1, 'X')]],
+    ['a reversed range', 'abcd', [fixAt(3, 1, 'X'), fixAt(0, 1, 'Y')]],
+    ['a template that starts with a byte order mark', '\uFEFFab', [fixAt(1, 2, 'X')]],
+    ['a fix that removes the byte order mark', '\uFEFFab', [fixAt(-1, 0, '')]],
+  ])('applies %s exactly as ESLint does', (_, source, messages) => {
+    expect(applyOnePass(source, messages).output).toBe(eslintFixer.applyFixes(source, messages).output);
+  });
+
+  it('records the text each applied fix replaced, without the byte order mark', () => {
+    expect(applyOnePass('\uFEFFab', [fixAt(0, 1, 'X')]).applied).toEqual([{ ruleId: 'r', replaced: 'a', replacement: 'X' }]);
   });
 });
 
