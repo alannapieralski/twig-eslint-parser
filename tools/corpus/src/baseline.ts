@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { writeFileAtomically } from './files.js';
+import { hashText } from './hash.js';
 import type { CheckOutcome, Finding, Template } from './types.js';
 
 export type BaselineCoverage = {
@@ -13,18 +13,18 @@ export type BaselineCoverage = {
 type RunOfCheck = { readonly id: string; readonly outcome: CheckOutcome };
 
 function hashOfTemplate(template: Template): string {
-  return createHash('sha256').update(template.source).digest('hex').slice(0, 12);
+  return hashText(template.source);
 }
 
 export function findingKey(finding: Finding): string {
   return `${finding.check}|${hashOfTemplate(finding.template)}|${finding.message.replace(/\d+/g, '#')}`;
 }
 
-export function templateHashOfKey(key: string): string {
+function templateHashOfKey(key: string): string {
   return key.split('|', 2)[1] ?? '';
 }
 
-export function checkOfKey(key: string): string {
+function checkOfKey(key: string): string {
   return key.split('|', 1)[0] ?? key;
 }
 

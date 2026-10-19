@@ -214,7 +214,3 @@ export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, app
     notes: firstOfEachMessage(reviews.flatMap(({ fix, review }) => review.notes.map((message) => located(fix, message)))),
   };
 }
-
-export function describeFixProblems(source: string, fixed: string, fixKeeps: FixKeeps, applied?: readonly AppliedFix[]): string[] {
-  return reviewFix(source, fixed, fixKeeps, applied).problems.map((problem) => problem.message);
-}

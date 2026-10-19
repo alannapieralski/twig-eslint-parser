@@ -5,8 +5,6 @@ import type { Check, Template } from './types.js';
 
 export type RuleCorpusSettings = {
   readonly fixKeeps?: FixKeeps;
-  readonly options?: readonly unknown[];
-  readonly settings?: Linter.Config['settings'];
 };
 
 export type RuleCheckVariant = {
@@ -34,11 +32,7 @@ function createRuleCheck(plugin: CorpusPlugin, prefix: string, ruleName: string,
   const ruleId = `${prefix}/${ruleName}`;
   const checkId = variant ? `${ruleId} [${variant.name}]` : ruleId;
   const { recommended } = plugin.configs;
-  const config: Linter.Config = {
-    ...recommended,
-    rules: { [ruleId]: ['warn', ...(settings.options ?? [])] },
-    settings: { ...recommended.settings, ...settings.settings },
-  };
+  const config: Linter.Config = { ...recommended, rules: { [ruleId]: 'warn' } };
   const target: LintTarget = {
     check: checkId,
     fixKeeps: settings.fixKeeps ?? 'code',

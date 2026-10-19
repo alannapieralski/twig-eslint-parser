@@ -9,7 +9,7 @@ import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/ca
 import { baselineCoverageOf, findingKey, findStaleBaselineKeys, updateBaselineKeys } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
-import { describeFixProblems, reviewFix, type FixKeeps } from '../src/fix-invariants.js';
+import { reviewFix, type FixKeeps } from '../src/fix-invariants.js';
 import { applyOnePass, type AppliedFix } from '../src/fixing.js';
 import { compareRuns, describeStrictViolations, mergeHistory, recordRun, renderComparison } from '../src/history.js';
 import { createProgressReporter } from '../src/progress.js';
@@ -47,7 +47,11 @@ function pluginWith(rules: Record<string, Rule.RuleModule>): CorpusPlugin {
   };
 }
 
-describe('describeFixProblems', () => {
+function describeFixProblems(source: string, fixed: string, fixKeeps: FixKeeps): string[] {
+  return reviewFix(source, fixed, fixKeeps).problems.map((problem) => problem.message);
+}
+
+describe('reviewFix', () => {
   it('accepts a change to the whitespace between attributes', () => {
     expect(describeFixProblems('<a  href="x"  id="y">', '<a\n  href="x"\n  id="y">', 'layout')).toEqual([]);
   });
@@ -122,7 +126,7 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: rule }), prefix: 'fake', rules: { rewrite: { fixKeeps } } });
     if (!check) throw new Error('No check was created.');
-    const { findings } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
     return findings.filter((finding) => finding.severity === 'failure');
   }
 
@@ -146,7 +150,7 @@ describe('ruleChecks', () => {
     if (!check) throw new Error('No check was created.');
     expect([check.id, check.rule]).toEqual(['fake/hides [hidden-class]', 'fake/hides']);
     const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
-    const { findings } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['report', 'hides class']]);
   });
 
@@ -187,7 +191,7 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': source });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: fixingRule((s) => s) }), prefix: 'fake', rules: { rewrite: { fixKeeps: 'code' } } });
     if (!check) throw new Error('No check was created.');
-    const { findings, stats } = await check.run([template(root, source)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings, stats } = await check.run([template(root, source)], { roots: new Map(), progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['skipped', expect.stringContaining('the template cannot be parsed')]]);
     expect(stats).toMatchObject({ unparseable: 1, reports: 0, withReports: 0 });
   });
@@ -197,7 +201,7 @@ describe('ruleChecks', () => {
     const plugin = pluginWith({ rewrite: fixingRule((s) => s) });
     const [check] = ruleChecks({ plugin: { ...plugin, configs: { recommended: { ...plugin.configs.recommended, ignores: ['**/a.twig'] } } }, prefix: 'fake', rules: { rewrite: { fixKeeps: 'code' } } });
     if (!check) throw new Error('No check was created.');
-    const { findings, stats } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings, stats } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['skipped', 'the plugin config ignores this template']]);
     expect(stats).toMatchObject({ ignored: 1, reports: 0, withReports: 0 });
   });

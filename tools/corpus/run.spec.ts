@@ -58,7 +58,7 @@ describe.skipIf(options.list)('corpus', () => {
     const label = `${position} ${check.id}`;
     reporter.phase(`${label}: starting`);
     const started = performance.now();
-    const outcome = await check.run(templates, { sampleSize: options.sample, roots, progress: reporter.track(label, templates.length) });
+    const outcome = await check.run(templates, { roots, progress: reporter.track(label, templates.length) });
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
     const report = buildCheckReport(result, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
