@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 type VendoredUnit = {
@@ -14,8 +14,11 @@ type VendoredUnit = {
   readonly runUpstreamTests: (patchedRoot: string) => void;
 };
 
+type ListedTest = { readonly name: string; readonly file: string };
+
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const resolveDependency = createRequire(import.meta.url).resolve;
+const regExpSpecialCharacters = /[.*+?^${}()|[\]\\]/g;
 
 function runTwigLexerTests(patchedRoot: string): void {
   const testFiles = ['src/test/unit/lib/Lexer/index.ts', 'src/test/unit/lib/Token/index.ts', 'src/test/unit/lib/SyntaxError/index.ts'];
@@ -44,15 +47,44 @@ function runTwigLexerTests(patchedRoot: string): void {
   execFileSync(process.execPath, ['-e', runner], { cwd: patchedRoot, stdio: 'inherit' });
 }
 
+function escapeForRegExp(text: string): string {
+  return text.replace(regExpSpecialCharacters, '\\$&');
+}
+
+// Renames the snapshot keys Jest writes ("describe test 1") to the keys Vitest looks up ("describe > test 1").
+function renameJestSnapshotKeys(snapshot: string, vitestTestNames: readonly string[]): string {
+  return vitestTestNames.reduce((renamed, vitestName) => {
+    const jestName = vitestName.split(' > ').join(' ');
+    const jestKey = new RegExp(`^exports\\[\`${escapeForRegExp(jestName)} (\\d+)\`\\]`, 'gm');
+    return renamed.replace(jestKey, (_key, count: string) => `exports[\`${vitestName} ${count}\`]`);
+  }, snapshot);
+}
+
+function convertJestSnapshots(patchedRoot: string, vitest: string, configPath: string): void {
+  const listing = execFileSync(process.execPath, [vitest, 'list', '--json', '--config', configPath], { cwd: patchedRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  const tests = JSON.parse(listing) as readonly ListedTest[];
+  const testsBySnapshotFile = Map.groupBy(tests, (test) => join(dirname(test.file), '__snapshots__', `${basename(test.file)}.snap`));
+
+  for (const [snapshotPath, testsInFile] of testsBySnapshotFile) {
+    if (!existsSync(snapshotPath)) continue;
+    const testNames = testsInFile.map((test) => test.name);
+    writeFileSync(snapshotPath, renameJestSnapshotKeys(readFileSync(snapshotPath, 'utf8'), testNames));
+  }
+}
+
 function runEsHtmlParserTests(patchedRoot: string): void {
   const vitest = join(dirname(resolveDependency('vitest/package.json')), 'vitest.mjs');
   const fileSnapshotShim = join(packageRoot, 'third_party/es-html-parser/test-support/jest-file-snapshot.ts');
-  writeFileSync(join(patchedRoot, 'vitest.config.mjs'), `export default ${JSON.stringify({
+  const configPath = join(patchedRoot, 'vitest.config.mjs');
+  writeFileSync(configPath, `export default ${JSON.stringify({
     root: patchedRoot,
     resolve: { alias: { 'jest-file-snapshot': fileSnapshotShim } },
     test: { globals: true, include: ['src/**/*.spec.ts'] },
   })};\n`);
-  execFileSync(process.execPath, [vitest, 'run', '--config', join(patchedRoot, 'vitest.config.mjs')], { cwd: patchedRoot, stdio: 'inherit' });
+  convertJestSnapshots(patchedRoot, vitest, configPath);
+
+  const failOnMissingSnapshots = { ...process.env, CI: 'true' };
+  execFileSync(process.execPath, [vitest, 'run', '--config', configPath], { cwd: patchedRoot, stdio: 'inherit', env: failOnMissingSnapshots });
 }
 
 const units: readonly VendoredUnit[] = [

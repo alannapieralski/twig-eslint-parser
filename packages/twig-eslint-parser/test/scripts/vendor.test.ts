@@ -29,3 +29,11 @@ describe('scripts/vendor.ts --workspace', () => {
     expect(readFileSync(patchedTagNameKeys, 'utf8')).toBe(readFileSync(shippedTagNameKeys, 'utf8'));
   });
 });
+
+describe('scripts/vendor.ts --test es-html-parser', () => {
+  it('compares every upstream snapshot instead of writing or dropping any', () => {
+    const output = execFileSync(process.execPath, [vendorScript, '--test', 'es-html-parser'], { encoding: 'utf8', env: { ...process.env, CI: '' } });
+    expect(output).toMatch(/Tests\s+\d+ passed/);
+    expect(output).not.toMatch(/failed|written|obsolete/);
+  }, 60_000);
+});
