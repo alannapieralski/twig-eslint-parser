@@ -58,6 +58,10 @@ attributes, such as a Twig comment, the rule reports the tag but does not fix it
 `>`, where the parser reads the markup after it as attributes (including when it ends up inside an unquoted value): splitting those "attributes" onto
 separate lines would break the next tag.
 
+### Where it stays silent
+
+The rule leaves a tag alone, reporting nothing, where [`twig-html/indent`](indent.md) would skip the tag's lines, because a split tag there would be left at column 0. That covers a tag inside `pre`, inside `{% verbatim %}` or `{% raw %}`, inside an element that is never closed, or in a file whose Twig tags do not pair up (a stray `{% endif %}`, for example), and an element whose open tag and close tag sit in different Twig branches.
+
 ## Options
 
 | Option | Default | Description |
@@ -91,6 +95,7 @@ The defaults match Vue's threshold.
 ## Testing
 
 - `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in `textarea`, the unfixable Twig-comment case and open tags missing their `>`.
+- `test/layout-agreement.test.ts` checks that both layout rules leave alone what `twig-html/indent` skips.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
 

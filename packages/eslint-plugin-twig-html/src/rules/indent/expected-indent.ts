@@ -1,13 +1,9 @@
-import type { Range } from '../../shared/range.js';
+import { containsOffset, type Range } from '../../shared/range.js';
 import type { IndentUnit, ResolvedOptions } from './options.js';
-import type { IndentLayout, OpenTag } from './types.js';
-
-function contains(range: Range, offset: number): boolean {
-  return range[0] <= offset && offset < range[1];
-}
+import type { IndentLayout, OpenTag } from '../../shared/indent-layout/types.js';
 
 function depthAt(offset: number, nestings: readonly Range[]): number {
-  return nestings.filter((range) => contains(range, offset)).length;
+  return nestings.filter((range) => containsOffset(range, offset)).length;
 }
 
 function repeatUnit(unit: IndentUnit, depth: number): string {
@@ -37,10 +33,6 @@ function expectedInOpenTag(tag: OpenTag, offset: number, nestings: readonly Rang
 
   const alignment = ' '.repeat(tag.firstAttributeColumn ?? 0);
   return `${repeatUnit(unit, tagDepth)}${alignment}${repeatUnit(unit, lineDepth - tagDepth)}`;
-}
-
-export function isSkipped(offset: number, layout: IndentLayout): boolean {
-  return layout.skipped.some((range) => contains(range, offset));
 }
 
 export function expectedIndentAt(offset: number, layout: IndentLayout, options: ResolvedOptions): string {

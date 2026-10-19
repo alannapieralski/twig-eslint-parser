@@ -1,8 +1,8 @@
 import type { TwigBlockSummary } from 'twig-eslint-parser';
-import { whitespaceSensitiveElements } from '../../shared/html-elements.js';
-import type { Range } from '../../shared/range.js';
-import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
-import type { Token } from '../../shared/tag-node.js';
+import { whitespaceSensitiveElements } from '../html-elements.js';
+import type { Range } from '../range.js';
+import { isOpenTagSwallowingMarkup } from '../swallowed-markup.js';
+import type { Token } from '../tag-node.js';
 import { findYamlFrontMatter } from './yaml-front-matter.js';
 import { twigBlockEnd } from './twig-frames.js';
 import type { IndentLayout, MarkupNode, OpenTag, TwigSegment } from './types.js';

@@ -1,12 +1,12 @@
 import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { Problem } from '../../shared/problem.js';
+import { findIndentLayout } from '../../shared/indent-layout/find-indent-layout.js';
+import { isSkipped } from '../../shared/indent-layout/indent-skips.js';
+import type { IndentLayout, LineStart, MarkupNode } from '../../shared/indent-layout/types.js';
 import { describeIndentation } from './describe-indentation.js';
-import { expectedIndentAt, isSkipped } from './expected-indent.js';
-import { buildIndentLayout } from './indent-regions.js';
+import { expectedIndentAt } from './expected-indent.js';
 import { findLineStarts } from './line-starts.js';
 import type { ResolvedOptions } from './options.js';
-import { findTwigSegments } from './twig-frames.js';
-import type { IndentLayout, LineStart, MarkupNode } from './types.js';
 
 export type MarkupProgram = { readonly body: readonly MarkupNode[] };
 
@@ -35,10 +35,9 @@ export function findIndentProblems(program: MarkupProgram, source: IndentSource,
   const [document] = program.body;
   if (!document) return [];
 
-  const segments = findTwigSegments(blocks, text);
-  if (!segments) return [];
+  const layout = findIndentLayout(document, { text, blocks, ignores: options.ignores });
+  if (!layout) return [];
 
-  const layout = buildIndentLayout(document, segments, { text, blocks, ignores: options.ignores });
   const checkedLines = findLineStarts(text).filter((line) => !isSkipped(line.contentStart, layout));
 
   return checkedLines.flatMap((line) => findLineProblem(line, layout, text, options));

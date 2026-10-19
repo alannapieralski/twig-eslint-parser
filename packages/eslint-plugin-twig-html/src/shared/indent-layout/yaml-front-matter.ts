@@ -1,4 +1,4 @@
-import type { Range } from '../../shared/range.js';
+import type { Range } from '../range.js';
 
 const leadingYamlFrontMatter = /^---\r?\n[\s\S]*?\r?\n---(?=\r?\n|$)/;
 

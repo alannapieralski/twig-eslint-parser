@@ -85,6 +85,8 @@ inline element can render as a space.
 The fix only places line breaks. A line break it adds has no indentation, and when it removes blank lines it keeps the
 indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix pass.
 
+The rule stays silent for an element whose lines [`twig-html/indent`](indent.md) skips: inside `pre` or `{% verbatim %}`, inside an element that is never closed, in a file whose Twig tags do not pair up, or an element whose edges sit in different Twig branches. A line break added there would not be indented.
+
 The fix only changes HTML whitespace (space, tab, line feed, carriage return and form feed), so a non-breaking space at
 the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`).
 

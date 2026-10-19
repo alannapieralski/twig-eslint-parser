@@ -163,7 +163,7 @@
   ],
   "broken/html-open-tag-missing-gt-end-of-file.html.twig": [
     { "check": "parser/html-oracle", "failures": "all" },
-    { "check": "twig-html/attrs-newline", "reports": [1, 2] },
+    { "check": "twig-html/attrs-newline", "reports": [1] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-html-element-content-newline", "noFailures": "all" },
     { "check": "twig-html/quotes", "noFailures": "all" }

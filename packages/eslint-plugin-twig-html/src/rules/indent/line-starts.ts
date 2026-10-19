@@ -1,4 +1,4 @@
-import type { LineStart } from './types.js';
+import type { LineStart } from '../../shared/indent-layout/types.js';
 
 const leadingIndentation = /^[ \t]*/;
 

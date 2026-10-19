@@ -100,6 +100,9 @@ nesting, and guessing would move every later line.
 breaks. This rule indents the lines they create, on the next fix pass. Keep it on with them,
 otherwise their fixes leave the new lines at column 0.
 
+Those two rules leave a tag alone wherever this rule skips its lines, so a fix never leaves a
+line at column 0 that this rule will not indent.
+
 ## Options
 
 The first option is the indent size: a number of spaces (default `2`) or `'tab'`. The second is an

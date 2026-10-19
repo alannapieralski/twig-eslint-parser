@@ -1,5 +1,5 @@
-import type { Range } from '../../shared/range.js';
-import type { Token } from '../../shared/tag-node.js';
+import type { Range } from '../range.js';
+import type { Token } from '../tag-node.js';
 
 export type MarkupNode = {
   readonly type: string;
