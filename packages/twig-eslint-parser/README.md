@@ -67,7 +67,7 @@ Add rules that read HTML nodes, string literals or call expressions. For Tailwin
 | Option | Default | Description |
 |---|---|---|
 | `ignoreInterpolatedAttributes` | `[]` | Attribute names (case-insensitive) to leave out of the HTML AST when their value contains Twig, such as `class="figure {{ classes }}"`. The recommended config of `eslint-plugin-twig-tailwind` sets `['class']`. |
-| `rawContentTags` | `[]` | Extra element names whose content is read as raw text, added to `textarea` and `title`. |
+| `rawContentTags` | `[]` | Extra element names (case-insensitive) whose content is read as raw text, added to `textarea` and `title`. |
 
 `ignoreInterpolatedAttributes` exists because linters such as better-tailwindcss read HTML
 attribute values as plain strings, so they would report `{{`, variable names and BEM fragments

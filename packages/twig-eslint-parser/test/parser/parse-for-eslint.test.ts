@@ -345,6 +345,22 @@ describe('markup and options', () => {
     expect(() => parseForESLint('<p></p>', { ignoreInterpolatedAttributes: 'class' } as unknown as ParserOptions)).toThrow(/must be an array of attribute names/);
   });
 
+  it.each([
+    ['a string', 'pre'],
+    ['an empty name', ['']],
+    ['a number', [1]],
+  ])('rejects rawContentTags given as %s loudly', (_, rawContentTags) => {
+    expect(() => parseForESLint('<p></p>', { rawContentTags } as unknown as ParserOptions)).toThrow(/parserOptions\.rawContentTags must be an array of element names/);
+  });
+
+  it('reads the content of rawContentTags as raw text, whatever the case of the names given', () => {
+    const code = '<x-code><p>a</p></x-code><p>b</p>';
+    const childTypesOf = (rawContentTags: readonly string[]) => ((collectNodes(parse(code, { rawContentTags }).result.ast.body, (node) => node['name'] === 'x-code')[0] as Node)['children'] as Node[]).map((child) => child.type);
+    expect(childTypesOf(['X-Code'])).toEqual(['RawContent']);
+    expect(childTypesOf(['x-code'])).toEqual(['RawContent']);
+    expect(childTypesOf([])).toEqual(['Tag']);
+  });
+
   it('reports blocks it cannot convert instead of dropping them silently', () => {
     const { services } = parse('<p>{{ foo.is not }}</p>');
     expect(services.unconvertedBlocks).toMatchObject([{ kind: 'print', tagName: undefined, range: [3, 19] }]);

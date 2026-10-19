@@ -2,7 +2,7 @@ import type { Linter } from 'eslint';
 import { unionWith } from 'eslint-visitor-keys';
 import { omitInterpolatedAttributes, type OmittedAttribute } from './attributes.js';
 import { parseJavaScriptAt, type EstreeNode } from './estree.js';
-import { parseMarkup, type MarkupParserOptions } from './html/parse-markup.js';
+import { parseMarkup } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
 import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockKind, type TwigBlockSummary } from './twig/blocks.js';
@@ -10,7 +10,7 @@ import { toSameLengthJavaScript } from './twig/javascript.js';
 import { summariseTwigStrings, type TwigStringSummary } from './twig/strings.js';
 import { tokenizeTwig } from './twig/tokens.js';
 
-export type ParserOptions = MarkupParserOptions & { ignoreInterpolatedAttributes?: readonly string[] } & Record<string, unknown>;
+export type ParserOptions = { readonly ignoreInterpolatedAttributes?: readonly string[]; readonly rawContentTags?: readonly string[] } & Record<string, unknown>;
 
 export type UnconvertedTwigBlock = {
   readonly kind: TwigBlockKind;
@@ -62,10 +62,10 @@ function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number
 }
 
 export function parseForESLint(code: string, options: ParserOptions = {}): TwigParseResult {
-  const { ignoreInterpolatedAttributes } = parseTwigParserOptions(options);
+  const { ignoreInterpolatedAttributes, rawContentTags } = parseTwigParserOptions(options);
   const tokens = tokenizeTwig(code);
   const blocks = groupTwigBlocks(tokens);
-  const markup = parseMarkup(code, blocks, options);
+  const markup = parseMarkup(code, blocks, rawContentTags);
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, ...twigServices } = convertTwigBlocks(blocks, createOffsetLocator(code));
   const visitorKeys = unionWith(markup.visitorKeys);

@@ -6,8 +6,6 @@ import { HtmlSyntaxError } from './syntax-error.js';
 import { templateInfosOf } from './template-infos.js';
 import { maskVerbatimDelimiters, restoreVerbatimDelimiters } from './verbatim-text.js';
 
-export type MarkupParserOptions = { readonly rawContentTags?: readonly string[] };
-
 type HtmlParseResult = { readonly ast: HtmlProgram; readonly visitorKeys: typeof visitorKeys };
 
 const rawTextElements: readonly string[] = ['textarea', 'title'];
@@ -16,11 +14,11 @@ function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: 
   return error instanceof SyntaxError && typeof (error as { pos?: unknown }).pos === 'number';
 }
 
-export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
+export function parseMarkup(source: string, blocks: readonly TwigBlock[], rawContentTags: ReadonlySet<string>): HtmlParseResult {
   const verbatim = maskVerbatimDelimiters(source, blocks);
   const parseOptions = {
     templateInfos: templateInfosOf(source, blocks),
-    rawContentTags: [...rawTextElements, ...(options.rawContentTags ?? [])],
+    rawContentTags: [...new Set([...rawTextElements, ...rawContentTags])],
   };
   let result: HtmlParseResult;
   try {
