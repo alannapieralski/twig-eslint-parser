@@ -27,10 +27,10 @@ export function omitInterpolatedAttributes(root: unknown, attributeNames: Readon
   const omitted: OmittedAttribute[] = [];
   const visited = new WeakSet<object>();
   const shouldOmit = (attribute: AttributeNode) => attributeNames.has(attribute.key.value.toLowerCase()) && containsTwig(attribute);
-  const pending: unknown[] = [root];
+  const toVisit: unknown[] = [root];
 
-  for (let index = 0; index < pending.length; index += 1) {
-    const value = pending[index];
+  for (let index = 0; index < toVisit.length; index += 1) {
+    const value = toVisit[index];
     if (typeof value !== 'object' || value === null || visited.has(value)) continue;
     visited.add(value);
 
@@ -42,7 +42,7 @@ export function omitInterpolatedAttributes(root: unknown, attributeNames: Readon
       node['attributes'] = attributes.filter((attribute) => !shouldOmit(attribute));
     }
     for (const [key, child] of Object.entries(node)) {
-      if (key !== 'parent') pending.push(child);
+      if (key !== 'parent') toVisit.push(child);
     }
   }
 

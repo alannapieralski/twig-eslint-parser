@@ -42,14 +42,14 @@ export function maskVerbatimDelimiters(source: string, blocks: readonly TwigBloc
 
 export function restoreVerbatimDelimiters(tree: unknown, source: string, maskedRanges: readonly Range[]): void {
   const visited = new Set<object>();
-  const pending: unknown[] = [tree];
+  const toVisit: unknown[] = [tree];
 
-  for (let index = 0; index < pending.length; index += 1) {
-    const value = pending[index];
+  for (let index = 0; index < toVisit.length; index += 1) {
+    const value = toVisit[index];
     if (typeof value !== 'object' || value === null || visited.has(value)) continue;
     visited.add(value);
     if (Array.isArray(value)) {
-      for (const item of value) pending.push(item);
+      for (const item of value) toVisit.push(item);
       continue;
     }
     const node = value as Record<string, unknown>;
@@ -58,7 +58,7 @@ export function restoreVerbatimDelimiters(tree: unknown, source: string, maskedR
       node['value'] = source.slice(...range);
     }
     for (const [key, child] of Object.entries(node)) {
-      if (key !== 'range' && key !== 'loc' && key !== 'parent') pending.push(child);
+      if (key !== 'range' && key !== 'loc' && key !== 'parent') toVisit.push(child);
     }
   }
 }

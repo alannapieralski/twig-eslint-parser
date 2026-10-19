@@ -32,7 +32,7 @@ describe('scripts/vendor.ts --workspace', () => {
 
 describe('scripts/vendor.ts --test es-html-parser', () => {
   it('compares every upstream snapshot instead of writing or dropping any', () => {
-    const output = execFileSync(process.execPath, [vendorScript, '--test', 'es-html-parser'], { encoding: 'utf8', env: { ...process.env, CI: '' } });
+    const output = execFileSync(process.execPath, [vendorScript, '--test', 'es-html-parser'], { encoding: 'utf8', env: { ...process.env, CI: '', FORCE_COLOR: '0', NO_COLOR: '1' } });
     expect(output).toMatch(/Tests\s+\d+ passed/);
     expect(output).not.toMatch(/failed|written|obsolete/);
   }, 60_000);

@@ -30,11 +30,11 @@ function isDefined<Value>(value: Value | undefined): value is Value {
 
 function flattenMarkup(nodes: readonly MarkupNode[]): MarkupNode[] {
   const flattened: MarkupNode[] = [];
-  const pending = [...nodes].reverse();
+  const toVisit = [...nodes].reverse();
 
-  for (let node = pending.pop(); node; node = pending.pop()) {
+  for (let node = toVisit.pop(); node; node = toVisit.pop()) {
     flattened.push(node);
-    for (const child of [...(node.children ?? [])].reverse()) pending.push(child);
+    for (const child of [...(node.children ?? [])].reverse()) toVisit.push(child);
   }
 
   return flattened;

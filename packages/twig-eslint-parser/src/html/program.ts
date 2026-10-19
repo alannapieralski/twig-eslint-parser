@@ -25,13 +25,13 @@ function isTyped(value: unknown): value is { type: string } {
 }
 
 function visit<Visited extends { type: string }>(root: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
-  const pending: Visited[] = [root];
+  const toVisit: Visited[] = [root];
 
-  for (let node = pending.pop(); node; node = pending.pop()) {
+  for (let node = toVisit.pop(); node; node = toVisit.pop()) {
     const childKeys = keysByType[typeOf(node)] ?? [];
     visitor(node);
     const children = childKeys.flatMap((key) => [(node as Record<string, unknown>)[key]].flat()).filter(isTyped) as Visited[];
-    for (const child of children.reverse()) pending.push(child);
+    for (const child of children.reverse()) toVisit.push(child);
   }
 }
 
