@@ -7,10 +7,10 @@ export type FileSpans = {
   readonly interpolatedStrings: readonly Range[];
 };
 
-const lineBreak = /\r\n|\r|\n/g;
+const eslintLineBreak = /\r\n|[\r\n\u2028\u2029]/gu;
 
 function findLineStarts(text: string): number[] {
-  return [0, ...[...text.matchAll(lineBreak)].map((match) => (match.index as number) + match[0].length)];
+  return [0, ...[...text.matchAll(eslintLineBreak)].map((match) => (match.index as number) + match[0].length)];
 }
 
 function findInterpolatedStringsOrNone(text: string): readonly Range[] {

@@ -178,6 +178,17 @@ describe('interpolated strings ("#{ }")', () => {
     expect(result.messages).toEqual([]);
   });
 
+  it.each([
+    ['U+2028', '\u2028'],
+    ['U+2029', '\u2029'],
+    ['a lone \\r', '\r'],
+  ])('silences them after a %s line break, which ESLint counts as a new line', async (_, lineBreak) => {
+    const code = `<p>Intro${lineBreak}more</p>\n${interpolated}`;
+    const result = await lint(code, { fix: true });
+    expect(result.output ?? code).toBe(code);
+    expect(result.messages).toEqual([]);
+  });
+
   it('keeps linting and fixing every other string in the same file', async () => {
     const code = `${interpolated}\n<span{{ attributes.addClass('shrink-0 mt-1') }}>y</span>`;
     const result = await lint(code, { fix: true });
