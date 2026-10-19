@@ -131,6 +131,10 @@ describe('twig-html/indent', () => {
       expect(await fixed(code)).toBe(code);
     });
 
+    it('leaves a tag alone, its first line included, when a Twig branch starts inside it', async () => {
+      await expectUntouched('<ul>\n  {% for field in fields %}\n  <{{ field.tag }}{{ field.attributes }}\n  {% if field.value %}\n  >{{ field.value }}</{{ field.tag }}>\n    {% else %}\n  />\n    {% endif %}\n  {% endfor %}\n</ul>\n');
+    });
+
     it('leaves an element split across branches alone', async () => {
       const code = '{% if a %}\n  <div class="a">\n{% else %}\n  <div class="b">\n{% endif %}\n<p>x</p>\n</div>\n<p>y</p>';
       const { messages } = await lint(code, [], false);
@@ -166,6 +170,16 @@ describe('twig-html/indent', () => {
 
     it('nests Twig blocks between attributes', async () => {
       expect(await fixed('<div\n  {% if a %}\n  class="a"\n  {% endif %}\n>\n</div>')).toBe('<div\n  {% if a %}\n    class="a"\n  {% endif %}\n>\n</div>');
+    });
+
+    it('indents the attributes of a tag after an element that is never closed from the tag line as written', async () => {
+      const code = '<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\nrel="a"\nhref="b"\n>\n</head>';
+      expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\n     rel="a"\n     href="b"\n   >\n</head>');
+    });
+
+    it('indents the attributes of a tag inside an element split across Twig branches from the tag line as written', async () => {
+      const code = '{% if url %}<a href="{{ url }}">{% endif %}\n    <span\nclass="a"\n        id="b"\n>x</span>\n{% if url %}</a>{% endif %}';
+      expect(await fixed(code)).toBe('{% if url %}<a href="{{ url }}">{% endif %}\n    <span\n      class="a"\n      id="b"\n    >x</span>\n{% if url %}</a>{% endif %}');
     });
 
     it('leaves the inside of a multi-line attribute value alone', async () => {

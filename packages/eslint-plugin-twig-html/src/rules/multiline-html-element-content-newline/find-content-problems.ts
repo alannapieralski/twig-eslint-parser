@@ -1,4 +1,5 @@
 import { elementsWithUnrenderedEdgeWhitespace } from '../../shared/html-elements.js';
+import { lineIndentationAt } from '../../shared/line-indentation.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
@@ -16,12 +17,12 @@ function isLineBreakCountInvalid(lineBreaks: number, allowEmptyLines: boolean): 
   return allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
 }
 
-function describeEdgeProblem(edge: ContentEdge, name: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
+function describeEdgeProblem(edge: ContentEdge, name: string, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
   const whitespace = source.text.slice(...edge.range);
   const lineBreaks = countLineBreaks(whitespace);
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
 
-  const keptIndentation = lineBreaks === 0 ? '' : indentationAfterLastLineBreak(whitespace);
+  const keptIndentation = lineBreaks === 0 ? tagIndentation : indentationAfterLastLineBreak(whitespace);
 
   return {
     range: edge.range,
@@ -47,8 +48,9 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   if (isUnsafeToCheck) return [];
 
   const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());
+  const tagIndentation = lineIndentationAt(text, tag.openStart.range[0]);
   const edges = findContentEdges(tag, close, text);
-  const problems = edges.map((edge) => describeEdgeProblem(edge, name, source, options, isFixable));
+  const problems = edges.map((edge) => describeEdgeProblem(edge, name, tagIndentation, source, options, isFixable));
 
   return problems.filter((problem) => problem !== undefined);
 }

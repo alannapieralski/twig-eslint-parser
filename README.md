@@ -76,7 +76,8 @@ the templates you actually have: Drupal core, contributed modules and your theme
   lists are reordered or rewrapped, never lose or duplicate a class or move a `[ ]` or `|` group delimiter) or
   `'code'` (it must still parse with the same Twig blocks). Every fix must also keep the template's
   line endings: it may not add a kind of line break (`\n`, `\r\n` or `\r`) the template does not
-  already use. A rule that throws is a failure.
+  already use, and may not leave more lines of an opening tag (attribute lines and a `>` on its own
+  line) less indented than the tag's own line. A rule that throws is a failure.
 - **Whole configs** (slow): the tailwind plugin's `recommended` and `recommended + drupal` configs
   run as a user gets them, `better-tailwindcss` autofixes included, under the `'class-tokens'` rule.
   Tailwind is found per root; a root without one falls back to the plugin's own Tailwind 4, and a

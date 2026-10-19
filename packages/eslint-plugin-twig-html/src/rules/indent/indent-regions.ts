@@ -1,5 +1,6 @@
 import type { TwigBlockSummary } from 'twig-eslint-parser';
 import { whitespaceSensitiveElements } from '../../shared/html-elements.js';
+import { lineIndentationAt } from '../../shared/line-indentation.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
 import type { AttributesOf } from '../../shared/tag-attributes.js';
@@ -9,6 +10,7 @@ import { twigBlockEnd } from './twig-frames.js';
 import type { IndentLayout, MarkupNode, OpenTag, TwigSegment } from './types.js';
 
 type Element = MarkupNode & { readonly openStart: Token };
+type CrossingSpan = { readonly range: Range; readonly splitsOpenTag: boolean };
 
 type LayoutSource = {
   readonly text: string;
@@ -74,8 +76,6 @@ function findSkippedInElement(element: Element, text: string, attributes: readon
   const isSwallowingMarkup = isOpenTagSwallowingMarkup({ openEnd, attributes }, text);
   if (isSwallowingMarkup) return [[openStart.range[1], element.range[1]]];
 
-  const hasUnclosedChildren = !close && (element.children ?? []).length > 0;
-  if (hasUnclosedChildren) return [...attributeInteriors, [openEnd.range[1], element.range[1]]];
   if (!close) return attributeInteriors;
 
   if (isContentWhitespaceSensitive(element)) return [...attributeInteriors, [openEnd.range[1], close.range[1]]];
@@ -86,12 +86,19 @@ function findSkippedInElement(element: Element, text: string, attributes: readon
   return attributeInteriors;
 }
 
-function describeOpenTag(element: Element, text: string, attributes: readonly { readonly range: Range }[]): OpenTag | undefined {
+function findUnclosedContent(element: Element): Range | undefined {
+  const hasUnclosedChildren = !element.close && (element.children ?? []).length > 0;
+  if (!element.openEnd || !hasUnclosedChildren) return undefined;
+  return [element.openEnd.range[1], element.range[1]];
+}
+
+function describeOpenTag(element: Element, text: string, attributes: readonly { readonly range: Range }[], depthUnknown: readonly Range[]): OpenTag | undefined {
   if (!element.openEnd) return undefined;
 
   const tagStart = element.openStart.range[0];
   const firstAttribute = attributes[0];
   const isFirstAttributeOnTagLine = firstAttribute !== undefined && !text.slice(tagStart, firstAttribute.range[0]).includes('\n');
+  const isDepthUnknown = depthUnknown.some((range) => range[0] <= tagStart && tagStart < range[1]);
 
   return {
     start: tagStart,
@@ -99,6 +106,7 @@ function describeOpenTag(element: Element, text: string, attributes: readonly { 
     closeBracketStart: element.openEnd.range[0],
     isSelfClosing: element.openEnd.value === '/>',
     firstAttributeColumn: isFirstAttributeOnTagLine ? firstAttribute.range[0] - tagStart : undefined,
+    lineIndentationAsWritten: isDepthUnknown ? lineIndentationAt(text, tagStart) : undefined,
   };
 }
 
@@ -113,15 +121,24 @@ function frameExtentOf(segment: TwigSegment, segments: readonly TwigSegment[]): 
   return [segment.frameStart, Math.max(...frameEnds)];
 }
 
-function findCrossingSpans(elements: readonly Element[], segments: readonly TwigSegment[]): Range[] {
+function openTagOf(element: Element): Range {
+  const openTagEnd = element.openEnd?.range[1] ?? element.range[1];
+  return [element.openStart.range[0], openTagEnd];
+}
+
+function findCrossingSpans(elements: readonly Element[], segments: readonly TwigSegment[]): CrossingSpan[] {
   return elements.flatMap((element) => {
     const extent = extentOf(element);
     const inner = bodyOf(element) ?? extent;
+    const openTag = openTagOf(element);
+    const isInsideOpenTag = (offset: number) => openTag[0] < offset && offset < openTag[1];
     const crossedSegments = segments.filter((segment) => isCrossing(extent, segment.extent));
 
-    return crossedSegments.map((segment): Range => {
+    return crossedSegments.map((segment): CrossingSpan => {
       const frameExtent = frameExtentOf(segment, segments);
-      return [Math.min(inner[0], frameExtent[0]), Math.max(inner[1], frameExtent[1])];
+      const splitsOpenTag = isInsideOpenTag(frameExtent[0]) || isInsideOpenTag(frameExtent[1]);
+      const start = splitsOpenTag ? extent[0] : Math.min(inner[0], frameExtent[0]);
+      return { range: [start, Math.max(inner[1], frameExtent[1])], splitsOpenTag };
     });
   });
 }
@@ -142,11 +159,15 @@ export function buildIndentLayout(document: MarkupNode, segments: readonly TwigS
   const tokenInteriors = markupNodes.filter((node) => singleTokenNodeTypes.has(node.type)).map((node) => interiorOf(node.range));
   const unindentedSegments = segments.filter((segment) => unindentedTwigFrames.has(segment.frameName)).map((segment) => segment.range);
   const elementSkips = elements.flatMap((element) => findSkippedInElement(element, text, attributesOf(element), ignoredNames));
+  const splitOpenTags = crossingSpans.filter((span) => span.splitsOpenTag).map((span) => span.range);
+  const branchSplitContent = crossingSpans.filter((span) => !span.splitsOpenTag).map((span) => span.range);
+  const depthUnknown = [...branchSplitContent, ...elements.map(findUnclosedContent).filter(isDefined)];
 
   return {
     nestings: [...bodies, ...segments.map((segment) => segment.range)],
-    skipped: [...findYamlFrontMatter(text), ...crossingSpans, ...tokenInteriors, ...findTwigInteriors(blocks, text), ...unindentedSegments, ...elementSkips],
-    openTags: elements.map((element) => describeOpenTag(element, text, attributesOf(element))).filter(isDefined),
+    skipped: [...findYamlFrontMatter(text), ...splitOpenTags, ...tokenInteriors, ...findTwigInteriors(blocks, text), ...unindentedSegments, ...elementSkips],
+    depthUnknown,
+    openTags: elements.map((element) => describeOpenTag(element, text, attributesOf(element), depthUnknown)).filter(isDefined),
     closeTags: elements.flatMap((element) => (element.close ? [element.close.range] : [])),
   };
 }

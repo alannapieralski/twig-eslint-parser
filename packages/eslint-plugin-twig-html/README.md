@@ -53,7 +53,7 @@ opening tag fits on one line, once their content spans several lines.
 ## Upgrading: indentation moved to `indent`
 
 `attrs-newline` and `multiline-html-element-content-newline` no longer indent and no longer take an `indent` option.
-Their fixes insert bare line breaks, and `twig-html/indent` (on in `configs.recommended`) indents them. Move an `indent`
+Their fixes start each new line at the indentation of the tag's line, and `twig-html/indent` (on in `configs.recommended`) indents them. Move an `indent`
 size to that rule: `'twig-html/indent': ['warn', 4]`, or `['warn', 'tab']`.
 
 ## Why not @html-eslint's rules

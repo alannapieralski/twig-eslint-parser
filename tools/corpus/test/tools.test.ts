@@ -560,6 +560,19 @@ describe('reviewFix line endings', () => {
   });
 });
 
+describe('reviewFix opening tag indentation', () => {
+  const problemsOf = (source: string, fixed: string) => reviewFix(source, fixed, 'layout').problems.map((problem) => problem.message);
+
+  it('fails a fix that leaves attribute lines or the closing bracket less indented than the tag line', () => {
+    expect(problemsOf('  <a href="#" class="b">x</a>', '  <a\nhref="#"\nclass="b"\n>x</a>')).toEqual(['the fix leaves 3 more lines of opening tags less indented than the tag line']);
+  });
+
+  it('accepts attribute lines at or beyond the tag line, and lines that were already less indented', () => {
+    expect(problemsOf('  <a href="#" class="b">x</a>', '  <a\n    href="#"\n    class="b"\n  >x</a>')).toEqual([]);
+    expect(problemsOf('  <a\nhref="#"\nclass="b">x</a>', '  <a\nhref="#"\nclass="b"\n  >x</a>')).toEqual([]);
+  });
+});
+
 describe('reviewFix with class-tokens', () => {
   const review = (source: string, fixed: string, applied: AppliedFix[]) => {
     const result = reviewFix(source, fixed, 'class-tokens', applied, {

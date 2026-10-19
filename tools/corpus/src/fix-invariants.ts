@@ -12,11 +12,13 @@ type ClassList = { readonly delimiters: string; readonly groups: readonly (reado
 type Range = readonly [number, number];
 type Leaf = { readonly type: string; readonly range: Range; readonly isPreformatted: boolean };
 type ParsedTemplate = { readonly result: TwigParseResult } | { readonly error: string };
+type OpenTagRange = { readonly start: number; readonly attributesStart: number; readonly closeBracketStart: number };
 
 const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
 const cubeDelimiters = new Set(['[', ']', '|', '][']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const indentationAfterLineBreak = /(\n)[ \t]+/g;
+const leadingIndentation = /^[ \t]*/;
 const preformattedElements = new Set(['pre', 'textarea']);
 const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
 const lineBreak = /\r\n|\r|\n/g;
@@ -184,13 +186,63 @@ function describeAddedLineBreaks(source: string, fixed: string): FixProblem[] {
   return addedKinds.map((kind) => ({ message: `the fix adds ${lineBreakNames[kind]} line breaks to a template that has none` }));
 }
 
+function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new Set<object>()): OpenTagRange[] {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return tags;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    value.forEach((child) => collectOpenTags(child, tags, seen));
+    return tags;
+  }
+  const node = value as Record<string, { range?: Range } | unknown>;
+  const openStart = (node['openStart'] as { range?: Range } | undefined)?.range;
+  const openEnd = (node['openEnd'] as { range?: Range } | undefined)?.range;
+  if (openStart && openEnd) tags.push({ start: openStart[0], attributesStart: openStart[1], closeBracketStart: openEnd[0] });
+  for (const [key, child] of Object.entries(node)) {
+    if (!keysOutsideTheHtmlTree.has(key)) collectOpenTags(child, tags, seen);
+  }
+  return tags;
+}
+
+function indentationOfLineAt(code: string, offset: number): string {
+  const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
+  return code.slice(lineStart).match(leadingIndentation)?.[0] ?? '';
+}
+
+function lineStartsWithin(code: string, start: number, end: number): number[] {
+  const lineStarts: number[] = [];
+  for (let lineBreak = code.indexOf('\n', start); lineBreak !== -1 && lineBreak < end; lineBreak = code.indexOf('\n', lineBreak + 1)) {
+    lineStarts.push(lineBreak + 1);
+  }
+  return lineStarts;
+}
+
+function isBlankLineAt(code: string, lineStart: number): boolean {
+  const contentStart = lineStart + indentationOfLineAt(code, lineStart).length;
+  return /^(\r?\n|$)/.test(code.slice(contentStart, contentStart + 2));
+}
+
+function countUnderIndentedTagLines(code: string, result: TwigParseResult): number {
+  return collectOpenTags(result.ast.body).reduce((count, tag) => {
+    const tagIndentation = indentationOfLineAt(code, tag.start);
+    const tagLines = lineStartsWithin(code, tag.attributesStart, tag.closeBracketStart).filter((lineStart) => !isBlankLineAt(code, lineStart));
+    const underIndentedLines = tagLines.filter((lineStart) => indentationOfLineAt(code, lineStart).length < tagIndentation.length);
+    return count + underIndentedLines.length;
+  }, 0);
+}
+
+function describeUnderIndentedTagLines(source: string, before: TwigParseResult, fixed: string, after: TwigParseResult): FixProblem[] {
+  const added = countUnderIndentedTagLines(fixed, after) - countUnderIndentedTagLines(source, before);
+  if (added <= 0) return [];
+  return [{ message: `the fix leaves ${added} more lines of opening tags less indented than the tag line` }];
+}
+
 export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, applied: readonly AppliedFix[] = [], roles: ClassRuleRoles = {}): FixReview {
   const before = parse(source);
   const after = parse(fixed);
   if ('error' in after) return { problems: [{ message: `the fixed template no longer parses: ${after.error}` }], notes: [] };
   if ('error' in before) return { problems: [], notes: [] };
 
-  const problems: FixProblem[] = [...describeAddedLineBreaks(source, fixed)];
+  const problems: FixProblem[] = [...describeAddedLineBreaks(source, fixed), ...describeUnderIndentedTagLines(source, before.result, fixed, after.result)];
   if (after.result.services.twig.unconvertedBlocks.length !== before.result.services.twig.unconvertedBlocks.length) {
     problems.push({ message: 'the fix changes how many Twig blocks the parser can read' });
   }

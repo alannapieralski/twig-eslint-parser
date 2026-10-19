@@ -30,8 +30,20 @@ describe('twig-html/attrs-newline', () => {
     );
   });
 
-  it('only breaks lines, leaving indentation to twig-html/indent', async () => {
-    expect(await fixedAlone('  <button type="button" class="flex" data-js-toggle>x</button>')).toBe('  <button\ntype="button"\nclass="flex"\ndata-js-toggle\n>x</button>');
+  it('starts each new line at the indentation of the tag line, leaving the step to twig-html/indent', async () => {
+    expect(await fixedAlone('  <button type="button" class="flex" data-js-toggle>x</button>')).toBe('  <button\n  type="button"\n  class="flex"\n  data-js-toggle\n  >x</button>');
+  });
+
+  it('lays out a tag after an element that is never closed, where twig-html/indent cannot know the depth', async () => {
+    expect(await fixed('<head>\n  <css-placeholder token="x">\n  <link rel="a" href="b">\n</head>\n')).toBe(
+      '<head>\n  <css-placeholder token="x">\n  <link\n    rel="a"\n    href="b"\n  >\n</head>\n',
+    );
+  });
+
+  it('lays out a tag inside an element split across Twig branches', async () => {
+    expect(await fixed('{% if url %}<a href="{{ url }}">{% endif %}\n  <span class="a" id="b">x</span>\n{% if url %}</a>{% endif %}\n')).toBe(
+      '{% if url %}<a href="{{ url }}">{% endif %}\n  <span\n    class="a"\n    id="b"\n  >x</span>\n{% if url %}</a>{% endif %}\n',
+    );
   });
 
   it('accepts attributes on their own lines at any indentation', async () => {

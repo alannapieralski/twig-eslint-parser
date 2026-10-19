@@ -2,7 +2,7 @@ import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { Problem } from '../../shared/problem.js';
 import type { AttributesOf } from '../../shared/tag-attributes.js';
 import { describeIndentation } from './describe-indentation.js';
-import { expectedIndentAt, isSkipped } from './expected-indent.js';
+import { expectedIndentAt, isChecked } from './expected-indent.js';
 import { buildIndentLayout } from './indent-regions.js';
 import { findLineStarts } from './line-starts.js';
 import type { ResolvedOptions } from './options.js';
@@ -40,7 +40,7 @@ export function findIndentProblems(program: MarkupProgram, source: IndentSource,
   if (!segments) return [];
 
   const layout = buildIndentLayout(document, segments, { text, blocks, attributesOf, ignores: options.ignores });
-  const checkedLines = findLineStarts(text).filter((line) => !isSkipped(line.contentStart, layout));
+  const checkedLines = findLineStarts(text).filter((line) => isChecked(line.contentStart, layout));
 
   return checkedLines.flatMap((line) => findLineProblem(line, layout, text, options));
 }

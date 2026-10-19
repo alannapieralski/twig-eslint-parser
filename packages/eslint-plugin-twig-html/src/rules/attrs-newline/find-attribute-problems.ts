@@ -34,7 +34,7 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   const groups = groupAttributes(attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
 
-  const separators = describeSeparators(tag, groups, lineBreak, options.closeStyle);
+  const separators = describeSeparators(tag, groups, text, lineBreak, options.closeStyle);
   const wrongSeparators = separators.filter((separator) => !isSeparatorCorrect(text.slice(...separator.range), separator, lineBreak));
   const firstWrongSeparator = wrongSeparators[0];
   if (!firstWrongSeparator) return [];
