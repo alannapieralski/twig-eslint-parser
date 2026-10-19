@@ -36,7 +36,11 @@ function isPunctuation(token: TwigToken | undefined, value: string): boolean {
 }
 
 function findNextSignificant(tokens: readonly TwigToken[], afterIndex: number, toIndex: number): TwigToken | undefined {
-  return tokens.slice(afterIndex + 1, toIndex).find(isSignificant);
+  for (let index = afterIndex + 1; index < toIndex; index += 1) {
+    const token = tokens[index] as TwigToken;
+    if (isSignificant(token)) return token;
+  }
+  return undefined;
 }
 
 function findTopLevelIndices(tokens: readonly TwigToken[]): Set<number> {

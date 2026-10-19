@@ -67,6 +67,13 @@ function createBlock(kind: TwigBlockKind, tokens: TwigToken[]): TwigBlock {
   return { kind, start: first.start, end: last.end, tokens, tagName };
 }
 
+function findClosingIndex(tokens: readonly TwigToken[], openingIndex: number, closingType: TwigTokenType): number {
+  for (let index = openingIndex + 1; index < tokens.length; index += 1) {
+    if (tokens[index]?.type === closingType) return index;
+  }
+  return -1;
+}
+
 export function groupTwigBlocks(tokens: readonly TwigToken[]): TwigBlock[] {
   const blocks: TwigBlock[] = [];
   let index = 0;
@@ -79,7 +86,7 @@ export function groupTwigBlocks(tokens: readonly TwigToken[]): TwigBlock[] {
       continue;
     }
 
-    const closingIndex = tokens.findIndex((token, candidateIndex) => candidateIndex > index && token.type === blockKind.closingType);
+    const closingIndex = findClosingIndex(tokens, index, blockKind.closingType);
     if (closingIndex === -1) throw new Error(`Twig ${blockKind.kind} block opened at offset ${opening.start} has no closing delimiter.`);
 
     blocks.push(createBlock(blockKind.kind, tokens.slice(index, closingIndex + 1)));

@@ -381,6 +381,15 @@ describe('block structure services', () => {
   });
 });
 
+describe('large templates', () => {
+  it('groups 50,000 Twig blocks in linear time', () => {
+    const code = '<p>{{ a }}{% if b %}c{% endif %}{# d #}</p>\n'.repeat(12_500);
+    const { services } = parse(code);
+    expect(services.blocks).toHaveLength(50_000);
+    expect(services.blocks.at(-1)?.range[1]).toBe(code.length - '</p>\n'.length);
+  });
+});
+
 describe('block form tags in block structure services', () => {
   it('opens nesting for block-form set and trans but not for an inline set', () => {
     const { services } = parse('{% set a = 1 %}{% set b %}x{% endset %}{% trans %}y{% endtrans %}');
