@@ -3,7 +3,8 @@ import { basename, join } from 'node:path';
 import { findingKey } from './baseline.js';
 import { isCanary } from './canaries.js';
 import { coverageNdjson, renderCoverage, summariseCoverage, type CoverageTotals } from './coverage.js';
-import { hashText } from './history.js';
+import { hashText } from './hash.js';
+import { evenlySpaced } from './sampling.js';
 import { unifiedDiff } from './diff.js';
 import type { Check, CheckOutcome, Finding, FixChange } from './types.js';
 
@@ -68,7 +69,7 @@ function describeLocation(finding: Finding): string {
   return `${finding.template.root} :: ${finding.template.relativePath}${finding.line === undefined ? '' : `:${finding.line}`}`;
 }
 
-export function renderSummary(reports: readonly CheckReport[], templateCount: number, rootCount: number): string {
+function renderSummary(reports: readonly CheckReport[], templateCount: number, rootCount: number): string {
   const lines = [
     '# Corpus run',
     '',
@@ -148,12 +149,6 @@ function writeFailureFiles(directory: string, results: readonly CheckResult[]): 
       writeFileSync(join(checkDirectory, `${String(index + 1).padStart(2, '0')}-${basename(finding.template.path)}.txt`), body);
     });
   }
-}
-
-function evenlySpaced<T>(items: readonly T[], count: number): T[] {
-  if (items.length <= count) return [...items];
-  const step = items.length / count;
-  return Array.from({ length: count }, (_, index) => items[Math.floor(index * step)] as T);
 }
 
 function describeReportInContext(finding: Finding): string {

@@ -20,11 +20,13 @@ export type OpenTag = {
   readonly closeBracketStart: number;
   readonly isSelfClosing: boolean;
   readonly firstAttributeColumn: number | undefined;
+  readonly lineIndentationAsWritten: string | undefined;
 };
 
 export type IndentLayout = {
   readonly nestings: readonly Range[];
   readonly skipped: readonly Range[];
+  readonly depthUnknown: readonly Range[];
   readonly openTags: readonly OpenTag[];
   readonly closeTags: readonly Range[];
 };

@@ -1,0 +1,13 @@
+<head>
+  <css-placeholder token="{{ token }}">
+  <link
+    rel="icon"
+    href="/favicon.png"
+  >
+</head>
+{% if url %}<a href="{{ url }}">{% endif %}
+  <span
+    class="label"
+    id="label"
+  >{{ label }}</span>
+{% if url %}</a>{% endif %}

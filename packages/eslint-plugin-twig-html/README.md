@@ -32,7 +32,8 @@ export default [twigHtml.configs.recommended];
 
 `configs.recommended` applies to `**/*.twig` except `**/*.svg.twig`, sets `twig-eslint-parser` as the parser and turns on
 `twig-html/attrs-newline`, `twig-html/indent`, `twig-html/multiline-html-element-content-newline` and `twig-html/quotes` as warnings. It works next to `eslint-plugin-twig-tailwind`'s recommended
-config, which uses the same parser.
+config, which uses the same parser. That config leaves `class` attributes containing Twig out of the tree; every `twig-html` rule
+still counts them, checks their quotes and leaves their values alone.
 
 ## Rules
 
@@ -52,7 +53,7 @@ opening tag fits on one line, once their content spans several lines.
 ## Upgrading: indentation moved to `indent`
 
 `attrs-newline` and `multiline-html-element-content-newline` no longer indent and no longer take an `indent` option.
-Their fixes insert bare line breaks, and `twig-html/indent` (on in `configs.recommended`) indents them. Move an `indent`
+Their fixes start each new line at the indentation of the tag's line, and `twig-html/indent` (on in `configs.recommended`) indents them. Move an `indent`
 size to that rule: `'twig-html/indent': ['warn', 4]`, or `['warn', 'tab']`.
 
 ## Why not @html-eslint's rules

@@ -6,7 +6,7 @@ import { checkRewritesKeepTheTree, rewrites, type TreeParser } from './metamorph
 
 const parseWithoutTwigKinds: TreeParser = (source) => {
   const templateInfos = groupTwigBlocks(tokenizeTwig(source)).map((block): [number, number] => [block.start, block.end]);
-  const program = parseHtmlProgram(source, { templateInfos }, { branchSegments: [], branchControlRanges: [] });
+  const program = parseHtmlProgram(source, { templateInfos });
   return { ast: { body: program.body, twigBody: [] } };
 };
 

@@ -44,7 +44,6 @@ export type TemplateCoverage = {
 };
 
 export type CheckContext = {
-  readonly sampleSize: number;
   readonly roots: ReadonlyMap<string, CorpusRoot>;
   readonly progress: (done: number, counts?: Readonly<Record<string, number>>) => void;
 };

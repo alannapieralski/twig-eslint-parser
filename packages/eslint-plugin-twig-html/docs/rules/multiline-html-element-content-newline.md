@@ -82,8 +82,10 @@ It only fixes elements known to be block-level, such as `div`, `p`, `li` and `ta
 Other elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an
 inline element can render as a space.
 
-The fix only places line breaks. A line break it adds has no indentation, and when it removes blank lines it keeps the
-indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix pass.
+The fix only places line breaks. A line it creates starts at the indentation of the tag's line, and when it removes
+blank lines it keeps the indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix
+pass, so keep it on with this rule, as `configs.recommended` does. Where `indent` cannot know the depth, such as inside an
+element that is never closed, moved content stays at the tag's indentation.
 
 The fix only changes HTML whitespace (space, tab, line feed, carriage return and form feed), so a non-breaking space at
 the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`).

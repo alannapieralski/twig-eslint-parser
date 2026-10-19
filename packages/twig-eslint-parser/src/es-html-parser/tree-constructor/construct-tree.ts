@@ -1,7 +1,7 @@
 import { ConstructTreeContextTypes, NodeTypes } from "../constants/index.js";
-import { ConstructTreeState, DocumentNode, Range, AnyToken } from "../types/index.js";
+import { AnyContextualNode, ConstructTreeState, DocumentNode, Range, AnyToken } from "../types/index.js";
 import { SourceLocation } from "../types/source-location.js";
-import { first, last } from "../utils/index.js";
+import { extendNodeEndToLastChild, first, last } from "../utils/index.js";
 import { cloneLocation } from "../utils/clone-location.js";
 import {
   tagContent,
@@ -79,8 +79,15 @@ export function constructTree(tokens: AnyToken[]) {
 
   const positionOffset = state!.caretPosition;
   processTokens(tokens, state!, positionOffset);
+  endElementsLeftOpen(state!.currentNode);
 
   return { state, ast: state!.rootNode };
+}
+
+function endElementsLeftOpen(node: AnyContextualNode | undefined) {
+  for (let open = node; open && open.type !== NodeTypes.Document; open = open.parentRef) {
+    extendNodeEndToLastChild(open);
+  }
 }
 
 function processTokens(

@@ -1,15 +1,16 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { Rule } from 'eslint';
+import { dirname, join } from 'node:path';
+import type { Linter, Rule } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/canaries.js';
-import { findingKey, findStaleBaselineKeys, keepBaselineKeysOutsideTheRun } from '../src/baseline.js';
+import { baselineCoverageOf, findingKey, findStaleBaselineKeys, updateBaselineKeys } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
-import { describeFixProblems, reviewFix, type FixKeeps } from '../src/fix-invariants.js';
-import type { AppliedFix } from '../src/fixing.js';
+import { reviewFix, type FixKeeps } from '../src/fix-invariants.js';
+import { applyOnePass, type AppliedFix } from '../src/fixing.js';
 import { compareRuns, describeStrictViolations, mergeHistory, recordRun, renderComparison } from '../src/history.js';
 import { createProgressReporter } from '../src/progress.js';
 import { ruleChecks, type CorpusPlugin } from '../src/rule-checks.js';
@@ -46,7 +47,11 @@ function pluginWith(rules: Record<string, Rule.RuleModule>): CorpusPlugin {
   };
 }
 
-describe('describeFixProblems', () => {
+function describeFixProblems(source: string, fixed: string, fixKeeps: FixKeeps): string[] {
+  return reviewFix(source, fixed, fixKeeps).problems.map((problem) => problem.message);
+}
+
+describe('reviewFix', () => {
   it('accepts a change to the whitespace between attributes', () => {
     expect(describeFixProblems('<a  href="x"  id="y">', '<a\n  href="x"\n  id="y">', 'layout')).toEqual([]);
   });
@@ -91,6 +96,29 @@ describe('describeFixProblems', () => {
   });
 });
 
+describe('applyOnePass', () => {
+  const requireFromHere = createRequire(import.meta.url);
+  const eslintFixerPath = join(dirname(requireFromHere.resolve('eslint/package.json')), 'lib/linter/source-code-fixer.js');
+  const eslintFixer = requireFromHere(eslintFixerPath) as { applyFixes: (text: string, messages: readonly Linter.LintMessage[]) => { output: string } };
+  const fixAt = (start: number, end: number, replacement: string): Linter.LintMessage => ({ ruleId: 'r', message: 'm', severity: 1, line: 1, column: 1, fix: { range: [start, end], text: replacement } });
+
+  it.each([
+    ['two inserts at the same offset', 'ab', [fixAt(1, 1, '\n'), fixAt(1, 1, '\n')]],
+    ['a fix starting where the previous one ends', 'ab', [fixAt(0, 1, 'X'), fixAt(1, 2, 'Y')]],
+    ['overlapping fixes', 'abcd', [fixAt(1, 3, 'X'), fixAt(2, 4, 'Y')]],
+    ['fixes given out of order', 'abcd', [fixAt(3, 4, 'Y'), fixAt(0, 1, 'X')]],
+    ['a reversed range', 'abcd', [fixAt(3, 1, 'X'), fixAt(0, 1, 'Y')]],
+    ['a template that starts with a byte order mark', '\uFEFFab', [fixAt(1, 2, 'X')]],
+    ['a fix that removes the byte order mark', '\uFEFFab', [fixAt(-1, 0, '')]],
+  ])('applies %s exactly as ESLint does', (_, source, messages) => {
+    expect(applyOnePass(source, messages).output).toBe(eslintFixer.applyFixes(source, messages).output);
+  });
+
+  it('records the text each applied fix replaced, without the byte order mark', () => {
+    expect(applyOnePass('\uFEFFab', [fixAt(0, 1, 'X')]).applied).toEqual([{ ruleId: 'r', replaced: 'a', replacement: 'X' }]);
+  });
+});
+
 describe('ruleChecks', () => {
   const template = (root: string, source = '<p>x</p>'): Template => ({ root, path: join(root, 'a.twig'), relativePath: 'a.twig', source });
 
@@ -98,13 +126,32 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: rule }), prefix: 'fake', rules: { rewrite: { fixKeeps } } });
     if (!check) throw new Error('No check was created.');
-    const { findings } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
     return findings.filter((finding) => finding.severity === 'failure');
   }
 
   it('creates one check per rule, named after the rule', () => {
     const checks = ruleChecks({ plugin: pluginWith({ one: fixingRule((s) => s), two: fixingRule((s) => s) }), prefix: 'fake', rules: { one: { fixKeeps: 'code' }, two: { fixKeeps: 'code' } } });
     expect(checks.map((check) => check.id)).toEqual(['fake/one', 'fake/two']);
+  });
+
+  it('runs a variant of every rule under its own check id, with the variant\'s parser options', async () => {
+    const reportsHiddenClasses: Rule.RuleModule = {
+      meta: { type: 'problem', schema: [] },
+      create: (context) => ({
+        Program: (node) => {
+          const parserOptions = context.languageOptions.parserOptions as { ignoreInterpolatedAttributes?: readonly string[] } | undefined;
+          if (parserOptions?.ignoreInterpolatedAttributes?.includes('class')) context.report({ node, message: 'hides class' });
+        },
+      }),
+    };
+    const variant = { name: 'hidden-class', languageOptions: { parserOptions: { ignoreInterpolatedAttributes: ['class'] } } };
+    const [check] = ruleChecks({ plugin: pluginWith({ hides: reportsHiddenClasses }), prefix: 'fake', variant });
+    if (!check) throw new Error('No check was created.');
+    expect([check.id, check.rule]).toEqual(['fake/hides [hidden-class]', 'fake/hides']);
+    const root = createCorpusDirectory({ 'a.twig': '<p>x</p>' });
+    const { findings } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
+    expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['report', 'hides class']]);
   });
 
   it('fails loudly when the settings name a rule the plugin does not have', () => {
@@ -144,7 +191,7 @@ describe('ruleChecks', () => {
     const root = createCorpusDirectory({ 'a.twig': source });
     const [check] = ruleChecks({ plugin: pluginWith({ rewrite: fixingRule((s) => s) }), prefix: 'fake', rules: { rewrite: { fixKeeps: 'code' } } });
     if (!check) throw new Error('No check was created.');
-    const { findings, stats } = await check.run([template(root, source)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings, stats } = await check.run([template(root, source)], { roots: new Map(), progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['skipped', expect.stringContaining('the template cannot be parsed')]]);
     expect(stats).toMatchObject({ unparseable: 1, reports: 0, withReports: 0 });
   });
@@ -154,7 +201,7 @@ describe('ruleChecks', () => {
     const plugin = pluginWith({ rewrite: fixingRule((s) => s) });
     const [check] = ruleChecks({ plugin: { ...plugin, configs: { recommended: { ...plugin.configs.recommended, ignores: ['**/a.twig'] } } }, prefix: 'fake', rules: { rewrite: { fixKeeps: 'code' } } });
     if (!check) throw new Error('No check was created.');
-    const { findings, stats } = await check.run([template(root)], { sampleSize: 0, roots: new Map(), progress: () => undefined });
+    const { findings, stats } = await check.run([template(root)], { roots: new Map(), progress: () => undefined });
     expect(findings.map((finding) => [finding.severity, finding.message])).toEqual([['skipped', 'the plugin config ignores this template']]);
     expect(stats).toMatchObject({ ignored: 1, reports: 0, withReports: 0 });
   });
@@ -203,6 +250,13 @@ describe('config and discovery', () => {
     const root = createCorpusDirectory({ 'a.twig': 'a', 'sub/b.html.twig': 'b', 'node_modules/c.twig': 'c', 'vendor/d.twig': 'd', 'e.txt': 'e' });
     const config = loadConfig(tmpdir(), { TWIG_CORPUS: root });
     expect(discoverTemplates(config, { quick: false }).map((found) => found.relativePath)).toEqual(['a.twig', 'sub/b.html.twig']);
+  });
+
+  it('says whether the roots came from TWIG_CORPUS, which makes every run partial', () => {
+    const root = createCorpusDirectory({ 'a.twig': 'a' });
+    expect(loadConfig(tmpdir(), { TWIG_CORPUS: root }).isFromEnvironment).toBe(true);
+    const configured = createCorpusDirectory({ 'corpus.config.json': JSON.stringify({ roots: [root] }) });
+    expect(loadConfig(configured, {}).isFromEnvironment).toBe(false);
   });
 
   it('fails loudly when a root does not exist', () => {
@@ -302,6 +356,15 @@ describe('run history', () => {
     expect(comparison?.added).toHaveLength(1);
   });
 
+  it('keeps the last results of a check that was skipped, so the next run compares with them', () => {
+    const a = template('a.twig');
+    const skipped = recordRun([a], [{ id: 'c', outcome: { findings: [], stats: {}, skipped: 'needs PHP' } }]);
+    const merged = mergeHistory(run([a], [report(a)]), skipped);
+    const [comparison] = compareRuns(merged, run([a], [report(a)]));
+    expect(comparison).toMatchObject({ before: { report: 1 }, after: { report: 1 }, wasSkipped: false });
+    expect(describeStrictViolations(compareRuns(merged, run([a], [report(a)])))).toEqual([]);
+  });
+
   it('keeps earlier results for templates a partial run did not cover', () => {
     const [a, b] = [template('a.twig'), template('b.twig')];
     const merged = mergeHistory(run([a, b], [report(a), report(b)]), run([a], []));
@@ -391,15 +454,44 @@ function comparisons<Item>(comparison: Item | undefined): Item[] {
 describe('baseline hygiene', () => {
   const key = (check: string, hash: string) => `${check}|${hash}|message`;
 
-  it('finds baseline entries that no longer happen', () => {
-    const baseline = new Set([key('c', 'aaa'), key('c', 'bbb'), key('other', 'ccc')]);
-    expect(findStaleBaselineKeys(baseline, new Set(['c']), new Set([key('c', 'aaa')]), new Set(['aaa']), true)).toEqual([key('c', 'bbb')]);
-    expect(findStaleBaselineKeys(baseline, new Set(['c']), new Set([key('c', 'aaa')]), new Set(['aaa']), false)).toEqual([]);
+  const template = (source: string): Template => ({ root: '/r', path: `/r/${source}`, relativePath: source, source });
+  const hashOf = (source: string) => findingKey({ check: 'c', severity: 'failure', message: 'message', template: template(source) }).split('|')[1] as string;
+  const [aaa, bbb, ccc] = [hashOf('aaa'), hashOf('bbb'), hashOf('ccc')];
+  const coverage = (runs: Parameters<typeof baselineCoverageOf>[0], isFullRun: boolean, sources = ['aaa']) => baselineCoverageOf(runs, sources.map(template), isFullRun);
+  const ran = (id: string, findings: readonly Finding[] = []) => ({ id, outcome: { findings, stats: {} } });
+  const skippedCheck = (id: string) => ({ id, outcome: { findings: [], stats: {}, skipped: 'needs PHP' } });
+
+  it('finds entries that no longer happen, and on a full run entries whose template is gone', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb), key('other', ccc)]);
+    expect(findStaleBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], true))).toEqual([key('c', bbb)]);
+    expect(findStaleBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], false))).toEqual([]);
   });
 
-  it('keeps entries for checks and templates outside a partial run when updating', () => {
-    const baseline = new Set([key('c', 'aaa'), key('c', 'bbb'), key('other', 'aaa')]);
-    expect(keepBaselineKeysOutsideTheRun(baseline, new Set(['c']), new Set(['aaa']))).toEqual([key('c', 'bbb'), key('other', 'aaa')]);
+  it('drops exactly the stale entries when updating, and adds the recorded ones', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb), key('other', ccc)]);
+    const recorded = new Set([key('c', aaa), key('c', `${aaa}-new`)]);
+    const runCoverage = coverage([ran('c')], true);
+    const updated = updateBaselineKeys(baseline, recorded, runCoverage);
+    expect(updated).toEqual([key('c', aaa), key('other', ccc), key('c', `${aaa}-new`)]);
+    expect(findStaleBaselineKeys(new Set(updated), recorded, runCoverage)).toEqual([]);
+  });
+
+  it('keeps entries for templates outside a partial run when updating', () => {
+    const baseline = new Set([key('c', aaa), key('c', bbb)]);
+    expect(updateBaselineKeys(baseline, new Set([key('c', aaa)]), coverage([ran('c')], false))).toEqual([key('c', aaa), key('c', bbb)]);
+  });
+
+  it('keeps every entry of a check that was skipped', () => {
+    const baseline = new Set([key('parity', aaa), key('parity', bbb)]);
+    const runCoverage = coverage([skippedCheck('parity')], true);
+    expect(findStaleBaselineKeys(baseline, new Set(), runCoverage)).toEqual([]);
+    expect(updateBaselineKeys(baseline, new Set(), runCoverage)).toEqual([key('parity', aaa), key('parity', bbb)]);
+  });
+
+  it('keeps the entries of a template that a check skipped', () => {
+    const skippedTemplate: Finding = { check: 'c', severity: 'skipped', message: 'no Tailwind', template: template('aaa') };
+    const baseline = new Set([key('c', aaa)]);
+    expect(updateBaselineKeys(baseline, new Set(), coverage([ran('c', [skippedTemplate])], true))).toEqual([key('c', aaa)]);
   });
 
   it('keys a failure without the numbers in its message', () => {
@@ -439,10 +531,45 @@ describe('canaries', () => {
     expect(evaluateCanaries(entries, 'c', outcomeOf([finding('report', 1)])).nowPassing).toHaveLength(1);
   });
 
+  it('judges no canary of a check that was skipped', () => {
+    const skipped: CheckOutcome = { findings: [], stats: {}, skipped: 'needs PHP' };
+    expect(evaluateCanaries(expect_({ kind: 'reports', lines: [1] }), 'c', skipped)).toEqual({ missed: [], stillPending: [], nowPassing: [] });
+  });
+
   it('treats failures on a pending or deliberately failing canary as expected', () => {
     expect(isExpectedCanaryFailure(expect_({ kind: 'noFailures', lines: 'all', pending: 'later' }), finding('failure', 2))).toBe(true);
     expect(isExpectedCanaryFailure(expect_({ kind: 'failures', lines: [1] }), finding('failure', 2))).toBe(false);
     expect(isExpectedCanaryFailure(expect_({ kind: 'failures', lines: [1] }), finding('failure', 1))).toBe(true);
+  });
+});
+
+describe('reviewFix line endings', () => {
+  const problemsOf = (source: string, fixed: string) => reviewFix(source, fixed, 'code').problems.map((problem) => problem.message);
+
+  it('fails a fix that adds a kind of line break the template did not have', () => {
+    expect(problemsOf('<p>\r\n</p>', '<p>\r\n</p>\n')).toEqual(['the fix adds \\n line breaks to a template that has none']);
+    expect(problemsOf('<p>\n</p>', '<p>\n</p>\r\n')).toEqual(['the fix adds \\r\\n line breaks to a template that has none']);
+    expect(problemsOf('<p>\n</p>', '<p>\n</p>\r')).toEqual(['the fix adds \\r line breaks to a template that has none']);
+  });
+
+  it('accepts a fix that only uses the line breaks the template already has', () => {
+    expect(problemsOf('<p>\r\n</p>\n', '<p>\r\n\r\n</p>\n\n')).toEqual([]);
+    expect(problemsOf('<p>\r\n</p>', '<p></p>')).toEqual([]);
+    expect(problemsOf('<p></p>', '<p>\n</p>')).toEqual([]);
+    expect(problemsOf('<p></p>', '<p>\r\n</p>')).toEqual(['the fix adds \\r\\n line breaks to a template that has none']);
+  });
+});
+
+describe('reviewFix opening tag indentation', () => {
+  const problemsOf = (source: string, fixed: string) => reviewFix(source, fixed, 'layout').problems.map((problem) => problem.message);
+
+  it('fails a fix that leaves attribute lines or the closing bracket less indented than the tag line', () => {
+    expect(problemsOf('  <a href="#" class="b">x</a>', '  <a\nhref="#"\nclass="b"\n>x</a>')).toEqual(['the fix leaves 3 more lines of opening tags less indented than the tag line']);
+  });
+
+  it('accepts attribute lines at or beyond the tag line, and lines that were already less indented', () => {
+    expect(problemsOf('  <a href="#" class="b">x</a>', '  <a\n    href="#"\n    class="b"\n  >x</a>')).toEqual([]);
+    expect(problemsOf('  <a\nhref="#"\nclass="b">x</a>', '  <a\nhref="#"\nclass="b"\n  >x</a>')).toEqual([]);
   });
 });
 
@@ -492,6 +619,11 @@ describe('reviewFix with class-tokens', () => {
     const source = '<p>a</p>\n<a  href="x"  id="y">t</a>';
     const [problem] = reviewFix(source, source.replace('t</a>', 'u</a>'), 'layout').problems;
     expect(problem?.offset).toBe(source.indexOf('t</a>'));
+  });
+
+  it('fails a fix that duplicates a class', () => {
+    expect(review('<p class="a b">x</p>', '<p class="a b a">x</p>', [fix('order', 'a b', 'a b a')]).problems).toEqual(['order duplicates classes: a']);
+    expect(review('<p class="a b b">x</p>', '<p class="a a b">x</p>', [fix('order', 'a b b', 'a a b')]).problems).toEqual(['order duplicates classes: a']);
   });
 
   it('fails a fix that changes Twig inside a class list', () => {

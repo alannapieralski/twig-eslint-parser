@@ -329,12 +329,36 @@ describe('markup and options', () => {
     expect(services.omittedAttributes[0]?.attribute).toMatchObject({ type: 'Attribute', key: { value: 'class' } });
   });
 
+  it('names the tag each left-out attribute belonged to, as the node in the tree', () => {
+    const code = '<ul><li class="a {{ b }}">x</li></ul><script class="{{ c }}"></script>';
+    const { result, services } = parse(code, { ignoreInterpolatedAttributes: ['class'] });
+    const ownerTags = [...collectNodes(result.ast.body, (node) => node.type === 'Tag' && node['name'] === 'li'), ...collectNodes(result.ast.body, (node) => node.type === 'ScriptTag')];
+    expect(services.omittedAttributes.map((attribute) => attribute.owner)).toEqual(ownerTags);
+    expect(services.omittedAttributes.every((attribute, index) => (attribute.owner as object) === ownerTags[index])).toBe(true);
+  });
+
   it('keeps interpolated attributes unless asked to leave them out', () => {
     expect(parse('<p class="a {{ b }}">x</p>').services.omittedAttributes).toEqual([]);
   });
 
   it('rejects invalid ignoreInterpolatedAttributes values loudly', () => {
     expect(() => parseForESLint('<p></p>', { ignoreInterpolatedAttributes: 'class' } as unknown as ParserOptions)).toThrow(/must be an array of attribute names/);
+  });
+
+  it.each([
+    ['a string', 'pre'],
+    ['an empty name', ['']],
+    ['a number', [1]],
+  ])('rejects rawContentTags given as %s loudly', (_, rawContentTags) => {
+    expect(() => parseForESLint('<p></p>', { rawContentTags } as unknown as ParserOptions)).toThrow(/parserOptions\.rawContentTags must be an array of element names/);
+  });
+
+  it('reads the content of rawContentTags as raw text, whatever the case of the names given', () => {
+    const code = '<x-code><p>a</p></x-code><p>b</p>';
+    const childTypesOf = (rawContentTags: readonly string[]) => ((collectNodes(parse(code, { rawContentTags }).result.ast.body, (node) => node['name'] === 'x-code')[0] as Node)['children'] as Node[]).map((child) => child.type);
+    expect(childTypesOf(['X-Code'])).toEqual(['RawContent']);
+    expect(childTypesOf(['x-code'])).toEqual(['RawContent']);
+    expect(childTypesOf([])).toEqual(['Tag']);
   });
 
   it('reports blocks it cannot convert instead of dropping them silently', () => {
@@ -354,6 +378,15 @@ describe('block structure services', () => {
       ['tag', 'else', '{% else %}', 0],
       ['tag', 'endif', '{% endif %}', -1],
     ]);
+  });
+});
+
+describe('large templates', () => {
+  it('groups 50,000 Twig blocks in linear time', () => {
+    const code = '<p>{{ a }}{% if b %}c{% endif %}{# d #}</p>\n'.repeat(12_500);
+    const { services } = parse(code);
+    expect(services.blocks).toHaveLength(50_000);
+    expect(services.blocks.at(-1)?.range[1]).toBe(code.length - '</p>\n'.length);
   });
 });
 
@@ -378,6 +411,30 @@ describe('block form tags in block structure services', () => {
       ['endblock', -1],
       ['endblock', -1],
     ]);
+  });
+
+  it('opens nesting for a block whose name is followed by an inline comment', () => {
+    const { services } = parse('{% block body # the page body\n%}x{% endblock %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['block', 1],
+      ['endblock', -1],
+    ]);
+  });
+
+  it('opens nesting for a trans with a body but not for Drupal\'s short trans with a string', () => {
+    const { services } = parse('{% trans \'Hello\' %}{% trans "Hi" with {\'context\': \'x\'} %}{% trans with {\'context\': \'x\'} %}y{% endtrans %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['trans', 0],
+      ['trans', 0],
+      ['trans', 1],
+      ['endtrans', -1],
+    ]);
+  });
+
+  it('treats the short block the same way when it is converted to JavaScript', () => {
+    const { services } = parse('{% block body # the page body\n%}x{% endblock %}{% block title page_title %}');
+    expect(services.unconvertedBlocks).toEqual([]);
+    expect(services.convertedBlockCount).toBe(1);
   });
 });
 
@@ -459,13 +516,6 @@ describe('Drupal attributes printed straight after a tag name', () => {
     expect(attributeSources(code, li)).toEqual(['{{ item.attributes }}', 'class="a"']);
     expect(classAttribute?.loc.start).toEqual({ line: 2, column: code.split('\n')[1]?.indexOf('class') });
     expect(sourceOf(code, li['close'] as Node)).toBe('</li>');
-  });
-
-  it('keeps the Twig branch ranges pointing at the original template', () => {
-    const code = '{% if a %}<div{{ attributes }}>x</div>{% else %}<p>y</p>{% endif %}';
-    const ast = parse(code).result.ast as unknown as { branchSegments: { start: number; end: number }[]; branchControlRanges: [number, number][] };
-    expect(ast.branchSegments.map(({ start, end }) => code.slice(start, end))).toEqual(['<div{{ attributes }}>x</div>', '<p>y</p>']);
-    expect(ast.branchControlRanges.map((range) => code.slice(...range))).toEqual(['{% if a %}', '{% else %}', '{% endif %}']);
   });
 
   it('leaves Twig that is part of a tag name alone', () => {
@@ -588,6 +638,22 @@ describe('Twig as part of the markup structure', () => {
     expect(sourceOf(code, element['close'] as Node)).toBe('</{{element}}>');
   });
 
+  it.each([
+    ['before markup', '</><p>x</p>'],
+    ['in text', 'Use a</> here<p>x</p>'],
+    ['at the end', '<p>x</p>a</>'],
+    ['spaced', '<p>x</p></ >'],
+  ])('drops an empty close tag at the top of the document (%s)', (_, code) => {
+    const { result } = parse(code);
+    const tags = collectNodes(result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => sourceOf(code, tag))).toEqual(['<p>x</p>']);
+  });
+
+  it('drops an empty close tag inside an element without closing it', () => {
+    const code = '<div>a</>b</div>';
+    expect(sourceOf(code, namedTag(code, 'div')['close'] as Node)).toBe('</div>');
+  });
+
   it('closes back to the open element when a never-closed element sits inside it', () => {
     const code = '<html><head><head-placeholder token="x"><title>t</title></head><body><p>x</p></body></html>';
     const head = namedTag(code, 'head');
@@ -595,6 +661,47 @@ describe('Twig as part of the markup structure', () => {
     expect(namedTag(code, 'head-placeholder')['close']).toBeUndefined();
     expect(sourceOf(code, namedTag(code, 'body')['close'] as Node)).toBe('</body>');
     expect(sourceOf(code, namedTag(code, 'html')['close'] as Node)).toBe('</html>');
+  });
+
+  it('ends elements that an ancestor\'s close tag closes where their content ends', () => {
+    const code = '<ul>\n  <li>a\n  <li>b\n</ul>';
+    const [outer, inner] = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag' && node['name'] === 'li');
+    expect([sourceOf(code, outer as Node), sourceOf(code, inner as Node)]).toEqual(['<li>a\n  <li>b\n', '<li>b\n']);
+    expect((outer as Node)['loc']).toEqual({ start: { line: 2, column: 2 }, end: { line: 4, column: 0 } });
+  });
+
+  it('ends elements left open at the end of the file where their content ends', () => {
+    const code = '<div>\n  <p>a <b>b</b>';
+    const tags = collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag');
+    expect(tags.map((tag) => sourceOf(code, tag))).toEqual([code, '<p>a <b>b</b>', '<b>b</b>']);
+  });
+
+  it('keeps an element left open without content as its open tag', () => {
+    const code = '<p>a</p><br-like>';
+    expect(sourceOf(code, namedTag(code, 'br-like'))).toBe('<br-like>');
+  });
+
+  it('parses 2,000 elements left open inside each other, closed back by one close tag', () => {
+    const code = `<ul>${'<li>x'.repeat(2_000)}</ul><p>after</p>`;
+    const [document] = parse(code).result.ast.body as unknown as Node[];
+    const [list, paragraph] = (document as Node)['children'] as Node[];
+    expect(sourceOf(code, (list as Node)['close'] as Node)).toBe('</ul>');
+    expect(sourceOf(code, list as Node)).toBe(code.slice(0, -'<p>after</p>'.length));
+    expect((paragraph as Node)['name']).toBe('p');
+  });
+
+  it('says so when markup is nested too deeply for the call stack', () => {
+    expect(() => parse('<div>'.repeat(50_000))).toThrow(/nested too deeply/);
+  });
+
+  it('drops 20,000 stray close tags inside deep nesting', () => {
+    const code = `${'<div>'.repeat(500)}${'</span>'.repeat(20_000)}${'</div>'.repeat(500)}`;
+    expect(collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag' && node['close'] !== undefined)).toHaveLength(500);
+  });
+
+  it('leaves out interpolated attributes from 2,000 nested elements', () => {
+    const code = `<ul>${'<li class="a {{ b }}">x'.repeat(2_000)}</ul>`;
+    expect(parse(code, { ignoreInterpolatedAttributes: ['class'] }).services.omittedAttributes).toHaveLength(2_000);
   });
 
   it('pairs a close tag that ends in a stray slash, as a browser does', () => {

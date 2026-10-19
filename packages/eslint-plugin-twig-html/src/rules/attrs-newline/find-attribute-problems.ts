@@ -29,17 +29,18 @@ function findReportedEnd(separator: AttributeSeparator, tag: TagNode, groups: re
 }
 
 export function findAttributeProblems(tag: TagNode, source: TagSource, options: Required<Options>): Problem[] {
-  const { text, lineBreak, blocks, isIgnored } = source;
-  const groups = groupAttributes(tag.attributes, blocks);
+  const { text, lineBreak, blocks, attributesOf, isIgnored } = source;
+  const attributes = attributesOf(tag);
+  const groups = groupAttributes(attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
 
-  const separators = describeSeparators(tag, groups, lineBreak, options.closeStyle);
+  const separators = describeSeparators(tag, groups, text, lineBreak, options.closeStyle);
   const wrongSeparators = separators.filter((separator) => !isSeparatorCorrect(text.slice(...separator.range), separator, lineBreak));
   const firstWrongSeparator = wrongSeparators[0];
   if (!firstWrongSeparator) return [];
 
   const areAllSeparatorsWhitespace = separators.every((separator) => whitespaceOnly.test(text.slice(...separator.range)));
-  const isFixable = areAllSeparatorsWhitespace && !isOpenTagSwallowingMarkup(tag, text);
+  const isFixable = areAllSeparatorsWhitespace && !isOpenTagSwallowingMarkup({ openEnd: tag.openEnd, attributes }, text);
 
   return [{
     range: [firstWrongSeparator.range[1], findReportedEnd(firstWrongSeparator, tag, groups)],

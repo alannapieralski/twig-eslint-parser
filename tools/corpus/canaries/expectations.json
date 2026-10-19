@@ -324,5 +324,15 @@
     { "check": "twig-html/quotes", "reports": [1, 3, 4, 5, 6, 7], "clean": [2], "output": "quotes.expected" },
     { "check": "parser/html-oracle", "failures": [3], "noFailures": [6, 7] },
     { "check": "parser/output-matches-source", "noFailures": [6, 7] }
+  ],
+  "indent-unknown-depth.html.twig": [
+    { "check": "twig-html/attrs-newline", "reports": [3, 6] },
+    { "check": "twig-html/config:recommended", "reports": [3, 6], "output": "indent-unknown-depth.expected" }
+  ],
+  "hidden-class-attributes.html.twig": [
+    { "check": "twig-html/attrs-newline [hidden-class]", "reports": [13], "clean": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    { "check": "twig-html/indent [hidden-class]", "clean": "all" },
+    { "check": "twig-html/multiline-html-element-content-newline [hidden-class]", "clean": "all" },
+    { "check": "twig-html/quotes [hidden-class]", "clean": "all" }
   ]
 }

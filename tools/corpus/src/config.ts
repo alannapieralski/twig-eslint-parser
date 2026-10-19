@@ -2,7 +2,7 @@ import { existsSync, globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { CorpusOptions, CorpusRoot, TailwindSettings, Template } from './types.js';
 
-export type CorpusConfig = { readonly roots: readonly CorpusRoot[]; readonly exclude: readonly string[] };
+export type CorpusConfig = { readonly roots: readonly CorpusRoot[]; readonly exclude: readonly string[]; readonly isFromEnvironment: boolean };
 
 const defaultExcludedDirectories = ['node_modules', 'vendor', '.git'];
 
@@ -36,13 +36,13 @@ function parseConfigFile(configPath: string): CorpusConfig {
   const raw: unknown = JSON.parse(readFileSync(configPath, 'utf8'));
   const { roots, exclude = defaultExcludedDirectories } = raw as { roots?: unknown; exclude?: string[] };
   if (!Array.isArray(roots) || roots.length === 0) throw new Error(`${configPath} must have a non-empty "roots" array.`);
-  return { roots: roots.map(parseRoot), exclude };
+  return { roots: roots.map(parseRoot), exclude, isFromEnvironment: false };
 }
 
 export function loadConfig(repositoryRoot: string, environment: NodeJS.ProcessEnv): CorpusConfig {
   const fromEnvironment = (environment['TWIG_CORPUS'] ?? '').split(':').filter((directory) => directory !== '');
   const config = fromEnvironment.length > 0
-    ? { roots: fromEnvironment.map(parseRoot), exclude: defaultExcludedDirectories }
+    ? { roots: fromEnvironment.map(parseRoot), exclude: defaultExcludedDirectories, isFromEnvironment: true }
     : readLocalConfig(repositoryRoot);
 
   const missing = config.roots.filter((root) => !existsSync(root.path));

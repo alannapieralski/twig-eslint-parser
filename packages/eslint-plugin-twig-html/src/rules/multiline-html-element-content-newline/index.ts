@@ -24,11 +24,11 @@ export const multilineHtmlElementContentNewline: Rule.RuleModule = {
 
   create(context) {
     const options = resolveOptions(context.options[0]);
-    const { blocks } = readTwigServices(context.sourceCode, context.id);
-    const source = createTagSource(context.sourceCode, blocks, [...whitespaceSensitiveElements, ...options.ignores]);
+    const services = readTwigServices(context.sourceCode, context.id);
+    const source = createTagSource(context.sourceCode, services, [...whitespaceSensitiveElements, ...options.ignores]);
 
     const checkTag = (tag: TagNode) => reportProblems(context, findContentProblems(tag, source, options));
 
-    return balancedTagListeners(checkTag, ['Tag'], blocks);
+    return balancedTagListeners(checkTag, ['Tag'], services.blocks);
   },
 };

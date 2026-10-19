@@ -1,7 +1,6 @@
 import { parse as parseCss, toPlainObject, type CssNodePlain } from 'css-tree';
 import { parse as parseMarkupTree, TokenTypes } from '../es-html-parser/index.js';
 import type { TemplateInfo } from '../es-html-parser/types/index.js';
-import type { BranchAnnotations } from './branches.js';
 import { cssVisitorKeys, htmlVisitorKeys } from './visitor-keys.js';
 
 type Position = { line: number; column: number };
@@ -9,7 +8,7 @@ type Node = { type: string; range: [number, number]; loc: { start: Position; end
 type CssNode = { type: string; range?: [number, number]; loc?: { start: Position & { offset: number }; end: Position & { offset: number } } | null; [key: string]: unknown };
 type Comment = { readonly type: string; readonly range: [number, number]; readonly loc: Node['loc']; readonly value: unknown };
 
-export type HtmlProgram = BranchAnnotations & {
+export type HtmlProgram = {
   readonly type: 'Program';
   readonly body: unknown[];
   readonly range: [number, number];
@@ -21,14 +20,18 @@ export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]
 
 const commentTokenTypes: ReadonlySet<string> = new Set([TokenTypes.CommentOpen, TokenTypes.CommentContent, TokenTypes.CommentClose]);
 
-function visit<Visited extends { type: string }>(node: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
-  const childKeys = keysByType[typeOf(node)] ?? [];
-  visitor(node);
-  for (const key of childKeys) {
-    const child = (node as Record<string, unknown>)[key];
-    for (const value of Array.isArray(child) ? child : [child]) {
-      if (typeof value === 'object' && value !== null && 'type' in value) visit(value as Visited, keysByType, typeOf, visitor);
-    }
+function isTyped(value: unknown): value is { type: string } {
+  return typeof value === 'object' && value !== null && 'type' in value;
+}
+
+function visit<Visited extends { type: string }>(root: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
+  const toVisit: Visited[] = [root];
+
+  for (let node = toVisit.pop(); node; node = toVisit.pop()) {
+    const childKeys = keysByType[typeOf(node)] ?? [];
+    visitor(node);
+    const children = childKeys.flatMap((key) => [(node as Record<string, unknown>)[key]].flat()).filter(isTyped) as Visited[];
+    for (const child of children.reverse()) toVisit.push(child);
   }
 }
 
@@ -50,7 +53,7 @@ function parseStylesheet(content: Node): CssNodePlain {
   return stylesheet;
 }
 
-export function parseHtmlProgram(text: string, options: HtmlParseOptions, branches: BranchAnnotations): HtmlProgram {
+export function parseHtmlProgram(text: string, options: HtmlParseOptions): HtmlProgram {
   const { ast, tokens } = parseMarkupTree(text, {
     templateInfos: [...options.templateInfos],
     ...(options.rawContentTags && { rawContentTags: [...options.rawContentTags] }),
@@ -68,7 +71,6 @@ export function parseHtmlProgram(text: string, options: HtmlParseOptions, branch
     loc: document.loc,
     tokens: tokens.filter((token) => !commentTokenTypes.has(token.type)),
     comments,
-    ...branches,
   };
 }
 
