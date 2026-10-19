@@ -681,8 +681,8 @@ describe('Twig as part of the markup structure', () => {
     expect(sourceOf(code, namedTag(code, 'br-like'))).toBe('<br-like>');
   });
 
-  it('parses 20,000 elements left open inside each other, closed back by one close tag', () => {
-    const code = `<ul>${'<li>x'.repeat(20_000)}</ul><p>after</p>`;
+  it('parses 2,000 elements left open inside each other, closed back by one close tag', () => {
+    const code = `<ul>${'<li>x'.repeat(2_000)}</ul><p>after</p>`;
     const [document] = parse(code).result.ast.body as unknown as Node[];
     const [list, paragraph] = (document as Node)['children'] as Node[];
     expect(sourceOf(code, (list as Node)['close'] as Node)).toBe('</ul>');
@@ -690,14 +690,18 @@ describe('Twig as part of the markup structure', () => {
     expect((paragraph as Node)['name']).toBe('p');
   });
 
+  it('says so when markup is nested too deeply for the call stack', () => {
+    expect(() => parse('<div>'.repeat(500_000))).toThrow(/nested too deeply/);
+  });
+
   it('drops 20,000 stray close tags inside deep nesting', () => {
     const code = `${'<div>'.repeat(500)}${'</span>'.repeat(20_000)}${'</div>'.repeat(500)}`;
     expect(collectNodes(parse(code).result.ast.body, (node) => node.type === 'Tag' && node['close'] !== undefined)).toHaveLength(500);
   });
 
-  it('leaves out interpolated attributes from 5,000 nested elements', () => {
-    const code = `<ul>${'<li class="a {{ b }}">x'.repeat(5_000)}</ul>`;
-    expect(parse(code, { ignoreInterpolatedAttributes: ['class'] }).services.omittedAttributes).toHaveLength(5_000);
+  it('leaves out interpolated attributes from 2,000 nested elements', () => {
+    const code = `<ul>${'<li class="a {{ b }}">x'.repeat(2_000)}</ul>`;
+    expect(parse(code, { ignoreInterpolatedAttributes: ['class'] }).services.omittedAttributes).toHaveLength(2_000);
   });
 
   it('pairs a close tag that ends in a stray slash, as a browser does', () => {

@@ -61,11 +61,22 @@ function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number
   return { statements, convertedBlockCount, ignoredBlockCount, unconvertedBlocks };
 }
 
+function parseMarkupWithinStack(code: string, blocks: readonly TwigBlock[], rawContentTags: ReadonlySet<string>) {
+  try {
+    return parseMarkup(code, blocks, rawContentTags);
+  } catch (error) {
+    if (error instanceof RangeError && /call stack/i.test(error.message)) {
+      throw new Error('twig-eslint-parser could not parse this file because its markup is nested too deeply.', { cause: error });
+    }
+    throw error;
+  }
+}
+
 export function parseForESLint(code: string, options: ParserOptions = {}): TwigParseResult {
   const { ignoreInterpolatedAttributes, rawContentTags } = parseTwigParserOptions(options);
   const tokens = tokenizeTwig(code);
   const blocks = groupTwigBlocks(tokens);
-  const markup = parseMarkup(code, blocks, rawContentTags);
+  const markup = parseMarkupWithinStack(code, blocks, rawContentTags);
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, ...twigServices } = convertTwigBlocks(blocks, createOffsetLocator(code));
   const visitorKeys = unionWith(markup.visitorKeys);
