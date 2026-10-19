@@ -44,6 +44,19 @@ still counts them, checks their quotes and leaves their values alone.
 | [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
+## Drupal's `html.html.twig`
+
+Drupal's `html.html.twig` has `<head-placeholder>` and similar elements that are never closed, so the parser reads everything after them as
+their children, and `indent` leaves those lines alone. To keep the three layout rules out of `<head>` in that case, ignore it in each:
+
+```js
+'twig-html/attrs-newline': ['warn', { ignoreInside: ['svg', 'head'] }],
+'twig-html/multiline-html-element-content-newline': ['warn', { ignores: ['head', 'pre', 'textarea', 'svg', 'a', 'span'] }],
+'twig-html/indent': ['warn', 2, { ignores: ['head'] }],
+```
+
+Each list replaces its default, so keep the entries you still want. `indent` still indents the `<head>` tags themselves.
+
 ## Upgrading from `multiline-tag-content`
 
 `multiline-tag-content` is now `multiline-html-element-content-newline`. Rename the rule in your config, and rename its `ignoreInside` option to
