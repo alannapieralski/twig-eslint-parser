@@ -1,4 +1,4 @@
-import type { TwigToken, TwigTokenType } from './tokens.js';
+import { isSignificant, type TwigToken, type TwigTokenType } from './tokens.js';
 
 export type TwigBlockKind = 'print' | 'tag' | 'comment';
 
@@ -17,17 +17,29 @@ export type TwigBlockSummary = {
   readonly depthChange: -1 | 0 | 1;
 };
 
-const tagDelimiterTypes: ReadonlySet<TwigTokenType> = new Set(['TAG_START', 'TAG_END', 'WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER']);
+function tokensAfterTagName(block: TwigBlock): TwigToken[] {
+  const content = block.tokens.slice(1, -1).filter(isSignificant);
+  return content.slice(1);
+}
 
-function isShortBlock(block: TwigBlock): boolean {
-  const contentTokens = block.tokens.filter((token) => !tagDelimiterTypes.has(token.type));
-  return block.tagName === 'block' && contentTokens.length > 2;
+export function isShortFormTag(block: TwigBlock): boolean {
+  const [firstAfterName, secondAfterName] = tokensAfterTagName(block);
+
+  switch (block.tagName) {
+    case 'set':
+      return block.tokens.some((token) => token.type === 'OPERATOR' && token.value === '=');
+    case 'block':
+      return secondAfterName !== undefined;
+    case 'trans':
+      return firstAfterName?.type === 'OPENING_QUOTE';
+    default:
+      return false;
+  }
 }
 
 function opensNesting(block: TwigBlock, closedTagNames: ReadonlySet<string>): boolean {
   if (block.tagName === undefined || !closedTagNames.has(block.tagName)) return false;
-  const isInlineSet = block.tagName === 'set' && block.tokens.some((token) => token.type === 'OPERATOR' && token.value === '=');
-  return !isInlineSet && !isShortBlock(block);
+  return !isShortFormTag(block);
 }
 
 function nestingDepthChange(block: TwigBlock, closedTagNames: ReadonlySet<string>): TwigBlockSummary['depthChange'] {

@@ -164,6 +164,13 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixedAlone('<div class="a">{% if x %}\n  a\n{% else %}\n  b\n{% endif %}</div>')).toBe('<div class="a">\n{% if x %}\n  a\n{% else %}\n  b\n{% endif %}\n</div>');
   });
 
+  it.each([
+    ['a short block', "<h1>{% block title 'Home' %}\n</h1>\n{% block body %}{% endblock %}\n"],
+    ['Drupal\'s short trans', "<p>{% trans 'Hello' %}\n</p>\n{% trans %}Bye{% endtrans %}\n"],
+  ])('lays out an element holding %s even when the file also has the long form', async (_name, code) => {
+    expect(await fixedAlone(code)).toBe(code.replace(/^<(h1|p)>/, '<$1>\n'));
+  });
+
   it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
     const code = `<${name}\n  class="a"\n  id="b"\n>this</${name}>`;
     expect((await lint(code)).messages).toEqual([]);

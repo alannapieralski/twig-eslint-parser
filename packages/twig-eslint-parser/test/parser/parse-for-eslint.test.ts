@@ -387,6 +387,30 @@ describe('block form tags in block structure services', () => {
       ['endblock', -1],
     ]);
   });
+
+  it('opens nesting for a block whose name is followed by an inline comment', () => {
+    const { services } = parse('{% block body # the page body\n%}x{% endblock %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['block', 1],
+      ['endblock', -1],
+    ]);
+  });
+
+  it('opens nesting for a trans with a body but not for Drupal\'s short trans with a string', () => {
+    const { services } = parse('{% trans \'Hello\' %}{% trans "Hi" with {\'context\': \'x\'} %}{% trans with {\'context\': \'x\'} %}y{% endtrans %}');
+    expect(services.blocks.map((block) => [block.tagName, block.depthChange])).toEqual([
+      ['trans', 0],
+      ['trans', 0],
+      ['trans', 1],
+      ['endtrans', -1],
+    ]);
+  });
+
+  it('treats the short block the same way when it is converted to JavaScript', () => {
+    const { services } = parse('{% block body # the page body\n%}x{% endblock %}{% block title page_title %}');
+    expect(services.unconvertedBlocks).toEqual([]);
+    expect(services.convertedBlockCount).toBe(1);
+  });
 });
 
 describe('readTwigServices', () => {
