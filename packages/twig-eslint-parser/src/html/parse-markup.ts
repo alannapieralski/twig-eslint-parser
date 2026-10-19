@@ -1,3 +1,4 @@
+import { drupalVoidElements } from '../drupal.js';
 import { createOffsetLocator } from '../source-text.js';
 import type { TwigBlock } from '../twig/blocks.js';
 import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './program.js';
@@ -18,6 +19,7 @@ export function parseMarkup(source: string, blocks: readonly TwigBlock[], rawCon
   const parseOptions = {
     templateInfos: templateInfosOf(source, blocks),
     rawContentTags: [...new Set([...rawTextElements, ...rawContentTags])],
+    voidElements: drupalVoidElements,
   };
   let result: HtmlParseResult;
   try {

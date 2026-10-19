@@ -45,7 +45,7 @@ const EMPTY_LOC: SourceLocation = {
   },
 };
 
-export function constructTree(tokens: AnyToken[]) {
+export function constructTree(tokens: AnyToken[], voidElements: readonly string[] = []) {
   const rootContext = {
     type: ConstructTreeContextTypes.TagContent,
     parentRef: undefined,
@@ -75,6 +75,7 @@ export function constructTree(tokens: AnyToken[]) {
     currentContext: rootContext,
     currentNode: rootNode,
     rootNode,
+    voidElements,
   };
 
   const positionOffset = state!.caretPosition;

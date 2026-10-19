@@ -1,3 +1,4 @@
+import { drupalVoidElements } from '../../src/drupal.js';
 import { branchSegmentsOf, isClosedInAnotherBranch } from './branches.js';
 import { TokenizerMode, type Token } from 'parse5';
 import { SAXParser, type EndTag, type StartTag } from 'parse5-sax-parser';
@@ -54,7 +55,7 @@ const tagModes = new Set<Mode>(['tag-name', 'before-attribute-name', 'attribute-
 const endDelimiterByKind = { print: '}}', tag: '%}' } as const;
 const rawTagInGap = /^\{%[-~]?\s*(?:verbatim|endverbatim|raw|endraw|line\s+\d+)\s*[-~]?%\}/;
 const rawTextElements = new Set(['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext']);
-const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'image', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'image', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr', ...drupalVoidElements]);
 const specialElements = new Set(`address applet area article aside base basefont bgsound blockquote body br button caption center col colgroup dd
   details dir div dl dt embed fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html iframe img input
   keygen li link listing main marquee menu meta nav noembed noframes noscript object ol p param plaintext pre script search section select source

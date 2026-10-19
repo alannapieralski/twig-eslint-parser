@@ -16,7 +16,7 @@ export type HtmlProgram = {
   readonly tokens: unknown[];
   readonly comments: Comment[];
 };
-export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]; readonly rawContentTags?: readonly string[] };
+export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]; readonly rawContentTags?: readonly string[]; readonly voidElements?: readonly string[] };
 
 const commentTokenTypes: ReadonlySet<string> = new Set([TokenTypes.CommentOpen, TokenTypes.CommentContent, TokenTypes.CommentClose]);
 
@@ -57,6 +57,7 @@ export function parseHtmlProgram(text: string, options: HtmlParseOptions): HtmlP
   const { ast, tokens } = parseMarkupTree(text, {
     templateInfos: [...options.templateInfos],
     ...(options.rawContentTags && { rawContentTags: [...options.rawContentTags] }),
+    ...(options.voidElements && { voidElements: [...options.voidElements] }),
   });
   const document = ast as unknown as Node;
   const comments: Comment[] = [];

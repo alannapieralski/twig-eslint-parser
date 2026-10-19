@@ -35,8 +35,8 @@ describe('twig-html/attrs-newline', () => {
   });
 
   it('lays out a tag after an element that is never closed, where twig-html/indent cannot know the depth', async () => {
-    expect(await fixed('<head>\n  <css-placeholder token="x">\n  <link rel="a" href="b">\n</head>\n')).toBe(
-      '<head>\n  <css-placeholder token="x">\n  <link\n    rel="a"\n    href="b"\n  >\n</head>\n',
+    expect(await fixed('<head>\n  <p>\n  <link rel="a" href="b">\n</head>\n')).toBe(
+      '<head>\n  <p>\n  <link\n    rel="a"\n    href="b"\n  >\n</head>\n',
     );
   });
 

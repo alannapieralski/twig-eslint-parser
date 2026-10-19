@@ -146,7 +146,7 @@ describe('compareWithHtmlOracle', () => {
   });
 
   it('reports an end tag that is not the close of its element', () => {
-    const source = '<html><head><head-placeholder token="x"></head><body></body></html>';
+    const source = '<html><head><span></head><body></body></html>';
     const { ast } = parseForESLint(source);
 
     expect(oracleIssues(source, plainHtml(source))).toEqual([]);

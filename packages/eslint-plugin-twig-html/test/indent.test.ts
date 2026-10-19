@@ -179,8 +179,18 @@ describe('twig-html/indent', () => {
     });
 
     it('indents the attributes of a tag after an element that is never closed from the tag line as written', async () => {
+      const code = '<head>\n  <p>\n      <meta charset="utf-8">\n   <link\nrel="a"\nhref="b"\n>\n</head>';
+      expect(await fixed(code)).toBe('<head>\n  <p>\n      <meta charset="utf-8">\n   <link\n     rel="a"\n     href="b"\n   >\n</head>');
+    });
+
+    it('indents the attributes of a tag after a Drupal placeholder element, which is never closed', async () => {
       const code = '<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\nrel="a"\nhref="b"\n>\n</head>';
-      expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\n     rel="a"\n     href="b"\n   >\n</head>');
+      expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n  <meta charset="utf-8">\n  <link\n    rel="a"\n    href="b"\n  >\n</head>');
+    });
+
+    it('indents a multi-line title after a Drupal placeholder element, leaving its raw text alone', async () => {
+      const code = '<head>\n<head-placeholder token="x">\n<title>\n  a\n</title>\n</head>';
+      expect(await fixed(code)).toBe('<head>\n  <head-placeholder token="x">\n  <title>\n  a\n</title>\n</head>');
     });
 
     it('indents the attributes of a tag inside an element split across Twig branches from the tag line as written', async () => {

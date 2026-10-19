@@ -67,6 +67,7 @@ function handleOpenTagEnd(
 
   if (
     SELF_CLOSING_TAGS.indexOf(tagName!) !== -1 ||
+    state.voidElements.includes(tagName!) ||
     state.currentNode.openEnd.value === "/>"
   ) {
     state.currentNode.selfClosing = true;

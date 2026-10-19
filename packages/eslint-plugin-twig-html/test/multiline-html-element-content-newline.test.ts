@@ -196,8 +196,8 @@ describe('twig-html/multiline-html-element-content-newline', () => {
   });
 
   it('keeps content it moves at the tag line indentation where twig-html/indent cannot know the depth', async () => {
-    const code = '<head>\n  <css-placeholder token="x">\n  <div\n    class="a"\n    id="b"\n  >{# note #}\n  </div>\n</head>';
-    expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n  <div\n    class="a"\n    id="b"\n  >\n  {# note #}\n  </div>\n</head>');
+    const code = '<head>\n  <p>\n  <div\n    class="a"\n    id="b"\n  >{# note #}\n  </div>\n</head>';
+    expect(await fixed(code)).toBe('<head>\n  <p>\n  <div\n    class="a"\n    id="b"\n  >\n  {# note #}\n  </div>\n</head>');
   });
 
   it('moves child tags onto their own lines, and twig-html/indent indents them', async () => {
