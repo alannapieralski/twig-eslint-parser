@@ -73,9 +73,10 @@ the templates you actually have: Drupal core, contributed modules and your theme
   time and fails if a fix does not resolve its own report, oscillates, or has not settled after 10
   passes. A fixable rule must say what its fix keeps: `'layout'` (only the whitespace between
   tokens changes; every attribute, text and Twig block stays byte for byte), `'class-tokens'` (class
-  lists are reordered or rewrapped, never lose a class or move a `[ ]` or `|` group delimiter) or
+  lists are reordered or rewrapped, never lose or duplicate a class or move a `[ ]` or `|` group delimiter) or
   `'code'` (it must still parse with the same Twig blocks). Every fix must also keep the template's
-  line endings. A rule that throws is a failure.
+  line endings: it may not add a kind of line break (`\n`, `\r\n` or `\r`) the template does not
+  already use. A rule that throws is a failure.
 - **Whole configs** (slow): the tailwind plugin's `recommended` and `recommended + drupal` configs
   run as a user gets them, `better-tailwindcss` autofixes included, under the `'class-tokens'` rule.
   Tailwind is found per root; a root without one falls back to the plugin's own Tailwind 4, and a

@@ -539,6 +539,23 @@ describe('canaries', () => {
   });
 });
 
+describe('reviewFix line endings', () => {
+  const problemsOf = (source: string, fixed: string) => reviewFix(source, fixed, 'code').problems.map((problem) => problem.message);
+
+  it('fails a fix that adds a kind of line break the template did not have', () => {
+    expect(problemsOf('<p>\r\n</p>', '<p>\r\n</p>\n')).toEqual(['the fix adds \\n line breaks to a template that has none']);
+    expect(problemsOf('<p>\n</p>', '<p>\n</p>\r\n')).toEqual(['the fix adds \\r\\n line breaks to a template that has none']);
+    expect(problemsOf('<p>\n</p>', '<p>\n</p>\r')).toEqual(['the fix adds \\r line breaks to a template that has none']);
+  });
+
+  it('accepts a fix that only uses the line breaks the template already has', () => {
+    expect(problemsOf('<p>\r\n</p>\n', '<p>\r\n\r\n</p>\n\n')).toEqual([]);
+    expect(problemsOf('<p>\r\n</p>', '<p></p>')).toEqual([]);
+    expect(problemsOf('<p></p>', '<p>\n</p>')).toEqual([]);
+    expect(problemsOf('<p></p>', '<p>\r\n</p>')).toEqual(['the fix adds \\r\\n line breaks to a template that has none']);
+  });
+});
+
 describe('reviewFix with class-tokens', () => {
   const review = (source: string, fixed: string, applied: AppliedFix[]) => {
     const result = reviewFix(source, fixed, 'class-tokens', applied, {
@@ -585,6 +602,11 @@ describe('reviewFix with class-tokens', () => {
     const source = '<p>a</p>\n<a  href="x"  id="y">t</a>';
     const [problem] = reviewFix(source, source.replace('t</a>', 'u</a>'), 'layout').problems;
     expect(problem?.offset).toBe(source.indexOf('t</a>'));
+  });
+
+  it('fails a fix that duplicates a class', () => {
+    expect(review('<p class="a b">x</p>', '<p class="a b a">x</p>', [fix('order', 'a b', 'a b a')]).problems).toEqual(['order duplicates classes: a']);
+    expect(review('<p class="a b b">x</p>', '<p class="a a b">x</p>', [fix('order', 'a b b', 'a a b')]).problems).toEqual(['order duplicates classes: a']);
   });
 
   it('fails a fix that changes Twig inside a class list', () => {
