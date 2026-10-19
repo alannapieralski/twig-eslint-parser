@@ -6,7 +6,7 @@ every node pointing at its exact position in the template.
 
 It is only a parser: it gives existing ESLint rules something to read and ships no rules of its
 own. Its first use is linting Tailwind CSS classes in Drupal themes with
-[`eslint-plugin-twig-tailwind`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/eslint-plugin-twig-tailwind), including classes that live inside Twig
+[`eslint-plugin-twig-tailwind`](https://github.com/alannapieralski/twig-lint/tree/main/packages/eslint-plugin-twig-tailwind), including classes that live inside Twig
 expressions:
 
 ```twig
@@ -60,7 +60,7 @@ export default [
 ```
 
 Add rules that read HTML nodes, string literals or call expressions. For Tailwind CSS, use
-[`eslint-plugin-twig-tailwind`](https://github.com/alannapieralski/twig-eslint-parser/tree/main/packages/eslint-plugin-twig-tailwind) instead of wiring this up by hand.
+[`eslint-plugin-twig-tailwind`](https://github.com/alannapieralski/twig-lint/tree/main/packages/eslint-plugin-twig-tailwind) instead of wiring this up by hand.
 
 ## Parser options
 
@@ -196,7 +196,7 @@ and both upstream test suites, on every pull request.
 
 ## Development
 
-Run these from the repository root; see the [root README](https://github.com/alannapieralski/twig-eslint-parser#readme) for the rest.
+Run these from the repository root; see the [root README](https://github.com/alannapieralski/twig-lint#readme) for the rest.
 
 | Command | What it does |
 |---|---|
