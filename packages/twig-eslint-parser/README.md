@@ -67,7 +67,7 @@ Add rules that read HTML nodes, string literals or call expressions. For Tailwin
 | Option | Default | Description |
 |---|---|---|
 | `ignoreInterpolatedAttributes` | `[]` | Attribute names (case-insensitive) to leave out of the HTML AST when their value contains Twig, such as `class="figure {{ classes }}"`. The recommended config of `eslint-plugin-twig-tailwind` sets `['class']`. |
-| `rawContentTags` | `[]` | Extra element names whose content is read as raw text, added to `textarea` and `title`. |
+| `rawContentTags` | `[]` | Extra element names (case-insensitive) whose content is read as raw text, added to `textarea` and `title`. |
 
 `ignoreInterpolatedAttributes` exists because linters such as better-tailwindcss read HTML
 attribute values as plain strings, so they would report `{{`, variable names and BEM fragments
@@ -83,8 +83,8 @@ silently.
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
-| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short form `{% block title page_title %}`. `twig-html/attrs-newline` uses it to keep attributes wrapped in a Twig block together. |
-| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range and the `Attribute` node itself. `twig-tailwind/no-interpolated-attributes` reports them, and `twig-html/quotes` still checks their quotes. |
+| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. `twig-html/attrs-newline` uses it to keep attributes wrapped in a Twig block together. |
+| `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range, the `Attribute` node itself and its `owner`, the `Tag`, `ScriptTag` or `StyleTag` node it was taken from. `twig-tailwind/no-interpolated-attributes` reports them, and every `twig-html` rule puts them back in their place among the owner's attributes. |
 | `strings` | Every Twig string literal, read from the lexer, with its range (quotes included), its `quote` (`'` or `"`) and whether it interpolates `#{ }`. It covers tags that never become JavaScript nodes, such as `{% extends %}` and `{% trans %}`, and blocks that fail to convert. `twig-html/quotes` uses it. |
 
 Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag missing its `>`, are reported by ESLint as a
@@ -137,15 +137,13 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   so rules see each fixed fragment on its own.
 - **Elements opened or closed in different Twig branches**, such as
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
-  as one document, so the element appears unclosed. The branches are recorded in
-  `Program.branchSegments` for rules that compare markup across them.
-- **Branch annotations are experimental.** `Program.branchSegments` and `Program.branchControlRanges`
-  split each `{% if %}` group (and the `for`, `block`, `macro`, `embed`, `autoescape`, `sandbox` and
-  `with` blocks that scope one) into its branches. No rule uses them yet: only the parser's own
-  output checks read them. Similar open source projects may have a better way to represent Twig
-  branches, so review how they do it before building a rule on this shape, which may change.
+  as one document, so the element appears unclosed. Rules can tell such elements apart with the
+  `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
+- **Very deep nesting.** The parser reads any depth, but ESLint's own scope analysis overflows the call stack
+  at a few thousand nested elements (for example thousands of `<li>` without their close tags), and ESLint
+  then reports a parsing error for the file.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig
@@ -186,8 +184,8 @@ Two upstream projects are kept as forks, each the same way: the upstream files b
 `third_party/<name>/pristine`, every change a separate patch with a
 [DEP-3](https://dep-team.pages.debian.net/deps/dep3/) header in `third_party/<name>/patches`, and
 `third_party/<name>/UPSTREAM.md` listing each change and the test that proves it.
-`npm run vendor:check` fails if the shipped copy ever differs from pristine plus patches; run it in
-CI.
+`npm run vendor:check` fails if the shipped copy ever differs from pristine plus patches. CI runs it,
+and both upstream test suites, on every pull request.
 
 - **twig-lexer 1.0.0** (`src/lexer`), a TypeScript port of Twig's lexer that has not been released
   since April 2024, brought up to Twig 3.28. See

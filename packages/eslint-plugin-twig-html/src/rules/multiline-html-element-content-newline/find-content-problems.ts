@@ -1,4 +1,5 @@
 import { elementsWithUnrenderedEdgeWhitespace } from '../../shared/html-elements.js';
+import { lineIndentationAt } from '../../shared/line-indentation.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
@@ -16,12 +17,12 @@ function isLineBreakCountInvalid(lineBreaks: number, allowEmptyLines: boolean): 
   return allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
 }
 
-function describeEdgeProblem(edge: ContentEdge, name: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
+function describeEdgeProblem(edge: ContentEdge, name: string, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
   const whitespace = source.text.slice(...edge.range);
   const lineBreaks = countLineBreaks(whitespace);
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
 
-  const keptIndentation = lineBreaks === 0 ? '' : indentationAfterLastLineBreak(whitespace);
+  const keptIndentation = lineBreaks === 0 ? tagIndentation : indentationAfterLastLineBreak(whitespace);
 
   return {
     range: edge.range,
@@ -35,7 +36,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const { close, name } = tag;
   if (!close || name === undefined || !plainElementName.test(name)) return [];
 
-  const { text, blocks, isIgnored } = source;
+  const { text, blocks, attributesOf, isIgnored } = source;
   const contentRange: Range = [tag.openEnd.range[1], close.range[0]];
   const isSingleLine = text.lastIndexOf('\n', close.range[0] - 1) < tag.openStart.range[0];
   if (isSingleLine) return [];
@@ -43,12 +44,13 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isEmpty = contentRange[0] === contentRange[1];
   if (options.ignoreWhenEmpty && isEmpty) return [];
 
-  const isUnsafeToCheck = isOpenTagSwallowingMarkup(tag, text) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
+  const isUnsafeToCheck = isOpenTagSwallowingMarkup({ openEnd: tag.openEnd, attributes: attributesOf(tag) }, text) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
   if (isUnsafeToCheck) return [];
 
   const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());
+  const tagIndentation = lineIndentationAt(text, tag.openStart.range[0]);
   const edges = findContentEdges(tag, close, text);
-  const problems = edges.map((edge) => describeEdgeProblem(edge, name, source, options, isFixable));
+  const problems = edges.map((edge) => describeEdgeProblem(edge, name, tagIndentation, source, options, isFixable));
 
   return problems.filter((problem) => problem !== undefined);
 }

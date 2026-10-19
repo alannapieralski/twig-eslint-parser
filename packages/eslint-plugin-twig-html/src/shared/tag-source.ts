@@ -1,23 +1,26 @@
 import type { SourceCode } from 'eslint';
-import type { TwigBlockSummary } from 'twig-eslint-parser';
+import type { TwigBlockSummary, TwigParserServices } from 'twig-eslint-parser';
 import { createIgnoredInsideCheck } from './ignored-inside.js';
 import { lineBreakUsedIn } from './line-ending.js';
+import { createAttributesOf, type AttributesOf } from './tag-attributes.js';
 import type { TagNode } from './tag-node.js';
 
 export type TagSource = {
   readonly text: string;
   readonly lineBreak: string;
   readonly blocks: readonly TwigBlockSummary[];
+  readonly attributesOf: AttributesOf;
   readonly isIgnored: (tag: TagNode) => boolean;
 };
 
-export function createTagSource(sourceCode: SourceCode, blocks: readonly TwigBlockSummary[], ignoreInside: readonly string[]): TagSource {
+export function createTagSource(sourceCode: SourceCode, services: TwigParserServices, ignoreInside: readonly string[]): TagSource {
   const { text } = sourceCode;
 
   return {
     text,
     lineBreak: lineBreakUsedIn(text),
-    blocks,
+    blocks: services.blocks,
+    attributesOf: createAttributesOf(services.omittedAttributes),
     isIgnored: createIgnoredInsideCheck(sourceCode, ignoreInside),
   };
 }

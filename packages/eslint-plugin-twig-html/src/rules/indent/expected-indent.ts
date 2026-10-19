@@ -25,29 +25,40 @@ function isInsideCloseTag(closeTag: Range, offset: number): boolean {
 function expectedInOpenTag(tag: OpenTag, offset: number, nestings: readonly Range[], options: ResolvedOptions): string {
   const { unit, closeBracket } = options;
   const tagDepth = depthAt(tag.start, nestings);
+  const tagIndentation = tag.lineIndentationAsWritten ?? repeatUnit(unit, tagDepth);
 
   if (offset === tag.closeBracketStart) {
     const bracketOffset = tag.isSelfClosing ? closeBracket.selfClosingTag : closeBracket.startTag;
-    return repeatUnit(unit, tagDepth + bracketOffset);
+    return `${tagIndentation}${repeatUnit(unit, bracketOffset)}`;
   }
 
-  const lineDepth = depthAt(offset, nestings);
+  const depthWithinTag = depthAt(offset, nestings) - tagDepth;
   const shouldAlign = options.alignAttributesVertically && tag.firstAttributeColumn !== undefined;
-  if (!shouldAlign) return repeatUnit(unit, lineDepth + options.attribute);
+  if (!shouldAlign) return `${tagIndentation}${repeatUnit(unit, depthWithinTag + options.attribute)}`;
 
   const alignment = ' '.repeat(tag.firstAttributeColumn ?? 0);
-  return `${repeatUnit(unit, tagDepth)}${alignment}${repeatUnit(unit, lineDepth - tagDepth)}`;
+  return `${tagIndentation}${alignment}${repeatUnit(unit, depthWithinTag)}`;
 }
 
-export function isSkipped(offset: number, layout: IndentLayout): boolean {
-  return layout.skipped.some((range) => contains(range, offset));
+function findOpenTagAt(offset: number, layout: IndentLayout): OpenTag | undefined {
+  return layout.openTags.find((tag) => isInsideOpenTag(tag, offset));
+}
+
+export function isChecked(offset: number, layout: IndentLayout): boolean {
+  const isSkipped = layout.skipped.some((range) => contains(range, offset));
+  if (isSkipped) return false;
+
+  const isDepthUnknown = layout.depthUnknown.some((range) => contains(range, offset));
+  if (!isDepthUnknown) return true;
+
+  return findOpenTagAt(offset, layout)?.lineIndentationAsWritten !== undefined;
 }
 
 export function expectedIndentAt(offset: number, layout: IndentLayout, options: ResolvedOptions): string {
   const { nestings } = layout;
   const { unit } = options;
 
-  const openTag = layout.openTags.find((tag) => isInsideOpenTag(tag, offset));
+  const openTag = findOpenTagAt(offset, layout);
   if (openTag) return expectedInOpenTag(openTag, offset, nestings, options);
 
   const closeTag = layout.closeTags.find((range) => isInsideCloseTag(range, offset));

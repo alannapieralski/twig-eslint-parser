@@ -3,7 +3,7 @@ import { createOffsetLocator } from '../../src/source-text.js';
 import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
 import { toSameLengthJavaScript } from '../../src/twig/javascript.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch } from './branches.js';
+import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch, type BranchSegment } from './branches.js';
 
 export type OutputIssue = { readonly check: string; readonly detail: string; readonly line?: number; readonly range?: readonly [number, number] };
 
@@ -148,7 +148,7 @@ function checkTreeShape(tags: readonly TagNode[], report: ReportIssue): void {
     children.forEach((child, index) => {
       const previous = children[index - 1];
       if (previous && child.range[0] < previous.range[1]) report('html: siblings in source order', `${child.type} after ${previous.type} in <${tag.name}>`, child.range);
-      if (tag.close && (child.range[0] < tag.range[0] || child.range[1] > tag.range[1])) report('html: child inside parent', `${child.type} outside <${tag.name}>`, child.range);
+      if (child.range[0] < tag.range[0] || child.range[1] > tag.range[1]) report('html: child inside parent', `${child.type} outside <${tag.name}>`, child.range);
     });
     const attributes = tag.attributes ?? [];
     attributes.forEach((attribute, index) => {
@@ -167,7 +167,7 @@ function checkLeavesDoNotOverlap(leaves: readonly Node[], code: string, report: 
   });
 }
 
-function describeUncoveredSource(code: string, [start, end]: Range, tags: readonly TagNode[], ast: unknown): OutputIssue[] {
+function describeUncoveredSource(code: string, [start, end]: Range, tags: readonly TagNode[], branchSegments: readonly BranchSegment[]): OutputIssue[] {
   const text = code.slice(start, end);
   const issues: OutputIssue[] = [];
   let remainder = text;
@@ -178,7 +178,7 @@ function describeUncoveredSource(code: string, [start, end]: Range, tags: readon
     const branchTags = tags.map((tag) => ({ name: tag.name, openStart: tag.range[0], isClosed: Boolean(tag.close || tag.selfClosing) }));
     const check = !isDroppedClose
       ? 'html: stray close tag'
-      : isClosedInAnotherBranch(ast, closeStart, name, branchTags) ? 'html: element opened and closed in different Twig branches' : 'html: close tag is read';
+      : isClosedInAnotherBranch(branchSegments, closeStart, name, branchTags) ? 'html: element opened and closed in different Twig branches' : 'html: close tag is read';
     issues.push({ check, detail: closeTag.slice(0, 60), range: [closeStart, closeStart + closeTag.length] });
     remainder = remainder.replace(closeTag, '');
   }
@@ -318,7 +318,7 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
   }
 
   const commentRanges: Range[] = allBlocks.filter((block) => block.kind === 'comment').map((block) => [block.start, block.end]);
-  const branchSegments = branchSegmentsOf(result.ast);
+  const branchSegments = branchSegmentsOf(code);
   const tags = collectTags(result.ast.body);
   walk(result.ast.body, (node) => {
     if (!isRangeInSource(node)) return report('html: range inside the source', `${node.type} ${JSON.stringify(node.range)}`);
@@ -360,7 +360,7 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
   checkLeavesDoNotOverlap(leaves, code, report);
   const coveredRanges = [...leaves.map((leaf) => leaf.range), ...equalsSignRanges(tags), ...services.omittedAttributes.map((attribute) => attribute.range), ...commentRanges, ...verbatimDelimiterRanges(code, allBlocks)];
   for (const range of findUncoveredSource(code, coveredRanges)) {
-    for (const issue of describeUncoveredSource(code, range, tags, result.ast)) report(issue.check, issue.detail, issue.range ?? range);
+    for (const issue of describeUncoveredSource(code, range, tags, branchSegments)) report(issue.check, issue.detail, issue.range ?? range);
   }
 
   return issues;

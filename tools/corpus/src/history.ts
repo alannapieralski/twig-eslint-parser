@@ -1,6 +1,7 @@
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { formatScore, scoreOf, templatesToScore } from './coverage.js';
+import { writeFileAtomically } from './files.js';
+import { hashText } from './hash.js';
 import type { CheckOutcome, Finding, FixChange, Template } from './types.js';
 
 type Severity = Finding['severity'] | 'fix';
@@ -29,19 +30,14 @@ export type CheckComparison = {
   readonly coverage?: CoverageComparison;
 };
 
-const severities: readonly Severity[] = ['report', 'failure', 'skipped', 'fix'];
 const maxExamples = 5;
 const strictChangeRatio = 0.2;
 const strictMinimumChange = 5;
 
-export const emptyHistory: RunHistory = { templates: {}, checks: {} };
+const emptyHistory: RunHistory = { templates: {}, checks: {} };
 
-export function templateKey(template: Template): string {
+function templateKey(template: Template): string {
   return `${template.root} :: ${template.relativePath}`;
-}
-
-export function hashText(text: string): string {
-  return createHash('sha256').update(text).digest('hex').slice(0, 12);
 }
 
 export function loadHistory(path: string): RunHistory {
@@ -54,7 +50,7 @@ export function loadHistory(path: string): RunHistory {
 }
 
 export function writeHistory(path: string, history: RunHistory): void {
-  writeFileSync(path, `${JSON.stringify(history)}\n`);
+  writeFileAtomically(path, `${JSON.stringify(history)}\n`);
 }
 
 function fingerprintOf(finding: Finding): string {
@@ -91,6 +87,7 @@ export function mergeHistory(previous: RunHistory, current: RunHistory): RunHist
       checks[id] = check;
       continue;
     }
+    if (check.skipped !== undefined) continue;
     const rerun = new Set(check.templates);
     const keptFingerprints = Object.fromEntries(Object.entries(earlier.fingerprints).filter(([template]) => !rerun.has(template)));
     const keptCoverage = Object.fromEntries(Object.entries(earlier.coverage ?? {}).filter(([template]) => !rerun.has(template)));

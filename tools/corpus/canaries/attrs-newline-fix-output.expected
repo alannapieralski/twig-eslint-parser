@@ -1,12 +1,12 @@
 <section>
 	<a
-href="/one"
-class="link"
-data-track="one"
->One</a>
+	href="/one"
+	class="link"
+	data-track="one"
+	>One</a>
 	<input
-type="checkbox"
-name="agree"
-{%- if checked %} checked{%- endif %}
->
+	type="checkbox"
+	name="agree"
+	{%- if checked %} checked{%- endif %}
+	>
 </section>

@@ -4,7 +4,7 @@ import { describeQuote } from './quote-style.js';
 import { requote } from './requote.js';
 import type { QuoteSource } from './types.js';
 
-export function findTwigStringProblems(string: TwigStringSummary, source: QuoteSource): Problem[] {
+function findStringProblem(string: TwigStringSummary, source: QuoteSource): Problem[] {
   const { text, twigQuote } = source;
   if (string.quote === twigQuote || string.isInterpolated) return [];
 
@@ -18,4 +18,8 @@ export function findTwigStringProblems(string: TwigStringSummary, source: QuoteS
     data: { expected: describeQuote(twigQuote) },
     edits: [{ range: string.range, text: `${twigQuote}${requoted}${twigQuote}` }],
   }];
+}
+
+export function findTwigStringProblems(strings: readonly TwigStringSummary[], source: QuoteSource): Problem[] {
+  return strings.flatMap((string) => findStringProblem(string, source));
 }

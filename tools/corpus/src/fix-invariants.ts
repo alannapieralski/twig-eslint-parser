@@ -12,13 +12,17 @@ type ClassList = { readonly delimiters: string; readonly groups: readonly (reado
 type Range = readonly [number, number];
 type Leaf = { readonly type: string; readonly range: Range; readonly isPreformatted: boolean };
 type ParsedTemplate = { readonly result: TwigParseResult } | { readonly error: string };
+type OpenTagRange = { readonly start: number; readonly attributesStart: number; readonly closeBracketStart: number };
 
 const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
 const cubeDelimiters = new Set(['[', ']', '|', '][']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const indentationAfterLineBreak = /(\n)[ \t]+/g;
+const leadingIndentation = /^[ \t]*/;
 const preformattedElements = new Set(['pre', 'textarea']);
 const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
+const lineBreak = /\r\n|\r|\n/g;
+const lineBreakNames: Readonly<Record<string, string>> = { '\r\n': '\\r\\n', '\r': '\\r', '\n': '\\n' };
 
 function parse(code: string): ParsedTemplate {
   try {
@@ -128,6 +132,17 @@ function sameSet(first: readonly string[], second: readonly string[]): boolean {
   return firstSet.size === secondSet.size && [...firstSet].every((item) => secondSet.has(item));
 }
 
+function countEach(items: readonly string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const item of items) counts.set(item, (counts.get(item) ?? 0) + 1);
+  return counts;
+}
+
+function findAddedDuplicates(before: readonly string[], after: readonly string[]): string[] {
+  const countsBefore = countEach(before);
+  return [...countEach(after)].filter(([className, count]) => count > 1 && count > (countsBefore.get(className) ?? 0)).map(([className]) => className);
+}
+
 function occursMoreThanOnce(source: string, className: string): boolean {
   const pattern = new RegExp(`(^|[\\s"'])${className.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[\\s"']|$)`, 'g');
   return (source.match(pattern) ?? []).length > 1;
@@ -143,6 +158,8 @@ function reviewClassListFix(fix: AppliedFix, source: string, roles: ClassRuleRol
   }
   const beforeClasses = before.groups.flat();
   const afterClasses = after.groups.flat();
+  const addedDuplicates = findAddedDuplicates(beforeClasses, afterClasses);
+  if (addedDuplicates.length > 0) return { problems: [`${rule} duplicates classes: ${addedDuplicates.join(' ')}`], notes: [] };
   const regroups = before.groups.some((group, index) => !sameSet(group, after.groups[index] ?? []));
   if (sameSet(beforeClasses, afterClasses)) {
     if (regroups) return { problems: [`${rule} moves classes between the groups that [ ] and | delimit`], notes: [] };
@@ -158,8 +175,65 @@ function reviewClassListFix(fix: AppliedFix, source: string, roles: ClassRuleRol
   return { problems: [`${rule} changes the classes: removes ${lost.join(' ') || 'none'}, adds ${gained.join(' ') || 'none'}`], notes: [] };
 }
 
-function usesOnlyWindowsLineEndings(code: string): boolean {
-  return code.includes('\r\n') && !/(^|[^\r])\n/.test(code);
+function lineBreakKindsIn(code: string): Set<string> {
+  return new Set(code.match(lineBreak));
+}
+
+function describeAddedLineBreaks(source: string, fixed: string): FixProblem[] {
+  const kindsInSource = lineBreakKindsIn(source);
+  const allowedKinds = kindsInSource.size === 0 ? new Set(['\n']) : kindsInSource;
+  const addedKinds = [...lineBreakKindsIn(fixed)].filter((kind) => !allowedKinds.has(kind));
+  return addedKinds.map((kind) => ({ message: `the fix adds ${lineBreakNames[kind]} line breaks to a template that has none` }));
+}
+
+function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new Set<object>()): OpenTagRange[] {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return tags;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    value.forEach((child) => collectOpenTags(child, tags, seen));
+    return tags;
+  }
+  const node = value as Record<string, { range?: Range } | unknown>;
+  const openStart = (node['openStart'] as { range?: Range } | undefined)?.range;
+  const openEnd = (node['openEnd'] as { range?: Range } | undefined)?.range;
+  if (openStart && openEnd) tags.push({ start: openStart[0], attributesStart: openStart[1], closeBracketStart: openEnd[0] });
+  for (const [key, child] of Object.entries(node)) {
+    if (!keysOutsideTheHtmlTree.has(key)) collectOpenTags(child, tags, seen);
+  }
+  return tags;
+}
+
+function indentationOfLineAt(code: string, offset: number): string {
+  const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
+  return code.slice(lineStart).match(leadingIndentation)?.[0] ?? '';
+}
+
+function lineStartsWithin(code: string, start: number, end: number): number[] {
+  const lineStarts: number[] = [];
+  for (let lineBreak = code.indexOf('\n', start); lineBreak !== -1 && lineBreak < end; lineBreak = code.indexOf('\n', lineBreak + 1)) {
+    lineStarts.push(lineBreak + 1);
+  }
+  return lineStarts;
+}
+
+function isBlankLineAt(code: string, lineStart: number): boolean {
+  const contentStart = lineStart + indentationOfLineAt(code, lineStart).length;
+  return /^(\r?\n|$)/.test(code.slice(contentStart, contentStart + 2));
+}
+
+function countUnderIndentedTagLines(code: string, result: TwigParseResult): number {
+  return collectOpenTags(result.ast.body).reduce((count, tag) => {
+    const tagIndentation = indentationOfLineAt(code, tag.start);
+    const tagLines = lineStartsWithin(code, tag.attributesStart, tag.closeBracketStart).filter((lineStart) => !isBlankLineAt(code, lineStart));
+    const underIndentedLines = tagLines.filter((lineStart) => indentationOfLineAt(code, lineStart).length < tagIndentation.length);
+    return count + underIndentedLines.length;
+  }, 0);
+}
+
+function describeUnderIndentedTagLines(source: string, before: TwigParseResult, fixed: string, after: TwigParseResult): FixProblem[] {
+  const added = countUnderIndentedTagLines(fixed, after) - countUnderIndentedTagLines(source, before);
+  if (added <= 0) return [];
+  return [{ message: `the fix leaves ${added} more lines of opening tags less indented than the tag line` }];
 }
 
 export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, applied: readonly AppliedFix[] = [], roles: ClassRuleRoles = {}): FixReview {
@@ -168,8 +242,7 @@ export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, app
   if ('error' in after) return { problems: [{ message: `the fixed template no longer parses: ${after.error}` }], notes: [] };
   if ('error' in before) return { problems: [], notes: [] };
 
-  const problems: FixProblem[] = [];
-  if (usesOnlyWindowsLineEndings(source) && !usesOnlyWindowsLineEndings(fixed)) problems.push({ message: 'the fix mixes bare \\n line breaks into a template that uses \\r\\n' });
+  const problems: FixProblem[] = [...describeAddedLineBreaks(source, fixed), ...describeUnderIndentedTagLines(source, before.result, fixed, after.result)];
   if (after.result.services.twig.unconvertedBlocks.length !== before.result.services.twig.unconvertedBlocks.length) {
     problems.push({ message: 'the fix changes how many Twig blocks the parser can read' });
   }
@@ -192,8 +265,4 @@ export function reviewFix(source: string, fixed: string, fixKeeps: FixKeeps, app
     problems: [...problems, ...firstOfEachMessage(reviews.flatMap(({ fix, review }) => review.problems.map((message) => located(fix, message))))],
     notes: firstOfEachMessage(reviews.flatMap(({ fix, review }) => review.notes.map((message) => located(fix, message)))),
   };
-}
-
-export function describeFixProblems(source: string, fixed: string, fixKeeps: FixKeeps, applied?: readonly AppliedFix[]): string[] {
-  return reviewFix(source, fixed, fixKeeps, applied).problems.map((problem) => problem.message);
 }

@@ -1,5 +1,5 @@
 import { blankPreservingLineBreaks } from '../source-text.js';
-import type { TwigBlock } from './blocks.js';
+import { isShortFormTag, type TwigBlock } from './blocks.js';
 import {
   expressionTags,
   includeKeywordsToBlank,
@@ -10,7 +10,7 @@ import {
   tagsLeftUnconverted,
   twoWordTests,
 } from './syntax.js';
-import type { TwigToken } from './tokens.js';
+import { isSignificant, type TwigToken } from './tokens.js';
 
 type ExpressionLayout = {
   readonly wrapInParentheses: boolean;
@@ -26,15 +26,9 @@ type Frame = {
   readonly openQuestionMarkIndices: number[];
 };
 
-const nonSignificantTypes = new Set(['WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER', 'INLINE_COMMENT']);
-
 function padTo(replacement: string, length: number): string {
   if (replacement.length > length) throw new Error(`Replacement "${replacement}" is longer than the ${length} characters it replaces.`);
   return replacement.padEnd(length, ' ');
-}
-
-function isSignificant(token: TwigToken): boolean {
-  return !nonSignificantTypes.has(token.type);
 }
 
 function isPunctuation(token: TwigToken | undefined, value: string): boolean {
@@ -42,7 +36,11 @@ function isPunctuation(token: TwigToken | undefined, value: string): boolean {
 }
 
 function findNextSignificant(tokens: readonly TwigToken[], afterIndex: number, toIndex: number): TwigToken | undefined {
-  return tokens.slice(afterIndex + 1, toIndex).find(isSignificant);
+  for (let index = afterIndex + 1; index < toIndex; index += 1) {
+    const token = tokens[index] as TwigToken;
+    if (isSignificant(token)) return token;
+  }
+  return undefined;
 }
 
 function findTopLevelIndices(tokens: readonly TwigToken[]): Set<number> {
@@ -118,9 +116,8 @@ function describeTagLayout(block: TwigBlock): ExpressionLayout | undefined {
     return { wrapInParentheses: true, expressionStartIndex: afterTagName, replacements };
   }
   if (tagName === 'block') {
+    if (!isShortFormTag(block)) return undefined;
     const blockNameIndex = block.tokens.findIndex((token, index) => index >= afterTagName && isSignificant(token));
-    const hasShortFormValue = block.tokens.some((token, index) => index > blockNameIndex && isSignificant(token) && token.type !== 'TAG_END');
-    if (!hasShortFormValue) return undefined;
     return { wrapInParentheses: true, expressionStartIndex: blockNameIndex + 1, replacements: new Map() };
   }
   if (tagName === 'for') {

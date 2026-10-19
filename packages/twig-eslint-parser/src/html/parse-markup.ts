@@ -1,12 +1,9 @@
 import { createOffsetLocator } from '../source-text.js';
-import { summariseTwigBlocks, type TwigBlock } from '../twig/blocks.js';
-import { annotateBranches } from './branches.js';
+import type { TwigBlock } from '../twig/blocks.js';
 import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './program.js';
 import { HtmlSyntaxError } from './syntax-error.js';
 import { templateInfosOf } from './template-infos.js';
 import { maskVerbatimDelimiters, restoreVerbatimDelimiters } from './verbatim-text.js';
-
-export type MarkupParserOptions = { readonly rawContentTags?: readonly string[] };
 
 type HtmlParseResult = { readonly ast: HtmlProgram; readonly visitorKeys: typeof visitorKeys };
 
@@ -16,15 +13,15 @@ function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: 
   return error instanceof SyntaxError && typeof (error as { pos?: unknown }).pos === 'number';
 }
 
-export function parseMarkup(source: string, blocks: readonly TwigBlock[], options: MarkupParserOptions): HtmlParseResult {
+export function parseMarkup(source: string, blocks: readonly TwigBlock[], rawContentTags: ReadonlySet<string>): HtmlParseResult {
   const verbatim = maskVerbatimDelimiters(source, blocks);
   const parseOptions = {
     templateInfos: templateInfosOf(source, blocks),
-    rawContentTags: [...rawTextElements, ...(options.rawContentTags ?? [])],
+    rawContentTags: [...new Set([...rawTextElements, ...rawContentTags])],
   };
   let result: HtmlParseResult;
   try {
-    result = { ast: parseHtmlProgram(verbatim.text, parseOptions, annotateBranches(summariseTwigBlocks(blocks))), visitorKeys };
+    result = { ast: parseHtmlProgram(verbatim.text, parseOptions), visitorKeys };
   } catch (error) {
     if (!isPositionedSyntaxError(error)) throw error;
     const position = createOffsetLocator(source)(error.pos);

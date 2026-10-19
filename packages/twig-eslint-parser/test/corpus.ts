@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Check, CheckOutcome, Finding, PackageCorpus, Template, TemplateCoverage } from '../../../tools/corpus/src/index.js';
+import { evenlySpaced, type Check, type CheckOutcome, type Finding, type PackageCorpus, type Template, type TemplateCoverage } from '../../../tools/corpus/src/index.js';
 import { parseForESLint, type UnconvertedTwigBlock } from '../src/index.js';
 import { createOffsetLocator } from '../src/source-text.js';
 import { findParityMismatches, type Golden } from './lexer/parity.js';
@@ -247,12 +247,6 @@ const lineCoverage: Check = {
 
 const mutationSampleSize = 400;
 const maxMissesListedPerMutator = 10;
-
-function evenlySpaced<Item>(items: readonly Item[], count: number): Item[] {
-  if (items.length <= count) return [...items];
-  const step = items.length / count;
-  return Array.from({ length: count }, (_, index) => items[Math.floor(index * step)] as Item);
-}
 
 function percentage(part: number, whole: number): number {
   return whole === 0 ? 0 : Math.round((part / whole) * 100);

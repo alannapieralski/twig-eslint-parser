@@ -11,9 +11,9 @@ export { findInterpolatedStrings } from './twig/strings.js';
 export type { TwigQuote, TwigStringSummary } from './twig/strings.js';
 export type { ParserOptions, TwigParseResult, TwigParserServices, UnconvertedTwigBlock } from './parse-for-eslint.js';
 export { containsTwig, isAttributeNode } from './attributes.js';
-export type { AttributeNode, OmittedAttribute } from './attributes.js';
+export type { AttributeNode, AttributeOwner, OmittedAttribute } from './attributes.js';
 export type { TwigBlockSummary } from './twig/blocks.js';
-export { drupalAttributeMethods, drupalAttributeObjectFunction, drupalClassMethods, isDrupalAttributeListPrint } from './drupal.js';
+export { drupalClassMethods } from './drupal.js';
 export { HtmlSyntaxError } from './html/syntax-error.js';
 export { TwigSyntaxError } from './twig/tokens.js';
 

@@ -1,4 +1,4 @@
-import { isClosedInAnotherBranch } from './branches.js';
+import { branchSegmentsOf, isClosedInAnotherBranch } from './branches.js';
 import { TokenizerMode, type Token } from 'parse5';
 import { SAXParser, type EndTag, type StartTag } from 'parse5-sax-parser';
 import type { Golden } from '../lexer/parity.js';
@@ -652,10 +652,11 @@ export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigR
   }
 
   const ourCloseStarts = new Set(ours.flatMap((tag) => (tag.close ? [tag.close[0]] : [])));
+  const branchSegments = branchSegmentsOf(source);
   for (const endTag of oracle.endTags) {
     if (ourCloseStarts.has(endTag.range[0])) continue;
     const branchTags = ours.map((tag) => ({ name: tag.name, openStart: tag.openStart[0], isClosed: tag.close !== undefined }));
-    const isBranchPaired = isClosedInAnotherBranch(ast, endTag.range[0], endTag.name, branchTags);
+    const isBranchPaired = isClosedInAnotherBranch(branchSegments, endTag.range[0], endTag.name, branchTags);
     const check = isBranchPaired ? branchPairedEndTagCheck.replace('html-oracle: ', '') : endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
     report(check, endTag.range, 'end tag is not the close of any element');
   }

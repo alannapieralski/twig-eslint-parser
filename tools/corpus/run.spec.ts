@@ -1,9 +1,9 @@
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findingKey, findStaleBaselineKeys, keepBaselineKeysOutsideTheRun, loadBaseline, writeBaseline } from './src/baseline.js';
+import { baselineCoverageOf, findingKey, findStaleBaselineKeys, loadBaseline, updateBaselineKeys, writeBaseline } from './src/baseline.js';
 import { canaryRoot, discoverCanaries, evaluateCanaries, isExpectedCanaryFailure, loadCanaryExpectations } from './src/canaries.js';
 import { discoverTemplates, loadConfig } from './src/config.js';
-import { compareRuns, describeStrictViolations, hashText, loadHistory, mergeHistory, recordRun, renderComparison, writeHistory } from './src/history.js';
+import { compareRuns, describeStrictViolations, loadHistory, mergeHistory, recordRun, renderComparison, writeHistory } from './src/history.js';
 import { createProgressReporter, stderrOutput } from './src/progress.js';
 import { buildCheckReport, buildCheckReports, renderCanaries, writeReport, type CheckResult } from './src/report.js';
 import { selectChecks } from './src/select.js';
@@ -33,14 +33,17 @@ describe.skipIf(!options.list)('corpus checks', () => {
 
 describe.skipIf(options.list)('corpus', () => {
   const baseline = loadBaseline(baselinePath);
+  const previousRun = loadHistory(historyPath);
   const canaryExpectations = loadCanaryExpectations();
   const canaryNotes: string[] = [];
   const results: CheckResult[] = [];
   let templates: Template[] = [];
   let roots = new Map<string, CorpusRoot>();
+  let isFullRun = false;
 
   beforeAll(() => {
     const config = loadConfig(repositoryRoot, process.env);
+    isFullRun = !config.isFromEnvironment && !options.quick && options.roots === undefined;
     roots = new Map([...config.roots, { path: canaryRoot, quick: true }].map((root) => [root.path, root]));
     templates = [...discoverTemplates(config, options), ...discoverCanaries()];
     expect(templates.length, 'no templates found in the corpus roots').toBeGreaterThan(0);
@@ -55,7 +58,7 @@ describe.skipIf(options.list)('corpus', () => {
     const label = `${position} ${check.id}`;
     reporter.phase(`${label}: starting`);
     const started = performance.now();
-    const outcome = await check.run(templates, { sampleSize: options.sample, roots, progress: reporter.track(label, templates.length) });
+    const outcome = await check.run(templates, { roots, progress: reporter.track(label, templates.length) });
     const result: CheckResult = { package: packageName, check, outcome, seconds: (performance.now() - started) / 1000 };
     results.push(result);
     const report = buildCheckReport(result, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
@@ -74,21 +77,19 @@ describe.skipIf(options.list)('corpus', () => {
   afterAll(() => {
     const rootCount = new Set(templates.map((template) => template.root)).size;
     const reports = buildCheckReports(results, baseline, (finding) => isExpectedCanaryFailure(canaryExpectations, finding));
-    const checksRun = new Set(results.map(({ check }) => check.id));
-    const templateHashesRun = new Set(templates.map((template) => hashText(template.source)));
-    const recordedKeys = results.flatMap(({ outcome }) => outcome.findings.filter((finding) => finding.severity === 'failure').map(findingKey));
-    const isFullRun = !options.quick && options.roots === undefined;
-    const staleBaselineKeys = options.updateBaseline ? [] : findStaleBaselineKeys(baseline, checksRun, new Set(recordedKeys), templateHashesRun, isFullRun);
+    const checkRuns = results.map(({ check, outcome }) => ({ id: check.id, outcome }));
+    const baselineCoverage = baselineCoverageOf(checkRuns, templates, isFullRun);
+    const recordedKeys = new Set(results.flatMap(({ outcome }) => outcome.findings.filter((finding) => finding.severity === 'failure').map(findingKey)));
+    const staleBaselineKeys = options.updateBaseline ? [] : findStaleBaselineKeys(baseline, recordedKeys, baselineCoverage);
 
-    const previousRun = loadHistory(historyPath);
-    const currentRun = recordRun(templates, results.map(({ check, outcome }) => ({ id: check.id, outcome })));
+    const currentRun = recordRun(templates, checkRuns);
     const comparisons = compareRuns(previousRun, currentRun);
     const strictViolations = options.strict ? describeStrictViolations(comparisons) : undefined;
     const comparison = renderCanaries(canaryNotes) + renderComparison(comparisons, strictViolations);
 
     console.info(writeReport(reportDirectory, { results, reports, baseline, templateCount: templates.length, rootCount, sampleSize: options.sample, staleBaselineKeys, comparison, isExpectedFailure: (finding) => isExpectedCanaryFailure(canaryExpectations, finding) }));
     if (options.updateBaseline) {
-      writeBaseline(baselinePath, [...keepBaselineKeysOutsideTheRun(baseline, checksRun, templateHashesRun), ...recordedKeys]);
+      writeBaseline(baselinePath, updateBaselineKeys(baseline, recordedKeys, baselineCoverage));
       console.info('Baseline updated: corpus.baseline.json');
     }
     if (strictViolations && strictViolations.length > 0) {

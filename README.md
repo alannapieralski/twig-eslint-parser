@@ -73,9 +73,11 @@ the templates you actually have: Drupal core, contributed modules and your theme
   time and fails if a fix does not resolve its own report, oscillates, or has not settled after 10
   passes. A fixable rule must say what its fix keeps: `'layout'` (only the whitespace between
   tokens changes; every attribute, text and Twig block stays byte for byte), `'class-tokens'` (class
-  lists are reordered or rewrapped, never lose a class or move a `[ ]` or `|` group delimiter) or
+  lists are reordered or rewrapped, never lose or duplicate a class or move a `[ ]` or `|` group delimiter) or
   `'code'` (it must still parse with the same Twig blocks). Every fix must also keep the template's
-  line endings. A rule that throws is a failure.
+  line endings: it may not add a kind of line break (`\n`, `\r\n` or `\r`) the template does not
+  already use, and may not leave more lines of an opening tag (attribute lines and a `>` on its own
+  line) less indented than the tag's own line. A rule that throws is a failure.
 - **Whole configs** (slow): the tailwind plugin's `recommended` and `recommended + drupal` configs
   run as a user gets them, `better-tailwindcss` autofixes included, under the `'class-tokens'` rule.
   Tailwind is found per root; a root without one falls back to the plugin's own Tailwind 4, and a
@@ -107,13 +109,17 @@ Everything is written to `corpus-report/` (git-ignored, because it holds local p
 Each run is compared with the previous one, kept in `corpus.previous-run.json` (git-ignored), but
 only on templates whose content has not changed, so a run on a few roots compares fairly. A
 `--strict` run that fails does not replace the previous run, so the change stays visible until a run
-without `--strict` records it.
+without `--strict` records it. A check that is skipped, such as `lexer-parity` without PHP, keeps its
+previous results, and its canaries are not judged.
 
 The run fails for failures that are new and for canaries that miss. Failures you accept, such as a
 template that is not valid HTML, are recorded with `npm run corpus -- --update-baseline` in
 `corpus.baseline.json` (git-ignored). Entries are keyed by a hash of the template's content and the
-message without its numbers, so they survive a template moving. A partial run only updates the
-entries for the templates it covered, and the summary lists entries that no longer happen.
+message without its numbers, so they survive a template moving. The summary lists the entries that
+no longer happen, and `--update-baseline` drops exactly those. A run with `--quick`, `--roots` or
+`TWIG_CORPUS` is partial: it only judges the templates it covered. A full run also drops the entries of
+templates that were edited or deleted. Entries of a skipped check, or of a template a check skipped,
+are always kept.
 
 ### Adding a rule
 

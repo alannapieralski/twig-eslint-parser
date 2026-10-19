@@ -91,9 +91,9 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect((await lint('<p\n  class="a"\n  id="b"\n>\n      text\n</p>')).messages).toEqual([]);
   });
 
-  it('only breaks lines, leaving indentation to twig-html/indent', async () => {
+  it('starts each new line at the indentation of the tag line, leaving the step to twig-html/indent', async () => {
     const code = '{% if x %}\n    <p\n      class="a"\n      id="b"\n    >{{ text }}</p>\n{% endif %}';
-    expect(await fixedAlone(code)).toBe('{% if x %}\n    <p\n      class="a"\n      id="b"\n    >\n{{ text }}\n</p>\n{% endif %}');
+    expect(await fixedAlone(code)).toBe('{% if x %}\n    <p\n      class="a"\n      id="b"\n    >\n    {{ text }}\n    </p>\n{% endif %}');
     expect(await fixed(code)).toBe('{% if x %}\n  <p\n    class="a"\n    id="b"\n  >\n    {{ text }}\n  </p>\n{% endif %}');
   });
 
@@ -164,6 +164,13 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixedAlone('<div class="a">{% if x %}\n  a\n{% else %}\n  b\n{% endif %}</div>')).toBe('<div class="a">\n{% if x %}\n  a\n{% else %}\n  b\n{% endif %}\n</div>');
   });
 
+  it.each([
+    ['a short block', "<h1>{% block title 'Home' %}\n</h1>\n{% block body %}{% endblock %}\n"],
+    ['Drupal\'s short trans', "<p>{% trans 'Hello' %}\n</p>\n{% trans %}Bye{% endtrans %}\n"],
+  ])('lays out an element holding %s even when the file also has the long form', async (_name, code) => {
+    expect(await fixedAlone(code)).toBe(code.replace(/^<(h1|p)>/, '<$1>\n'));
+  });
+
   it.each(['{{ element }}', 'h{{ level }}'])('never touches <%s>, whose name Twig may render as an inline element', async (name) => {
     const code = `<${name}\n  class="a"\n  id="b"\n>this</${name}>`;
     expect((await lint(code)).messages).toEqual([]);
@@ -182,6 +189,11 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     const code = '<svg\n  class="icon"\n  viewBox="0 0 1 1"\n><path d="M0 0"/></svg>';
     expect(await fixed(code)).toBe(code);
     expect(await fixed(code, { ignores: ['pre', 'textarea'] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 1 1"\n>\n  <path d="M0 0"/>\n</svg>');
+  });
+
+  it('keeps content it moves at the tag line indentation where twig-html/indent cannot know the depth', async () => {
+    const code = '<head>\n  <css-placeholder token="x">\n  <div\n    class="a"\n    id="b"\n  >{# note #}\n  </div>\n</head>';
+    expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n  <div\n    class="a"\n    id="b"\n  >\n  {# note #}\n  </div>\n</head>');
   });
 
   it('moves child tags onto their own lines, and twig-html/indent indents them', async () => {

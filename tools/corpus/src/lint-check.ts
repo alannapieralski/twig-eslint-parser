@@ -77,7 +77,6 @@ async function inspectTemplate(template: Template, target: LintTarget, linter: E
   const review = reviewFix(template.source, fixed, target.fixKeeps, run.applied, target.classRuleRoles);
   const problems: FixProblem[] = [
     ...(outcomeProblem ? [{ message: outcomeProblem }] : []),
-    ...(fixed === template.source && !outcomeProblem ? [{ message: 'the rule offers fixes but fixing leaves the template unchanged' }] : []),
     ...review.problems,
   ];
 

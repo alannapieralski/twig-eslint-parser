@@ -8,8 +8,9 @@ Enabled as a warning in `configs.recommended`. Fixable.
 
 A tag with more than 1 attribute is laid out with one attribute per line, and the closing `>` or
 `/>` goes on its own line. The rule only places the line breaks: it accepts any indentation on those
-lines, and its fix inserts a bare line break. [`twig-html/indent`](indent.md) indents the new lines
-on the next fix pass, one step in from the tag with `>` in line with it.
+lines, and each line its fix creates starts at the indentation of the tag's line.
+[`twig-html/indent`](indent.md) then indents the new lines on the next fix pass, one step in from the
+tag with `>` in line with it. Keep `indent` on with this rule, as `configs.recommended` does.
 
 Examples of **incorrect** code:
 
@@ -53,7 +54,7 @@ are kept as they are. Tags inside an inline `<svg>` are left alone (see `ignoreI
 The line breaks it inserts match the file: a template with Windows line endings (`\r\n`) keeps
 them.
 
-The fix only changes the whitespace between attributes, and never indents. If anything else sits between two
+The fix only changes the whitespace between attributes, and never adds an indent step of its own. If anything else sits between two
 attributes, such as a Twig comment, the rule reports the tag but does not fix it. The same goes for an open tag that is missing its
 `>`, where the parser reads the markup after it as attributes (including when it ends up inside an unquoted value): splitting those "attributes" onto
 separate lines would break the next tag.

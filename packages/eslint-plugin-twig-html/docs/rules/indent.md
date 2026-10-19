@@ -84,9 +84,16 @@ These lines keep whatever indentation the author wrote:
 
   The parser cannot build one tree for both branches, so the lines inside that element, and the
   Twig tags that wrap it, are not checked. Lines before and after them are.
+- A tag whose own markup a Twig branch splits, such as one ending in `>` in one branch and `/>` in
+  another. The whole tag is left alone, its first line included.
 - YAML front matter between `---` lines at the top of the file, as in Drupal help topics.
 - Everything after an open tag that has no `>`, and the content of an element that is never
   closed, because the parser cannot tell where they end.
+
+Inside an element split across branches or never closed, the depth of a tag is unknown but its own
+line is not. The attribute lines and closing `>` of a tag there are still checked, measured from
+the indentation its line already has, so a tag that `attrs-newline` splits is laid out like any
+other.
 
 ### Files it does not check
 
@@ -97,8 +104,9 @@ nesting, and guessing would move every later line.
 ### Working with other rules
 
 `twig-html/attrs-newline` and `twig-html/multiline-html-element-content-newline` only insert line
-breaks. This rule indents the lines they create, on the next fix pass. Keep it on with them,
-otherwise their fixes leave the new lines at column 0.
+breaks, starting each new line at the indentation of the tag's line. This rule indents those lines
+one step further where needed, on the next fix pass. Keep it on with them, otherwise new attribute
+lines and moved content stay at the tag's own indentation.
 
 ## Options
 

@@ -4,15 +4,23 @@ Description: Let a close tag close back to a matching open ancestor
  swallowed every later close tag and nested the rest of the document inside
  it. Following HTML's "any other end tag" step, a close tag that matches an
  open ancestor now leaves the elements in between unclosed and closes the
- ancestor. A close tag that matches nothing open is still dropped.
+ ancestor. A close tag that matches nothing open is still dropped. The
+ ancestor is found with one walk up the open elements, each element's name
+ key is computed once, and every element in between is closed in the same
+ step, so closing back over thousands of open elements stays linear.
+ An element left unclosed this way, or open at the end of the input, used to
+ keep the range of its open tag while its children ran past it, so ESLint's
+ getNodeByRangeIndex skipped the whole subtree and getText returned only the
+ open tag. Such an element now ends where its last child ends; one with no
+ children still ends at its open tag.
 Author: Numiko
 Origin: vendor
 Forwarded: no
-Test: test/parser/parse-for-eslint.test.ts ("Twig as part of the markup structure"); upstream snapshot "Custom tag raw content" updated: </markdown> now closes <markdown>
-Last-Update: 2026-10-14
+Test: test/parser/parse-for-eslint.test.ts ("Twig as part of the markup structure", "parses 20,000 elements left open inside each other, closed back by one close tag", "drops 20,000 stray close tags inside deep nesting", "ends elements that an ancestor's close tag closes where their content ends", "ends elements left open at the end of the file where their content ends"); the "child inside parent" output check covers unclosed elements; upstream snapshot "Custom tag raw content" updated: </markdown> now closes <markdown> and the element left open inside it ends with its text
+Last-Update: 2026-10-19
 ---
 diff --git a/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json b/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
-index 2961559..8d83be7 100644
+index 2961559..dabb3e3 100644
 --- a/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
 +++ b/src/__tests__/tree-constructor/__file_snapshots__/construct-tree-Custom-tag-raw-content-0.json
 @@ -9,7 +9,7 @@
@@ -35,6 +43,26 @@ index 2961559..8d83be7 100644
          }
        },
        "attributes": [
+@@ -138,7 +138,7 @@
+           "type": "Tag",
+           "range": [
+             60,
+-            70
++            260
+           ],
+           "loc": {
+             "start": {
+@@ -146,8 +146,8 @@
+               "column": 9
+             },
+             "end": {
+-              "line": 5,
+-              "column": 19
++              "line": 17,
++              "column": 0
+             }
+           },
+           "attributes": [],
 @@ -249,7 +249,25 @@
            19
          ]
@@ -62,42 +90,124 @@ index 2961559..8d83be7 100644
      }
    ],
    "loc": {
+diff --git a/src/tree-constructor/construct-tree.ts b/src/tree-constructor/construct-tree.ts
+index 78adfab..d617db6 100644
+--- a/src/tree-constructor/construct-tree.ts
++++ b/src/tree-constructor/construct-tree.ts
+@@ -1,7 +1,7 @@
+ import { ConstructTreeContextTypes, NodeTypes } from "../constants/index.js";
+-import { ConstructTreeState, DocumentNode, Range, AnyToken } from "../types/index.js";
++import { AnyContextualNode, ConstructTreeState, DocumentNode, Range, AnyToken } from "../types/index.js";
+ import { SourceLocation } from "../types/source-location.js";
+-import { first, last } from "../utils/index.js";
++import { extendNodeEndToLastChild, first, last } from "../utils/index.js";
+ import { cloneLocation } from "../utils/clone-location.js";
+ import {
+   tagContent,
+@@ -79,10 +79,17 @@ export function constructTree(tokens: AnyToken[]) {
+ 
+   const positionOffset = state!.caretPosition;
+   processTokens(tokens, state!, positionOffset);
++  endElementsLeftOpen(state!.currentNode);
+ 
+   return { state, ast: state!.rootNode };
+ }
+ 
++function endElementsLeftOpen(node: AnyContextualNode | undefined) {
++  for (let open = node; open && open.type !== NodeTypes.Document; open = open.parentRef) {
++    extendNodeEndToLastChild(open);
++  }
++}
++
+ function processTokens(
+   tokens: AnyToken[],
+   state: ConstructTreeState<any>,
 diff --git a/src/tree-constructor/handlers/tag-content.ts b/src/tree-constructor/handlers/tag-content.ts
-index 45a8a4f..c83d6a6 100644
+index 127b5bf..e46386a 100644
 --- a/src/tree-constructor/handlers/tag-content.ts
 +++ b/src/tree-constructor/handlers/tag-content.ts
-@@ -52,6 +52,19 @@ function handleOpenTagStart(
+@@ -22,6 +22,7 @@ import {
+   closeTagNameOf,
+   createNodeFrom,
+   cloneLocation,
++  extendNodeEndToLastChild,
+   initChildrenIfNone,
+   tagNameKey,
+ } from "../../utils/index.js";
+@@ -52,8 +53,32 @@ function handleOpenTagStart(
    return state;
  }
  
-+function hasOpenAncestorNamed(node: unknown, nameKey: string): boolean {
-+  for (
-+    let ancestor = node as ContextualTagNode | undefined;
-+    ancestor?.type === NodeTypes.Tag;
-+    ancestor = ancestor.parentRef as ContextualTagNode | undefined
-+  ) {
-+    if (tagNameKey(ancestor.name ?? "") === nameKey) {
-+      return true;
-+    }
+-function isClosedBy(node: { type: NodeTypes; name?: string }, closeTagName: string): boolean {
+-  return node.type === NodeTypes.Tag && tagNameKey(node.name ?? "") === closeTagName;
++const nameKeys = new WeakMap<ContextualTagNode, string>();
++
++function nameKeyOf(tag: ContextualTagNode): string {
++  const cached = nameKeys.get(tag);
++  if (cached !== undefined) {
++    return cached;
 +  }
-+  return false;
++  const nameKey = tagNameKey(tag.name ?? "");
++  nameKeys.set(tag, nameKey);
++  return nameKey;
 +}
 +
- function handleCloseTag(
-   state: ConstructTreeState<ContextualTagNode>,
-   token: AnyToken
-@@ -59,8 +72,13 @@ function handleCloseTag(
-   const closeTagName = tagNameKey(closeTagNameOf(token));
- 
-   if (closeTagName !== tagNameKey(state.currentNode.name ?? "")) {
--    state.caretPosition++;
-+    if (!hasOpenAncestorNamed(state.currentNode.parentRef, closeTagName)) {
-+      state.caretPosition++;
-+      return state;
++function findOpenTagClosedBy(
++  node: ContextualTagNode,
++  closeTagName: string
++): ContextualTagNode | undefined {
++  for (
++    let open: ContextualTagNode | undefined = node;
++    open?.type === NodeTypes.Tag;
++    open = open.parentRef as ContextualTagNode | undefined
++  ) {
++    if (nameKeyOf(open) === closeTagName) {
++      return open;
 +    }
++  }
++  return undefined;
+ }
  
-+    state.currentNode = state.currentNode.parentRef as ContextualTagNode;
-+    state.currentContext = state.currentContext.parentRef.parentRef;
+ function handleCloseTag(
+@@ -61,13 +86,19 @@ function handleCloseTag(
+   token: AnyToken
+ ) {
+   const closeTagName = tagNameKey(closeTagNameOf(token));
++  const closedTag = findOpenTagClosedBy(state.currentNode, closeTagName);
+ 
+-  if (!isClosedBy(state.currentNode, closeTagName)) {
++  if (!closedTag) {
+     state.caretPosition++;
+-
      return state;
    }
  
++  while (state.currentNode !== closedTag) {
++    extendNodeEndToLastChild(state.currentNode);
++    state.currentNode = state.currentNode.parentRef as ContextualTagNode;
++    state.currentContext = state.currentContext.parentRef.parentRef;
++  }
++
+   state.currentContext = state.currentContext.parentRef;
+ 
+   return state;
+diff --git a/src/utils/update-node-end.ts b/src/utils/update-node-end.ts
+index 9a01b2c..2bd38ac 100644
+--- a/src/utils/update-node-end.ts
++++ b/src/utils/update-node-end.ts
+@@ -7,3 +7,15 @@ export function updateNodeEnd(
+   node.range[1] = token.range[1];
+   node.loc.end = { ...token.loc.end };
+ }
++
++export function extendNodeEndToLastChild(
++  node: AnyNode | AnyContextualNode
++): void {
++  const children = "children" in node ? node.children : undefined;
++  const lastChild = children?.[children.length - 1];
++  if (!lastChild || lastChild.range[1] <= node.range[1]) {
++    return;
++  }
++  node.range[1] = lastChild.range[1];
++  node.loc.end = { ...lastChild.loc.end };
++}

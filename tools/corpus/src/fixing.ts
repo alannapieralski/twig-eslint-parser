@@ -8,25 +8,40 @@ type Pass = { readonly output: string; readonly applied: readonly AppliedFix[] }
 type FixableMessage = Linter.LintMessage & { readonly fix: Rule.Fix };
 
 const maxPasses = 10;
+const byteOrderMark = '\uFEFF';
 
 function isFixable(message: Linter.LintMessage): message is FixableMessage {
   return message.fix !== undefined;
 }
 
-// Applies one pass of non-overlapping fixes in source order.
-export function applyOnePass(text: string, messages: readonly Linter.LintMessage[]): Pass {
-  const fixable = messages.filter(isFixable).sort((first, second) => first.fix.range[0] - second.fix.range[0] || first.fix.range[1] - second.fix.range[1]);
+function byFixRange(first: FixableMessage, second: FixableMessage): number {
+  return first.fix.range[0] - second.fix.range[0] || first.fix.range[1] - second.fix.range[1];
+}
+
+function removesByteOrderMark(fix: Rule.Fix): boolean {
+  const [start, end] = fix.range;
+  return (start < 0 && end >= 0) || (start === 0 && fix.text.startsWith(byteOrderMark));
+}
+
+// Applies one pass of fixes the way ESLint's SourceCodeFixer does, leaving a fix that touches or overlaps an earlier one for the next pass.
+export function applyOnePass(sourceText: string, messages: readonly Linter.LintMessage[]): Pass {
+  const leadingMark = sourceText.startsWith(byteOrderMark) ? byteOrderMark : '';
+  const text = sourceText.slice(leadingMark.length);
+  const fixable = messages.filter(isFixable).toSorted(byFixRange);
   const applied: AppliedFix[] = [];
-  let output = '';
-  let position = 0;
+  let output = leadingMark;
+  let lastEnd = Number.NEGATIVE_INFINITY;
+
   for (const { fix, ruleId } of fixable) {
     const [start, end] = fix.range;
-    if (start < position || start > end) continue;
-    output += text.slice(position, start) + fix.text;
-    applied.push({ ruleId, replaced: text.slice(start, end), replacement: fix.text });
-    position = end;
+    if (lastEnd >= start || start > end) continue;
+    if (removesByteOrderMark(fix)) output = '';
+    output += text.slice(Math.max(0, lastEnd), Math.max(0, start)) + fix.text;
+    applied.push({ ruleId, replaced: text.slice(Math.max(0, start), end), replacement: fix.text });
+    lastEnd = end;
   }
-  return { output: output + text.slice(position), applied };
+
+  return { output: output + text.slice(Math.max(0, lastEnd)), applied };
 }
 
 export async function fixUntilSettled(
