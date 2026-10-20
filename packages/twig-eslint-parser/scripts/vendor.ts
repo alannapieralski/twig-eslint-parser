@@ -51,7 +51,6 @@ function escapeForRegExp(text: string): string {
   return text.replace(regExpSpecialCharacters, '\\$&');
 }
 
-// Renames the snapshot keys Jest writes ("describe test 1") to the keys Vitest looks up ("describe > test 1").
 function renameJestSnapshotKeys(snapshot: string, vitestTestNames: readonly string[]): string {
   return vitestTestNames.reduce((renamed, vitestName) => {
     const jestName = vitestName.split(' > ').join(' ');
@@ -122,7 +121,7 @@ function readPatchSeries(unit: VendoredUnit): string[] {
 function applyPatch(unit: VendoredUnit, patchName: string, targetDirectory: string): void {
   const patchPath = join(vendorRootOf(unit), 'patches', patchName);
   if (!existsSync(patchPath)) throw new Error(`Patch "${patchName}" is listed in ${unit.name}/patches/series but ${patchPath} does not exist.`);
-  const result = spawnSync('git', ['apply', '--verbose', '--whitespace=error-all', patchPath], { cwd: targetDirectory, encoding: 'utf8' });
+  const result = spawnSync('git', ['apply', '--verbose', '--whitespace=error-all', patchPath], { cwd: targetDirectory, encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`Patch "${patchName}" no longer applies cleanly:\n${result.stderr}`);
   if (result.stderr.includes('Skipped patch')) throw new Error(`git apply skipped part of patch "${patchName}":\n${result.stderr}`);

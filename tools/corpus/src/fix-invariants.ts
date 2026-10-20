@@ -18,7 +18,7 @@ const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'styl
 const cubeDelimiters = new Set(['[', ']', '|', '][']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const indentationAfterLineBreak = /(\n)[ \t]+/g;
-const leadingIndentation = /^[ \t]*/;
+const leadingIndentation = /[ \t]*/y;
 const preformattedElements = new Set(['pre', 'textarea']);
 const layoutTextTypes = new Set(['Text', 'RawContent']);
 const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
@@ -210,7 +210,8 @@ function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new S
 
 function indentationOfLineAt(code: string, offset: number): string {
   const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
-  return code.slice(lineStart).match(leadingIndentation)?.[0] ?? '';
+  leadingIndentation.lastIndex = lineStart;
+  return leadingIndentation.exec(code)?.[0] ?? '';
 }
 
 function lineStartsWithin(code: string, start: number, end: number): number[] {

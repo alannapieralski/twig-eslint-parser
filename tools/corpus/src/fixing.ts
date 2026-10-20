@@ -23,7 +23,6 @@ function removesByteOrderMark(fix: Rule.Fix): boolean {
   return (start < 0 && end >= 0) || (start === 0 && fix.text.startsWith(byteOrderMark));
 }
 
-// Applies one pass of fixes the way ESLint's SourceCodeFixer does, leaving a fix that touches or overlaps an earlier one for the next pass.
 export function applyOnePass(sourceText: string, messages: readonly Linter.LintMessage[]): Pass {
   const leadingMark = sourceText.startsWith(byteOrderMark) ? byteOrderMark : '';
   const text = sourceText.slice(leadingMark.length);

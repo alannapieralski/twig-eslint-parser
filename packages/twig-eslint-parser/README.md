@@ -144,9 +144,9 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
-- **Very deep nesting.** The parser reads any depth, but ESLint's own scope analysis overflows the call stack
-  at a few thousand nested elements (for example thousands of `<li>` without their close tags), and ESLint
-  then reports a parsing error for the file.
+- **Very deep nesting.** The parser overflows the call stack at a few thousand nested elements (for example
+  thousands of `<li>` without their close tags) and throws a "nested too deeply" error, which ESLint reports
+  as a parsing error for the file.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig

@@ -42,7 +42,7 @@ export function omitInterpolatedAttributes(root: unknown, attributeNames: Readon
       node['attributes'] = attributes.filter((attribute) => !shouldOmit(attribute));
     }
     for (const [key, child] of Object.entries(node)) {
-      if (key !== 'parent') toVisit.push(child);
+      if (key !== 'parent' && typeof child === 'object' && child !== null) toVisit.push(child);
     }
   }
 
