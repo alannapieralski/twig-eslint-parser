@@ -211,3 +211,56 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe('<textarea\n  name="a"\n  rows="2"\n><p class="x" id="y">typed</p></textarea>');
   });
 });
+
+describe('twig-html/attrs-newline against the html-eslint attrs-newline cases', () => {
+  const closeStyles = ['sameline', 'newline'] as const;
+  const stripIndentation = (code: string) => code.replace(/\n[ \t]+/g, '\n');
+
+  const valid: [string, Record<string, unknown>, string][] = [
+    ['an element without attributes', { ifAttrsMoreThan: 0 }, '\n<p></p>'],
+    ['a nested element without attributes', { ifAttrsMoreThan: 0 }, '\n<p>\n  <img />\n</p>'],
+    ['one attribute per tag under the default threshold', { ifAttrsMoreThan: 1 }, '\n<p class="foo">\n  <img class="foo" />\n</p>'],
+    ['multi-line values on a single attribute', { ifAttrsMoreThan: 1 }, '\n<p title="this\n  is\n  a\n  long\n  value">\n  <img class="this\n  is\n  a\n  long" />\n</p>'],
+  ];
+
+  describe.each(closeStyles)('closeStyle %s', (closeStyle) => {
+    it.each(valid)('accepts %s', async (_name, options, code) => {
+      expect((await lint(code, { closeStyle, ...options }, 'off')).messages).toEqual([]);
+    });
+  });
+
+  const validBySameline: [string, Record<string, unknown>, string][] = [
+    ['one attribute on its own line, with > after it', { ifAttrsMoreThan: 0 }, '\n<p\n  class="foo">\n  <img\n    class="foo" />\n</p>'],
+    ['two attributes on their own lines, with > after them', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  id="p">\n  <img\n    class="foo"\n    id="img" />\n</p>'],
+    ['a valueless attribute between others', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  data-newline\n  id="p">\n  <img\n    class="foo"\n    id="img" />\n</p>'],
+    ['a multi-line value among attributes on their own lines', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  data-newline\n  id="p"\n  title="this\n  is\n  a\n  long\n  value">\n  <img\n    class="foo"\n    id="img" />\n</p>'],
+  ];
+
+  it.each(validBySameline)('accepts %s with closeStyle sameline', async (_name, options, code) => {
+    expect((await lint(code, { closeStyle: 'sameline', ...options }, 'off')).messages).toEqual([]);
+  });
+
+  const validByNewline: [string, Record<string, unknown>, string][] = [
+    ['one attribute on its own line, with > on its own line', { ifAttrsMoreThan: 0 }, '\n<p\n  class="foo"\n  >\n  <img\n    class="foo"\n  />\n</p>'],
+    ['two attributes on their own lines, with > on its own line', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  id="p"\n  >\n  <img\n    class="foo"\n    id="img"\n  />\n</p>'],
+    ['a valueless attribute between others', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  data-newline\n  id="p"\n  >\n  <img\n    class="foo"\n    id="img"\n  />\n</p>'],
+    ['a multi-line value among attributes on their own lines', { ifAttrsMoreThan: 1 }, '\n<p\n  class="foo"\n  data-newline\n  id="p"\n  title="this\n  is\n  a\n  long\n  value"\n  >\n  <img\n    class="foo"\n    id="img"\n  />\n</p>'],
+    ['four attributes under a threshold of three', { ifAttrsMoreThan: 3 }, '\n<button\n  type="button"\n  class="app-button"\n  data-property\n></button>'],
+  ];
+
+  it.each(validByNewline)('accepts %s with closeStyle newline', async (_name, options, code) => {
+    expect((await lint(code, { closeStyle: 'newline', ...options }, 'off')).messages).toEqual([]);
+  });
+
+  const invalid: [string, Record<string, unknown>, string, string][] = [
+    ['an attribute on the tag line with closeStyle sameline', { closeStyle: 'sameline', ifAttrsMoreThan: 0 }, '\n<p class="foo">\n  <img />\n</p>', '\n<p\nclass="foo">\n  <img />\n</p>'],
+    ['a > after the last attribute with closeStyle newline', { closeStyle: 'newline', ifAttrsMoreThan: 0 }, '\n<p\n  class="foo">\n  <img />\n</p>', '\n<p\nclass="foo"\n>\n  <img />\n</p>'],
+    ['two attributes sharing a line', { closeStyle: 'newline', ifAttrsMoreThan: 1 }, '\n<p\n  class="foo" id="p">\n  <img />\n</p>', '\n<p\nclass="foo"\nid="p"\n>\n  <img />\n</p>'],
+  ];
+
+  it.each(invalid)('lays out %s', async (_name, options, code, output) => {
+    const { messages, output: fixedOutput } = await lint(code, options, 'off');
+    expect(messages).toHaveLength(0);
+    expect(stripIndentation(fixedOutput)).toBe(stripIndentation(output));
+  });
+});
