@@ -1,0 +1,67 @@
+diff --git a/src/parser/parse.ts b/src/parser/parse.ts
+index e6252e5..d23c2b8 100644
+--- a/src/parser/parse.ts
++++ b/src/parser/parse.ts
+@@ -8,7 +8,7 @@ import { Options } from "../types/parse.js";
+ export function parse(html: string, options?: Options): ParseResult {
+   const tokenAdapter = (options && options.tokenAdapter) || defaultTokenAdapter;
+   const { tokens } = tokenize(html, tokenAdapter, options);
+-  const { ast } = constructTree(tokens);
++  const { ast } = constructTree(tokens, options?.voidElements);
+   return {
+     ast: clearParent(ast),
+     tokens,
+diff --git a/src/tree-constructor/construct-tree.ts b/src/tree-constructor/construct-tree.ts
+index d617db6..0205a54 100644
+--- a/src/tree-constructor/construct-tree.ts
++++ b/src/tree-constructor/construct-tree.ts
+@@ -45,7 +45,7 @@ const EMPTY_LOC: SourceLocation = {
+   },
+ };
+ 
+-export function constructTree(tokens: AnyToken[]) {
++export function constructTree(tokens: AnyToken[], voidElements: readonly string[] = []) {
+   const rootContext = {
+     type: ConstructTreeContextTypes.TagContent,
+     parentRef: undefined,
+@@ -75,6 +75,7 @@ export function constructTree(tokens: AnyToken[]) {
+     currentContext: rootContext,
+     currentNode: rootNode,
+     rootNode,
++    voidElements,
+   };
+ 
+   const positionOffset = state!.caretPosition;
+diff --git a/src/tree-constructor/handlers/tag.ts b/src/tree-constructor/handlers/tag.ts
+index 91ceb21..b61e088 100644
+--- a/src/tree-constructor/handlers/tag.ts
++++ b/src/tree-constructor/handlers/tag.ts
+@@ -67,6 +67,7 @@ function handleOpenTagEnd(
+ 
+   if (
+     SELF_CLOSING_TAGS.indexOf(tagName!) !== -1 ||
++    state.voidElements.includes(tagName!) ||
+     state.currentNode.openEnd.value === "/>"
+   ) {
+     state.currentNode.selfClosing = true;
+diff --git a/src/types/construct-tree-state.ts b/src/types/construct-tree-state.ts
+index 2f30d56..c7a5bcb 100644
+--- a/src/types/construct-tree-state.ts
++++ b/src/types/construct-tree-state.ts
+@@ -11,4 +11,5 @@ export type ConstructTreeState<N extends AnyContextualNode> = {
+   };
+   currentNode: N;
+   rootNode: DocumentNode;
++  voidElements: readonly string[];
+ };
+diff --git a/src/types/parse.ts b/src/types/parse.ts
+index 49f50a3..a5de3d9 100644
+--- a/src/types/parse.ts
++++ b/src/types/parse.ts
+@@ -11,5 +11,6 @@ export type ParseResult = {
+ export type Options = {
+   tokenAdapter?: TokenAdapter;
+   rawContentTags?: string[];
++  voidElements?: string[];
+   templateInfos?: TemplateInfo[];
+ };
