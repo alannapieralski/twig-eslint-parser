@@ -6,6 +6,7 @@ import { createAttributesOf } from '../../shared/tag-attributes.js';
 import { findIndentProblems, type MarkupProgram } from './find-indent-problems.js';
 import { messages } from './messages.js';
 import { indentSizeSchema, optionsSchema, resolveOptions } from './options.js';
+import { readRawContentTags } from './raw-content-tags.js';
 
 export const indent: Rule.RuleModule = {
   meta: {
@@ -24,8 +25,9 @@ export const indent: Rule.RuleModule = {
     const { text } = context.sourceCode;
     const { blocks, omittedAttributes } = readTwigServices(context.sourceCode, context.id);
     const attributesOf = createAttributesOf(omittedAttributes);
+    const rawContentTags = readRawContentTags(context.languageOptions.parserOptions);
 
-    const checkProgram = (program: unknown) => reportProblems(context, findIndentProblems(program as MarkupProgram, { text, blocks, attributesOf }, options));
+    const checkProgram = (program: unknown) => reportProblems(context, findIndentProblems(program as MarkupProgram, { text, blocks, attributesOf, rawContentTags }, options));
 
     return { Program: checkProgram };
   },

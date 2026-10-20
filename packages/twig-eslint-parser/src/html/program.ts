@@ -16,22 +16,18 @@ export type HtmlProgram = {
   readonly tokens: unknown[];
   readonly comments: Comment[];
 };
-export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]; readonly rawContentTags?: readonly string[] };
+export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]; readonly rawContentTags?: readonly string[]; readonly voidElements?: readonly string[] };
 
 const commentTokenTypes: ReadonlySet<string> = new Set([TokenTypes.CommentOpen, TokenTypes.CommentContent, TokenTypes.CommentClose]);
 
-function isTyped(value: unknown): value is { type: string } {
-  return typeof value === 'object' && value !== null && 'type' in value;
-}
-
-function visit<Visited extends { type: string }>(root: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
-  const toVisit: Visited[] = [root];
-
-  for (let node = toVisit.pop(); node; node = toVisit.pop()) {
-    const childKeys = keysByType[typeOf(node)] ?? [];
-    visitor(node);
-    const children = childKeys.flatMap((key) => [(node as Record<string, unknown>)[key]].flat()).filter(isTyped) as Visited[];
-    for (const child of children.reverse()) toVisit.push(child);
+function visit<Visited extends { type: string }>(node: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
+  const childKeys = keysByType[typeOf(node)] ?? [];
+  visitor(node);
+  for (const key of childKeys) {
+    const child = (node as Record<string, unknown>)[key];
+    for (const value of Array.isArray(child) ? child : [child]) {
+      if (typeof value === 'object' && value !== null && 'type' in value) visit(value as Visited, keysByType, typeOf, visitor);
+    }
   }
 }
 
@@ -57,6 +53,7 @@ export function parseHtmlProgram(text: string, options: HtmlParseOptions): HtmlP
   const { ast, tokens } = parseMarkupTree(text, {
     templateInfos: [...options.templateInfos],
     ...(options.rawContentTags && { rawContentTags: [...options.rawContentTags] }),
+    ...(options.voidElements && { voidElements: [...options.voidElements] }),
   });
   const document = ast as unknown as Node;
   const comments: Comment[] = [];

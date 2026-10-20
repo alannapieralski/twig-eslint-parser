@@ -18,8 +18,9 @@ const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'styl
 const cubeDelimiters = new Set(['[', ']', '|', '][']);
 const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
 const indentationAfterLineBreak = /(\n)[ \t]+/g;
-const leadingIndentation = /^[ \t]*/;
+const leadingIndentation = /[ \t]*/y;
 const preformattedElements = new Set(['pre', 'textarea']);
+const layoutTextTypes = new Set(['Text', 'RawContent']);
 const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
 const lineBreak = /\r\n|\r|\n/g;
 const lineBreakNames: Readonly<Record<string, string>> = { '\r\n': '\\r\\n', '\r': '\\r', '\n': '\\n' };
@@ -64,10 +65,14 @@ function withoutIndentationOutsideTwig(text: string): string {
   return result + text.slice(markupStart).replace(indentationAfterLineBreak, '$1');
 }
 
+function isLayoutText(leaf: Leaf): boolean {
+  return layoutTextTypes.has(leaf.type) && !leaf.isPreformatted;
+}
+
 function layoutTextOf(leaf: Leaf, text: string): string {
-  if (!leavesWithLooseEdges.has(leaf.type)) return text;
-  if (leaf.type !== 'Text' || leaf.isPreformatted) return text.trim();
-  return withoutIndentationOutsideTwig(text.trim());
+  if (isLayoutText(leaf)) return withoutIndentationOutsideTwig(text.trim());
+  if (leavesWithLooseEdges.has(leaf.type)) return text.trim();
+  return text;
 }
 
 function layoutTokens(code: string, result: TwigParseResult): Token[] {
@@ -205,7 +210,8 @@ function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new S
 
 function indentationOfLineAt(code: string, offset: number): string {
   const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
-  return code.slice(lineStart).match(leadingIndentation)?.[0] ?? '';
+  leadingIndentation.lastIndex = lineStart;
+  return leadingIndentation.exec(code)?.[0] ?? '';
 }
 
 function lineStartsWithin(code: string, start: number, end: number): number[] {

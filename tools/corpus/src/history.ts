@@ -93,7 +93,6 @@ export function mergeHistory(previous: RunHistory, current: RunHistory): RunHist
     const keptCoverage = Object.fromEntries(Object.entries(earlier.coverage ?? {}).filter(([template]) => !rerun.has(template)));
     const coverage = check.coverage && { ...keptCoverage, ...check.coverage };
     checks[id] = {
-      ...(check.skipped !== undefined && { skipped: check.skipped }),
       templates: [...new Set([...earlier.templates, ...check.templates])],
       fingerprints: { ...keptFingerprints, ...check.fingerprints },
       ...(coverage && { coverage }),

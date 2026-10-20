@@ -108,9 +108,12 @@ position in the markup says:
   (`data-{{ name }}="x"`). The tag's `name` is the Twig as written.
 - Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
   `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
-  as a browser does, so one element that is never closed, such as Drupal's
-  `<head-placeholder token="...">`, is reported on its own instead of swallowing the rest of the
-  document.
+  as a browser does, so one element that is never closed is reported on its own instead of
+  swallowing the rest of the document.
+- Drupal only: `<head-placeholder>`, `<css-placeholder>`, `<js-placeholder>` and
+  `<js-bottom-placeholder>` are void elements, because Drupal swaps the exact opening tag and the
+  templates leave them unclosed. The list is `drupalVoidElements` in `src/drupal.ts`, next to the
+  rest of the parser's Drupal knowledge; everything else in this section is plain Twig and HTML.
 - `textarea` and `title` content is raw text, as in HTML, and Twig inside `script`, `style` and raw
   text never ends the element early.
 - Twig delimiters inside `{% verbatim %}` are printed as text, so they are hidden from the markup
@@ -141,9 +144,9 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
-- **Very deep nesting.** The parser reads any depth, but ESLint's own scope analysis overflows the call stack
-  at a few thousand nested elements (for example thousands of `<li>` without their close tags), and ESLint
-  then reports a parsing error for the file.
+- **Very deep nesting.** The parser overflows the call stack at a few thousand nested elements (for example
+  thousands of `<li>` without their close tags) and throws a "nested too deeply" error, which ESLint reports
+  as a parsing error for the file.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig

@@ -20,7 +20,6 @@ function roleOf(block: TwigBlockSummary): Role | undefined {
   return undefined;
 }
 
-// Splits each {% if %} group into its branches, so checks do not compare markup across branches.
 function splitIntoBranches(blocks: readonly TwigBlockSummary[]): BranchSegment[] {
   const branchSegments: BranchSegment[] = [];
   const stack: Frame[] = [];

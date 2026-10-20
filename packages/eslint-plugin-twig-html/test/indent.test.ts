@@ -2,14 +2,14 @@ import { ESLint, type Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
 
-async function lint(code: string, ruleOptions: unknown[] = [], fix = true) {
+async function lint(code: string, ruleOptions: unknown[] = [], fix = true, parserOptions: Record<string, unknown> = {}) {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
     'twig-html/multiline-html-element-content-newline': 'off',
     'twig-html/quotes': 'off',
     'twig-html/indent': ['warn', ...ruleOptions],
   };
-  const eslint = new ESLint({ overrideConfigFile: true, fix, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], rules }] });
+  const eslint = new ESLint({ overrideConfigFile: true, fix, overrideConfig: [twigHtml.configs.recommended, { files: ['**/*.twig'], languageOptions: { parserOptions }, rules }] });
   const [result] = await eslint.lintText(code, { filePath: 'template.html.twig' });
   if (!result) throw new Error('ESLint returned no result.');
   return { output: result.output ?? code, messages: result.messages };
@@ -35,6 +35,12 @@ describe('twig-html/indent', () => {
 
     it('accepts a correctly indented tree', async () => {
       await expectUntouched('<div>\n  <ul>\n    <li>a</li>\n  </ul>\n</div>\n');
+    });
+
+    it('indents the text of a title but not the content of a textarea', async () => {
+      expect(await fixed('<head>\n<title>\n{{ head_title }}\n</title>\n<textarea>\n  a\n</textarea>\n</head>')).toBe(
+        '<head>\n  <title>\n    {{ head_title }}\n  </title>\n  <textarea>\n  a\n</textarea>\n</head>',
+      );
     });
 
     it('fixes a deep tree in one pass', async () => {
@@ -173,8 +179,18 @@ describe('twig-html/indent', () => {
     });
 
     it('indents the attributes of a tag after an element that is never closed from the tag line as written', async () => {
+      const code = '<head>\n  <p>\n      <meta charset="utf-8">\n   <link\nrel="a"\nhref="b"\n>\n</head>';
+      expect(await fixed(code)).toBe('<head>\n  <p>\n      <meta charset="utf-8">\n   <link\n     rel="a"\n     href="b"\n   >\n</head>');
+    });
+
+    it('indents the attributes of a tag after a Drupal placeholder element, which is never closed', async () => {
       const code = '<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\nrel="a"\nhref="b"\n>\n</head>';
-      expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n      <meta charset="utf-8">\n   <link\n     rel="a"\n     href="b"\n   >\n</head>');
+      expect(await fixed(code)).toBe('<head>\n  <css-placeholder token="x">\n  <meta charset="utf-8">\n  <link\n    rel="a"\n    href="b"\n  >\n</head>');
+    });
+
+    it('indents the text of a multi-line title after a Drupal placeholder element', async () => {
+      const code = '<head>\n<head-placeholder token="x">\n<title>\n  a\n</title>\n</head>';
+      expect(await fixed(code)).toBe('<head>\n  <head-placeholder token="x">\n  <title>\n    a\n  </title>\n</head>');
     });
 
     it('indents the attributes of a tag inside an element split across Twig branches from the tag line as written', async () => {
@@ -193,8 +209,13 @@ describe('twig-html/indent', () => {
       expect(await fixed(code)).toBe('<div>\n  <pre>\n    a\n</pre>\n  <textarea>\n    b\n</textarea>\n  <script>\n    c();\n  </script>\n  <style>\n    .d {}\n  </style>\n</div>');
     });
 
-    it('leaves raw-text elements such as title alone, closing tag included', async () => {
-      expect(await fixed('<head>\n<title>\n<b>a</b>\n  </title>\n</head>')).toBe('<head>\n  <title>\n<b>a</b>\n  </title>\n</head>');
+    it('leaves raw-text elements such as textarea alone, closing tag included', async () => {
+      expect(await fixed('<div>\n<textarea>\n<b>a</b>\n  </textarea>\n</div>')).toBe('<div>\n  <textarea>\n<b>a</b>\n  </textarea>\n</div>');
+    });
+
+    it('leaves the content of elements named in the parser option rawContentTags alone', async () => {
+      const code = '<div>\n<code-sample>\n      a\n</code-sample>\n</div>';
+      expect((await lint(code, [], true, { rawContentTags: ['code-sample'] })).output).toBe('<div>\n  <code-sample>\n      a\n</code-sample>\n</div>');
     });
 
     it('leaves the content of elements named in ignores alone', async () => {

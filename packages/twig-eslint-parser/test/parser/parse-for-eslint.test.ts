@@ -489,6 +489,16 @@ describe('Drupal attributes printed straight after a tag name', () => {
     expect(childTagNames(namedTag(code, 'input'))).toEqual([]);
   });
 
+  it.each(['head-placeholder', 'css-placeholder', 'js-placeholder', 'js-bottom-placeholder'])(
+    'reads the Drupal placeholder <%s> as a void element so the markup after it stays a sibling',
+    (name) => {
+      const code = `<head><${name} token="{{ placeholder_token }}"><title>x</title></head>`;
+      expect(tagsOf(code).map((tag) => tag['name'])).toEqual(['head', name, 'title']);
+      expect(childTagNames(namedTag(code, name))).toEqual([]);
+      expect(childTagNames(namedTag(code, 'head'))).toEqual([name, 'title']);
+    },
+  );
+
   it('reads a print after a Twig tag name as attributes while the name print stays in the name', () => {
     const code = '<{{ tag }}{{ attr }}><li>x</li></{{ tag }}><span>after</span>';
     const [wrapper] = tagsOf(code);

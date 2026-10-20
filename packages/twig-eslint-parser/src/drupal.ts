@@ -11,3 +11,5 @@ const attributeListPrint = new RegExp(
 export function isDrupalAttributeListPrint(printSource: string): boolean {
   return attributeListPrint.test(printSource);
 }
+
+export const drupalVoidElements: readonly string[] = ['head-placeholder', 'css-placeholder', 'js-placeholder', 'js-bottom-placeholder'];
