@@ -18,20 +18,7 @@ A rule is not finished until every row is done. `eslint-review` checks the same 
 
 ## Docs page headings
 
-Follow `docs/rules/quotes.md` and `docs/rules/attrs-newline.md`:
-
-1. `# <short-plugin-name>/<rule>` then one sentence matching `meta.docs.description`.
-2. A line saying whether it is enabled in the recommended config, at what severity, and whether it
-   is fixable.
-3. `## Rule details`: what it checks, then "Examples of **incorrect** code" and "Examples of
-   **correct** code" in `twig` fences.
-4. Subsections for each behaviour a reader could be surprised by, including "When it leaves a
-   value alone" and what it reports without fixing, each with the reason.
-5. `## Options`, when the rule has options: a table of option, default and description, then a
-   config snippet.
-6. `## Compared with ...` when a similar rule exists elsewhere.
-7. `## Testing`: which tests and canary cover it.
-8. `## When not to use it`.
+Defined in `.claude/rules/docs.md`. Follow it, and the rule pages already written.
 
 The docs, the `meta` and the tests must agree: every "reports but does not fix" case in the docs
 has a test, and every option in the schema is in the options table.

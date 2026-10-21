@@ -96,10 +96,10 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | Twig | Selector |
 |---|---|
 | `class="..."` without Twig inside | better-tailwindcss defaults |
-| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `class` or `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` |
+| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` (not one named just `class`: the parser renames that reserved word) |
 | `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `twigSelectors`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
 | `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable with such a name |
-| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`drupal: true`): matched by method name, since Drupal's Attribute is the only Twig object with these methods |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`drupal: true`): matched by method name, on any object |
 
 better-tailwindcss's default selector for variables named `style` or `styles` is left out, since
 in Twig those usually hold inline CSS or a variant name rather than classes.
@@ -142,9 +142,9 @@ interpolated string are therefore not checked; use an array such as `['flex', mo
 to keep them visible. An ESLint config applies one processor per file, so
 if you set your own processor for `.twig` files, these strings are no longer silenced.
 
-## Class lists grouped with [ ] or |
+## CUBE CSS separators
 
-Some themes group classes by breakpoint with brackets and pipes, as in
+[CUBE CSS](https://cube.fyi) lets a class list be grouped with `[ ]` and `|` separators, as in
 `'o-section | flex flex-col [ md:flex-row md:gap-8 ] [ lg:gap-12 ]'`. better-tailwindcss reads
 `[`, `]` and `|` as classes, so its fixes would sort them away from their group, remove the second
 `[` as a duplicate, or wrap a bracket away from its classes.
@@ -158,7 +158,8 @@ are not checked.
 ## Known limitations
 
 - **Classes built by concatenation** (`'c-grid--' ~ count ~ '-items'`) are only partly visible:
-  the fixed fragments are separate strings.
+  the fixed fragments are separate strings, and the recommended config reports them with
+  `better-tailwindcss/no-concatenated-classes`.
 - **Classes computed in PHP** (preprocess functions) are not in the template and cannot be seen.
 - **Oxlint** cannot run these rules on Twig: it does not support custom HTML parsers yet.
 

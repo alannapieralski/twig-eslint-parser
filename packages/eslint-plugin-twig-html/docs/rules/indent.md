@@ -6,20 +6,11 @@ Enabled as a warning in `configs.recommended`. Fixable.
 
 ## Rule details
 
-Each line is indented one step for every element and every Twig block it sits inside:
+### Overview
 
-- Children of an element are one step in from the element. The closing tag is in line with the
-  opening tag.
-- The body of a Twig block (`if`, `for`, `block`, `embed`, `macro`, `apply`, block-form `set` and
-  any other tag closed by `end<name>`) is one step in from the opening tag. `else`, `elseif` and
-  the `end` tag are in line with the opening tag.
-- Every line of multi-line text is at the child indent.
-- An attribute on its own line is one step in from the tag. If the first attribute is on the tag's
-  line, the others line up with it instead (see `alignAttributesVertically`).
-- A `>` or `/>` on its own line is in line with the tag (see `closeBracket`).
-
-Each line's indentation is worked out from scratch, so a deeply wrong tree is fixed in one pass.
-The fix replaces the whole leading whitespace of the line.
+Each line is indented one step for every element and every Twig block it sits inside. Each line's
+indentation is worked out from scratch, so a deeply wrong tree is fixed in one pass, and the fix
+replaces the whole leading whitespace of the line.
 
 Examples of **incorrect** code:
 
@@ -61,45 +52,28 @@ Examples of **correct** code:
 </div>
 ```
 
-### Lines it leaves alone
+### HTML elements
 
-These lines keep whatever indentation the author wrote:
+- **Children:** one step in from their element. The closing tag is in line with the opening tag.
+- **Text:** every line of multi-line text is at the child indent.
+- **`title`:** its text is indented like other content, because browsers trim it. Listing `title` in
+  the parser's `rawContentTags` leaves it alone instead.
 
-- Content of `pre` and `textarea`, including the line of their closing tag, because whitespace
-  there is content.
-- Content of `script` and `style`, and of any element named in `ignores`. Their closing tags are
-  still indented.
-- Inner lines of a multi-line attribute value. `eslint-plugin-twig-tailwind` wraps `class` values
-  and owns their layout.
-- Inner lines of a multi-line Twig print, tag or comment, such as an `include` with an object
-  literal, and of an HTML comment.
-- The bodies of `{% verbatim %}` and `{% raw %}`.
-- Elements opened and closed in different Twig branches, such as a conditional wrapper:
+### Twig blocks
 
-  ```twig
-  {% if url %}<a href="{{ url }}">{% endif %}
-    <span>{{ label }}</span>
-  {% if url %}</a>{% endif %}
-  ```
+- **Body of a block:** one step in from the opening tag, for `if`, `for`, `block`, `embed`, `macro`,
+  `apply`, block-form `set`, Drupal's `trans` and any other tag closed by `end<name>`.
+- **Branches and the end tag:** `else`, `elseif`, `plural` (in a Drupal `trans`) and the `end` tag are
+  in line with the opening tag.
+- **Short forms:** an inline `set` and the short `{% block title page_title %}` have no body, so they
+  add no level.
 
-  The parser cannot build one tree for both branches, so the lines inside that element, and the
-  Twig tags that wrap it, are not checked. Lines before and after them are.
-- A tag whose own markup a Twig branch splits, such as one ending in `>` in one branch and `/>` in
-  another. The whole tag is left alone, its first line included.
-- YAML front matter between `---` lines at the top of the file, as in Drupal help topics.
-- Everything after an open tag that has no `>`, and the content of an element that is never
-  closed, because the parser cannot tell where they end.
+### Attributes and close brackets
 
-Inside an element split across branches or never closed, the depth of a tag is unknown but its own
-line is not. The attribute lines and closing `>` of a tag there are still checked, measured from
-the indentation its line already has, so a tag that `attrs-newline` splits is laid out like any
-other.
-
-### Files it does not check
-
-If the Twig tags in a file do not pair up, such as an `{% endif %}` with no `{% if %}` or an
-`{% endfor %}` closing an `{% if %}`, nothing in the file is reported. The rule cannot know the
-nesting, and guessing would move every later line.
+- **Attributes on their own line:** one step in from the tag (the `attribute` option).
+- **First attribute on the tag's line:** the other attributes line up with it. With
+  `alignAttributesVertically: false` they are indented `attribute` steps from the tag instead.
+- **A `>` or `/>` on its own line:** in line with the tag (the `closeBracket` option).
 
 ### Working with other rules
 
@@ -108,10 +82,77 @@ breaks, starting each new line at the indentation of the tag's line. This rule i
 one step further where needed, on the next fix pass. Keep it on with them, otherwise new attribute
 lines and moved content stay at the tag's own indentation.
 
+## What it skips
+
+### Left alone
+
+These lines keep whatever indentation the author wrote:
+
+- **Content of `pre`, `textarea` and any element named in the parser's `rawContentTags` option**,
+  including the line of their closing tag, because whitespace there is content.
+- **Content of `script` and `style`, and of any element named in `ignores`.** Their closing tags are
+  still indented.
+- **Inner lines of a multi-line attribute value.** `eslint-plugin-twig-tailwind` wraps `class` values
+  and owns their layout.
+- **Inner lines of a multi-line Twig or HTML comment.** A comment is free text.
+- **The bodies of `{% verbatim %}` and `{% raw %}`.** Twig prints them as written.
+- **YAML front matter** between `---` lines at the top of the file, as in Drupal help topics.
+
+### Not checked at all
+
+- **Elements opened and closed in different Twig branches**, such as a conditional wrapper:
+
+  ```twig
+  {% if url %}<a href="{{ url }}">{% endif %}
+    <span>{{ label }}</span>
+  {% if url %}</a>{% endif %}
+  ```
+
+  The parser cannot build one tree for both branches, so the lines inside that element, and the Twig
+  tags that wrap it, are not checked. Lines before and after them are.
+- **A tag whose own markup a Twig branch splits**, such as one ending in `>` in one branch and `/>` in
+  another. The whole tag is left alone, its first line included.
+- **An open tag with no `>` at the end of the file, and markup swallowed by an unquoted attribute
+  value** that runs into the next tag (`<li id=b<span>`). Anywhere else a missing `>` is a parsing
+  error and no rule runs.
+- **The content of an element that is never closed**, meaning an element with no closing tag that holds
+  other nodes. In `<ul><li>a<li>b</ul>` the second `li` becomes a child of the first, so its content
+  is skipped. The parser cannot tell where these elements end.
+- **A file whose Twig tags do not pair up**, such as an `{% endif %}` with no `{% if %}`, an
+  `{% endfor %}` closing an `{% if %}`, or a bare `{% end %}`. A closing tag must be `end` plus the name
+  of the tag it closes. The rule cannot know the nesting, and guessing would move every later line, so
+  nothing in the file is reported, and nothing says it was skipped. Twig rejects such templates when it
+  renders them.
+
+Where the depth is unknown, the rule cannot say how many levels deep a line is, so it skips the
+content. It can still lay out a tag's own attribute lines and closing `>`, because they are measured
+from the line the tag starts on: the indentation that line already has is the base, and each attribute
+line is one step further in. A tag that `attrs-newline` splits is therefore laid out like any other.
+In this example `<p>` is never closed, so `text` and the `<i` line are left as written, but the
+attributes and `>` are placed from the `<i` line:
+
+```twig
+<div>
+  <p>
+      text
+    <i
+      class="a"
+      id="b"
+    >x</i>
+</div>
+```
+
+### Known gaps
+
+- **Multi-line Twig is not laid out inside.** The parameters of an `{% include 'x' with { ... } %}`
+  written over several lines, and the inner lines of any multi-line `{{ }}` expression or tag (a long
+  hash or ternary, for example), keep whatever indentation the author wrote. Only the line the Twig
+  starts on is indented. `vue/html-indent` indents the inner lines of an expression like JavaScript.
+
 ## Options
 
-The first option is the indent size: a number of spaces (default `2`) or `'tab'`. The second is an
-object:
+The first option is the indent size: a whole number of spaces of at least 1 (default `2`) or `'tab'`.
+The second is an object:
 
 | Option | Default | Description |
 |---|---|---|
@@ -124,7 +165,7 @@ object:
 'twig-html/indent': ['warn', 4, { closeBracket: { selfClosingTag: 1 }, ignores: ['svg'] }],
 ```
 
-## Compared with eslint-plugin-vue
+## Compared with `vue/html-indent`
 
 The rule follows `vue/html-indent`, which indents `<template>` in `.vue` files. `@stylistic/indent`
 only indents JavaScript, so it does not apply to templates. Checked against the `flat/recommended`
@@ -134,27 +175,36 @@ preset of eslint-plugin-vue 10:
 |---|---|---|
 | Indent size | `2` | `2` |
 | `attribute`, `closeBracket`, `alignAttributesVertically` | `1`, `0`, `true` | Same |
-| `ignores` | AST selectors | Element names |
+| `ignores` | AST selectors, so an element can be ignored by attribute or position | Element names only |
 | `baseIndent` | `1`: children of `<template>` are indented | Not needed: Twig templates have no root wrapper, so top-level content is at column 0 |
 | Twig and Vue blocks | `v-if` lives on the element, so blocks add no level | Every Twig block body adds a level |
-| Expressions inside `{{ }}` | Indented like JavaScript | Inner lines left alone |
+| Expressions inside `{{ }}` | Indented like JavaScript | Inner lines left alone (see Known gaps) |
 | Comments before a closing tag | May line up with the line above or the closing tag | Indented like the content around them |
 | Message | `Expected indentation of 2 spaces but found 0 spaces.` | Same |
+
+## Compared with `@html-eslint/indent`
+
+Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-eslint-parser`:
+
+| | `@html-eslint/indent` | `twig-html/indent` |
+|---|---|---|
+| Default indent size | `4` | `2` |
+| Twig blocks | Not known: the lines inside `{% if %}` and `{% for %}` stay at the level of the Twig tag | The body of every Twig block is one step in |
+| Attribute option | `Attribute` (at least 1, default 1) | `attribute` (at least 0, default 1) |
+| Other options | `tagChildrenIndent`, `ignoreComment`, `templateIndentBase` | `closeBracket`, `alignAttributesVertically`, `ignores` |
+| Elements left alone | `pre` and `xmp`, including their own tag lines | The content of `pre`, `textarea`, `script` and `style`, plus `ignores`; their tags are still indented |
+| `script` and `style` content | Left alone | Left alone |
+| Multi-line `include` parameters | Inner lines left alone | Inner lines left alone |
 
 ## Testing
 
 - `test/indent.test.ts` covers nested HTML, Twig blocks with `else` and `elseif`, block, embed and
   block-form set, inline set and the short block form, whitespace control, multi-line Twig, verbatim,
   unpaired Twig, conditional wrappers and elements split across branches, each attribute and close
-  bracket option, Twig between attributes, multi-line attribute values, `pre`, `textarea`, `script`,
-  `style`, `ignores`, open tags missing their `>`, tabs, other sizes, Windows line endings and
-  front matter and fixing a deep tree in one pass.
+  bracket option, Twig between attributes, multi-line attribute values, `pre`, `textarea`, `title`,
+  `rawContentTags`, `script`, `style`, `ignores`, open tags missing their `>`, tabs, other sizes,
+  Windows line endings, front matter and fixing a deep tree in one pass.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace
   and still parses.
 - `npm run corpus -- --rule twig-html/indent` does the same for real templates. The canary
-  `tools/corpus/canaries/indent.twig` must report and fix to `indent.expected`.
-
-## When not to use it
-
-Turn it off if your templates are laid out by a formatter, or if your team does not indent the body
-of Twig blocks.
+  `tools/corpus/canaries/indent.html.twig` must report and fix to `indent.expected`.

@@ -6,11 +6,11 @@ Enabled as a warning in `configs.recommended`. Fixable.
 
 ## Rule details
 
-A tag with more than 1 attribute is laid out with one attribute per line, and the closing `>` or
-`/>` goes on its own line. The rule only places the line breaks: it accepts any indentation on those
-lines, and each line its fix creates starts at the indentation of the tag's line.
-[`twig-html/indent`](indent.md) then indents the new lines on the next fix pass, one step in from the
-tag with `>` in line with it. Keep `indent` on with this rule, as `configs.recommended` does.
+### Overview
+
+A tag with more attributes than `ifAttrsMoreThan` (by default 1, so two or more) is laid out with one
+attribute per line, and its closing `>` or `/>` goes on its own line. The rule only places line
+breaks: [`twig-html/indent`](indent.md) indents the lines it creates.
 
 Examples of **incorrect** code:
 
@@ -34,80 +34,92 @@ Examples of **correct** code:
 <a href="{{ url }}">
 ```
 
-What counts as one attribute:
+### What counts as one attribute
 
-- Every HTML attribute, including ones whose value contains Twig (`id="item-{{ id }}"`).
-- Drupal attributes printed straight after the tag name, such as `<div{{ attributes }}>`,
-  `<legend{{ legend.attributes }}>` or `<div{{ create_attribute(...) }}>`, and conditional
-  attributes such as `<div{% if id %} id="{{ id }}"{% endif %}>`. They move to their own line like
-  any other attribute, which renders the same HTML.
-- A Twig block that spans several attributes, such as `{% if checked %}checked disabled{% endif %}`.
-  It stays together on one line.
+The parser decides what is an attribute and what builds the tag name, because Twig output cannot be
+known in advance. The rule counts whatever the parser gives it:
 
-Twig that builds the tag name, such as `<h{{ level }}>` or `<{{ html_element }}>`, stays on the
-tag's line and is not counted as an attribute.
+- **HTML attributes:** every one, including those whose value contains Twig (`id="item-{{ id }}"`).
+- **A print separated from the previous token by whitespace**, such as `<div {{ attributes }} class="a">`.
+  It counts as one attribute and moves to its own line. This renders the same HTML.
+- **A print touching the end of the tag name**, such as `<div{{ attributes }}>` or `<input{{ attrs }}>`.
+  It is read as attributes, whatever the expression is called, unless a close tag anywhere in the file
+  spells the same Twig into the name (`<h{{ level }}>...</h{{ level }}>`). Then it is part of the name.
+- **A print straight after `<`**, such as `<{{ html_element }}>`, is always the name.
+- **Conditional attributes:** `<div{% if id %} id="{{ id }}"{% endif %}>` counts as one.
+- **Twig blocks spanning attributes:** `{% if checked %}checked disabled{% endif %}` counts as one and
+  stays together on one line, so the block is never split.
 
-`<script>` and `<style>` tags are checked too. Attribute values that already span several lines
-are kept as they are. Tags inside an inline `<svg>` are left alone (see `ignoreInside`), and
-`<textarea>` and `<title>` content is text, so the rule never reads markup there.
+Parts of the tag name are never counted and stay on the tag's line. See Known gaps for the case where
+the parser cannot tell.
 
-The line breaks it inserts match the file: a template with Windows line endings (`\r\n`) keeps
-them.
+### Which tags are checked
 
-The fix only changes the whitespace between attributes, and never adds an indent step of its own. If anything else sits between two
-attributes, such as a Twig comment, the rule reports the tag but does not fix it. The same goes for an open tag that is missing its
-`>`, where the parser reads the markup after it as attributes (including when it ends up inside an unquoted value): splitting those "attributes" onto
-separate lines would break the next tag.
+- **`script` and `style`:** their opening tags are checked like any other tag, so `src`, `type` and
+  `defer` each go on their own line. Their content is never checked.
+- **Multi-line attribute values:** kept as they are. Only the whitespace between attributes changes.
+
+### What the fix changes
+
+- **Only whitespace between attributes.** The rule accepts any indentation on the attribute lines.
+- **Indentation:** each line the fix creates starts at the indentation of the tag's line, and the fix
+  never adds an indent step. `indent` then moves the new lines one step in, with `>` in line with the
+  tag.
+- **Close bracket:** with `closeStyle: 'sameline'` the `>` stays after the last attribute, and `/>` gets
+  one space before it.
+- **Line endings:** the line breaks it inserts match the file, so `\r\n` stays `\r\n`.
+
+### Working with other rules
+
+Keep [`indent`](indent.md) on, as `configs.recommended` does. Without it the new attribute lines stay
+at the tag's own indentation.
+
+## What it skips
+
+### Left alone
+
+- **Tags at or under the threshold**, however they are written, because the rule does not normalise
+  them.
+- **Tags inside `ignoreInside` elements, and those elements themselves** (by default `svg`). Inline SVG
+  puts many short tags on one line, and one attribute per line would make it much longer for no gain.
+- **`textarea` and `title` content.** It is text, so the rule never reads markup there.
+
+### Reported but not fixed
+
+- **A tag with anything other than whitespace between two attributes**, such as a Twig comment. A fix
+  would have to move or drop it.
+- **An open tag that is missing its `>`**, where the parser reads the markup after it as attributes
+  (including when it ends up inside an unquoted value). Splitting those "attributes" onto separate
+  lines would break the next tag.
+
+### Not checked at all
+
+- **A tag where a Twig block opens or branches without closing inside the tag.** The tag has a
+  different shape on each branch.
+
+### Known gaps
+
+- **A print that builds the tag name is read as an attribute when no close tag in the file spells it.**
+  In `<h{{ heading }} class="a" id="b">x</h1>` the fix puts `{{ heading }}` on its own line, which
+  renders as `<h`, a line break, then `1`, and breaks the tag. The same happens to an open tag with no
+  close tag at all. The reverse also happens: one matching close tag anywhere in the file makes every
+  open tag with the same print read it as part of the name.
 
 ## Options
 
 | Option | Default | Description |
 |---|---|---|
-| `ifAttrsMoreThan` | `1` | Lay out a tag once it has more attributes than this. |
-| `closeStyle` | `'newline'` | `'newline'` puts `>` on its own line; `'sameline'` keeps it after the last attribute. |
-| `ignoreInside` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Inline SVG puts many short tags on one line, and one attribute per line would make it much longer for no gain. Set `[]` to lay SVG out too. |
+| `ifAttrsMoreThan` | `1` | Lay out a tag once it has more attributes than this. `0` lays out every tag that has an attribute. |
+| `closeStyle` | `'newline'` | `'newline'` puts `>` or `/>` on its own line; `'sameline'` keeps it after the last attribute. |
+| `ignoreInside` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Setting it replaces the list; `[]` lays SVG out too. |
 
 ```js
 'twig-html/attrs-newline': ['warn', { ifAttrsMoreThan: 2, closeStyle: 'sameline' }],
 ```
 
-## Compared with eslint-plugin-vue
-
-The rule follows the layout `vue/max-attributes-per-line`, `vue/first-attribute-linebreak` and
-`vue/html-closing-bracket-newline` produce, so `.vue` and `.twig` files look alike. Checked against
-the `flat/recommended` preset of eslint-plugin-vue 10:
-
-| | `vue` | `twig-html/attrs-newline` |
-|---|---|---|
-| Tag with more attributes than the threshold | One attribute per line, `>` on its own line | Same layout |
-| Indent of attributes | One step from the tag (`vue/html-indent`) | One step from the tag (`twig-html/indent`) |
-| Threshold | More than 1 attribute on one line | More than 1 (`ifAttrsMoreThan`) |
-| Tag at or under the threshold | Still checked: a multi-line tag is normalised | Left alone, however it is written |
-| Attribute order | `vue/attributes-order` reorders them | Never reorders |
-| Self-closing void tag (`<img />`) | `vue/html-self-closing` removes the `/` | Keeps `/>` and puts it on its own line |
-| Scope of the fix | Line breaks only; `vue/html-indent` indents | Line breaks only; `twig-html/indent` indents |
-
-The defaults match Vue's threshold.
-
-## Testing
-
-- `test/attrs-newline.test.ts` covers the layout, the options, Drupal attributes after the tag name, Twig blocks that span attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in `textarea`, the unfixable Twig-comment case and open tags missing their `>`.
-- `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
-- `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
-
-Run over 15 real Drupal projects (17,914 templates, Drupal core and contrib included): 4,770 tags
-were reported at a threshold of 2. The fix changed only whitespace in every file, every fixed template
-still parsed and was stable on a second pass. The only tags left unfixed were two with a Twig comment
-between attributes, as designed. One template had an unclosed tag, so it failed to parse and was
-skipped.
-
-## When not to use it
-
-Turn it off if your templates are laid out by a formatter.
-
-`configs.recommended` skips `**/*.svg.twig`, for the same reason the rule leaves inline SVG alone.
-The skipped files get no parser either, so to lint them anyway, reuse the whole recommended config
-for them and let the rule into SVG:
+`configs.recommended` skips `**/*.svg.twig` for the same reason the rule leaves inline SVG alone. The
+skipped files get no parser either, so to lint them anyway, reuse the recommended config's parser
+and `files` setting for them and let the rule into SVG:
 
 ```js
 // eslint.config.js
@@ -123,3 +135,42 @@ export default [
   },
 ];
 ```
+
+## Compared with `vue/max-attributes-per-line`
+
+The rule follows the layout `vue/max-attributes-per-line`, `vue/first-attribute-linebreak` and
+`vue/html-closing-bracket-newline` produce, so `.vue` and `.twig` files look alike. Checked against the
+`flat/recommended` preset of eslint-plugin-vue 10:
+
+| | `vue` | `twig-html/attrs-newline` |
+|---|---|---|
+| Tag with more attributes than the threshold | One attribute per line, `>` on its own line | Same layout |
+| Indent of attributes | One step from the tag (`vue/html-indent`) | One step from the tag (`twig-html/indent`) |
+| Threshold | More than 1 attribute on one line | More than 1 (`ifAttrsMoreThan`) |
+| Tag at or under the threshold | Still checked: a multi-line tag is normalised | Left alone, however it is written |
+| Attribute order | `vue/attributes-order` reorders them | Never reorders |
+| Self-closing void tag (`<img />`) | `vue/html-self-closing` removes the `/` | Keeps `/>` and puts it on its own line |
+| Scope of the fix | Line breaks only; `vue/html-indent` indents | Line breaks only; `twig-html/indent` indents |
+
+## Compared with `@html-eslint/attrs-newline`
+
+Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-eslint-parser`:
+
+| | `@html-eslint/attrs-newline` | `twig-html/attrs-newline` |
+|---|---|---|
+| Threshold | More than 2 attributes | More than 1 |
+| Options | `ifAttrsMoreThan`, `closeStyle`, `maxLen`, `skip`, `inline` | `ifAttrsMoreThan`, `closeStyle`, `ignoreInside` |
+| Indentation | None; left to `@html-eslint/indent` | None; left to `twig-html/indent` |
+| Twig block around attributes | Each Twig tag is an attribute of its own, so `{% if %}` and `{% endif %}` get their own lines and the block is split | The block stays together on one line |
+| Twig comment between attributes | Dropped by the fix, which rebuilds the tag from the attributes it parsed | Reported, not fixed |
+| Inline SVG | Laid out unless `skip` lists `svg` | Skipped by default |
+
+## Testing
+
+- `test/attrs-newline.test.ts` covers the layout, the options, prints touching the tag name, Twig blocks that span
+  attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in
+  `textarea`, the unfixable Twig-comment case and open tags missing their `>`.
+- `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace
+  and still parses.
+- `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks
+  a second pass changes nothing (see the repository README).

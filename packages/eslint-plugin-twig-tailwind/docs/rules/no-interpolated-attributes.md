@@ -7,7 +7,7 @@ Enabled as an error by `createConfig()`.
 ## Rule details
 
 `class="flex {{ modifier }}"` hides classes from every linter: nothing can know what the Twig
-produces. This rule reports Twig (`{{ }}` or `{% %}`) inside `class=""` and points to the
+produces. This rule reports Twig (`{{ }}`, `{% %}` or `{# #}`) inside `class=""` and points to the
 alternatives, `{% set classes = [...] %}` with `attributes.addClass()`, or `{ classes: [...] }`
 passed to an include.
 
@@ -46,8 +46,3 @@ once by this rule.
 
 - `test/integration/recommended.test.ts` lints templates with the recommended config and checks the reports, the `attributes` option and turning the rule off.
 - `tools/corpus/canaries/twig-tailwind.html.twig` is a canary the rule must report on every corpus run.
-
-## When not to use it
-
-Turn the rule off for templates you do not control (for example copies of Drupal core templates)
-if rewriting them is not an option.

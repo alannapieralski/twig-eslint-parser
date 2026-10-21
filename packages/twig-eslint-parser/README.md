@@ -83,12 +83,13 @@ silently.
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `unconvertedBlocks` | Blocks that could not be converted, with their range and the reason. |
-| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. `twig-html/attrs-newline` uses it to keep attributes wrapped in a Twig block together. |
+| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. The `twig-html` rules use it, for example to keep attributes wrapped in a Twig block together. |
 | `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range, the `Attribute` node itself and its `owner`, the `Tag`, `ScriptTag` or `StyleTag` node it was taken from. `twig-tailwind/no-interpolated-attributes` reports them, and every `twig-html` rule puts them back in their place among the owner's attributes. |
 | `strings` | Every Twig string literal, read from the lexer, with its range (quotes included), its `quote` (`'` or `"`) and whether it interpolates `#{ }`. It covers tags that never become JavaScript nodes, such as `{% extends %}` and `{% trans %}`, and blocks that fail to convert. `twig-html/quotes` uses it. |
 
-Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag missing its `>`, are reported by ESLint as a
-parsing error with its position.
+Invalid Twig, such as an unclosed `{{`, and broken markup, such as a tag whose `>` is missing before the next tag, are reported by ESLint as a
+parsing error with its position. The exception is an unquoted attribute value that runs into the next tag
+(`<li id=b<span>`), which is read as one attribute value.
 
 ## Markup
 
@@ -108,10 +109,10 @@ position in the markup says:
   (`data-{{ name }}="x"`). The tag's `name` is the Twig as written.
 - Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
   `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
-  as a browser does, so one element that is never closed is reported on its own instead of
+  as a browser does, so one element that is never closed stays open on its own instead of
   swallowing the rest of the document.
-- Drupal only: `<head-placeholder>`, `<css-placeholder>`, `<js-placeholder>` and
-  `<js-bottom-placeholder>` are void elements, because Drupal swaps the exact opening tag and the
+- Drupal: `<head-placeholder>`, `<css-placeholder>`, `<js-placeholder>` and
+  `<js-bottom-placeholder>` are always void elements, whatever the project, because Drupal swaps the exact opening tag and the
   templates leave them unclosed. The list is `drupalVoidElements` in `src/drupal.ts`, next to the
   rest of the parser's Drupal knowledge; everything else in this section is plain Twig and HTML.
 - `textarea` and `title` content is raw text, as in HTML, and Twig inside `script`, `style` and raw
@@ -142,11 +143,16 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
   as one document, so the element appears unclosed. Rules can tell such elements apart with the
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
+- **A print touching a tag name** is read as the end of the name only when a close tag elsewhere in the file
+  spells the same Twig (`<h{{ level }}>...</h{{ level }}>`). Otherwise it is read as attributes, so
+  `<h{{ heading }} class="a">x</h1>` has the attributes `{{ heading }}` and `class`, and rules that move
+  attributes can split the tag name.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
-- **Very deep nesting.** The parser overflows the call stack at a few thousand nested elements (for example
-  thousands of `<li>` without their close tags) and throws a "nested too deeply" error, which ESLint reports
-  as a parsing error for the file.
+- **Very deep nesting.** ESLint itself overflows the call stack at roughly 4,000 nested elements (for example
+  thousands of `<li>` without their close tags), and the run fails with "Maximum call stack size exceeded". Above
+  roughly 7,000 levels the parser stops first with a "nested too deeply" error, which ESLint reports as a
+  parsing error for the file. The thresholds vary with the Node version.
 - **Oxlint** cannot use this parser: it does not support custom HTML parsers yet.
 
 ## Supported Twig
@@ -162,11 +168,13 @@ Twig 3.x syntax up to 3.28, verified against real Twig:
 - Every fixture matches Twig 3.28.0's own tokens exactly, and its output passes the node-by-node
   checks in `test/support/output-checks.ts`: ranges, locations and text match the source, every
   string appears once, every tag and attribute is read, and every element closes.
-- On about 19,000 real templates (Drupal core, contributed modules and themes) the lexer matches
+- On real templates (Drupal core, contributed modules and themes) the lexer matches
   Twig on every token and the output passes the same checks, apart from elements opened or closed
   in different Twig branches and a few templates with invalid HTML.
 
 ## Upgrading Twig
+
+Run these from `packages/twig-eslint-parser`.
 
 1. Set the new version in `tools/twig-oracle/composer.json` and run `composer update` there.
 2. `npm run syntax:twig` rewrites `twig-syntax.json`. Its diff is the list of new syntax.
@@ -210,7 +218,7 @@ Run these from the repository root; see the [root README](https://github.com/ala
 | `npm run vendor:check -w twig-eslint-parser` / `vendor:write` | Checks or regenerates `src/lexer` and `src/es-html-parser` from pristine plus patches. |
 | `npm run golden:twig -w twig-eslint-parser` | Regenerates the fixture golden files with real Twig (needs PHP and `composer install` in `tools/twig-oracle`). |
 | `npm run syntax:twig -w twig-eslint-parser` | Regenerates `twig-syntax.json` from the installed Twig (same requirements). |
-| `npm run corpus -w twig-eslint-parser` | Checks the lexer against real Twig, and the parser's output node by node, on every template in your corpus (needs PHP). See the root README. |
+| `npm run corpus -w twig-eslint-parser` | Checks the lexer against real Twig, and the parser's output node by node, on every template in your corpus (the lexer and HTML oracle checks need PHP). See the root README. |
 
 ## Licence
 
