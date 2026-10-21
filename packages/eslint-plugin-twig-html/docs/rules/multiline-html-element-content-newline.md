@@ -106,7 +106,7 @@ that is never closed, moved content stays at the tag's indentation.
   `></div>` into `>\n</div>`.
 - **Elements in `ignores`, and everything inside them.** By default that is `pre`, `textarea` and
   common inline elements (`a`, `span`, `strong`, `label`, `svg` and the like), where a line break may
-  render as a space.
+  render as a space. Inline SVG is skipped this way, so taking `svg` out of `ignores` lays it out.
 - **`pre` and `textarea`, and everything inside them**, even when `ignores` leaves them out, since
   their whitespace is content.
 - **Tags whose name is Twig**, such as `<{{ element }}>` or `<h{{ level }}>`, since Twig may render

@@ -44,20 +44,6 @@ still counts them, checks their quotes and leaves their values alone.
 | [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
-## What each rule skips
-
-Each rule's page gives the reasons. This table shows where they differ.
-
-| Case | `attrs-newline` | `indent` | `multiline-html-element-content-newline` | `quotes` |
-|---|---|---|---|---|
-| Inline `svg` | Skipped (`ignoreInside`) | Checked | Skipped (inline element) | Checked |
-| Other inline elements (`a`, `span`) | Checked | Checked | Skipped by default (`ignores`) | Checked |
-| `pre` and `textarea` | Tag checked, content is text | Content left alone | Skipped | Attributes checked, text left alone |
-| `script` and `style` | Opening tag checked | Content left alone, tags indented | Not checked | Attributes checked, content left alone |
-| Tag name built by Twig (`<h{{ level }}>`) | Checked, name not counted | Checked | Skipped | Checked |
-| Element split across Twig branches | Tag skipped when a Twig block opens or branches inside it | Not checked | Skipped when its content edges sit in another branch | Attribute holding half a Twig block reported, not fixed |
-| Open tag missing its `>` | Reported, not fixed | Not checked | Not checked | Reported, not fixed |
-| Twig tags that do not pair up | Not affected | Whole file skipped | Not affected | Not affected |
 
 ## Known limitations
 
