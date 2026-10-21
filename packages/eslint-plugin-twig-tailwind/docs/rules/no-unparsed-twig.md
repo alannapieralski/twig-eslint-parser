@@ -35,8 +35,3 @@ rule: ESLint reports it as a parsing error.
 
 - `test/integration/recommended.test.ts` lints templates with the recommended config and checks the report for a block the parser could not convert.
 - `tools/corpus/canaries/twig-tailwind.html.twig` is a canary the rule must report on every corpus run.
-
-## When not to use it
-
-If a template uses valid Twig that the parser cannot read yet, turn the rule off for that file and
-report the expression as a parser issue.
