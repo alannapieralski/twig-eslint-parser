@@ -111,7 +111,6 @@ that is never closed, moved content stays at the tag's indentation.
   their whitespace is content.
 - **Tags whose name is Twig**, such as `<{{ element }}>` or `<h{{ level }}>`, since Twig may render
   them as an inline element.
-- **`<script>` and `<style>`**, which this rule does not check (`attrs-newline` does).
 - **Tags with no closing tag**, such as `<img>`.
 
 ### Reported but not fixed
@@ -126,6 +125,11 @@ that is never closed, moved content stays at the tag's indentation.
   Moving the edges would move the Twig tags with them. Twig blocks that open and close inside the
   content are fine.
 - **An open tag that is missing its `>`**, where the parser reads the markup after it as attributes.
+
+### Known gaps
+
+- **`script` and `style` are not checked.** After `attrs-newline` splits a `<script>` opening tag, its
+  content stays on the `>` line (`>init()</script>`), unlike every other element.
 
 ## Options
 

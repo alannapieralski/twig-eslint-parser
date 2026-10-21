@@ -114,21 +114,40 @@ These lines keep whatever indentation the author wrote:
   another. The whole tag is left alone, its first line included.
 - **An open tag with no `>` at the end of the file, and markup swallowed by an unquoted attribute
   value** that runs into the next tag (`<li id=b<span>`). Anywhere else a missing `>` is a parsing
-  error and no rule runs. The content of an element that is never closed is skipped too. The parser
-  cannot tell where these end.
-- **A file whose Twig tags do not pair up**, such as an `{% endif %}` with no `{% if %}` or an
-  `{% endfor %}` closing an `{% if %}`. The rule cannot know the nesting, and guessing would move
-  every later line.
+  error and no rule runs.
+- **The content of an element that is never closed**, meaning an element with no closing tag that holds
+  other nodes. In `<ul><li>a<li>b</ul>` the second `li` becomes a child of the first, so its content
+  is skipped. The parser cannot tell where these elements end.
+- **A file whose Twig tags do not pair up**, such as an `{% endif %}` with no `{% if %}`, an
+  `{% endfor %}` closing an `{% if %}`, or a bare `{% end %}`. A closing tag must be `end` plus the name
+  of the tag it closes. The rule cannot know the nesting, and guessing would move every later line, so
+  nothing in the file is reported, and nothing says it was skipped. Twig rejects such templates when it
+  renders them.
 
-Inside an element split across branches or never closed, the depth of a tag is unknown but its own
-line is not. The attribute lines and closing `>` of a tag there are still checked, measured from the
-indentation its line already has, so a tag that `attrs-newline` splits is laid out like any other.
+Where the depth is unknown, the rule cannot say how many levels deep a line is, so it skips the
+content. It can still lay out a tag's own attribute lines and closing `>`, because they are measured
+from the line the tag starts on: the indentation that line already has is the base, and each attribute
+line is one step further in. A tag that `attrs-newline` splits is therefore laid out like any other.
+In this example `<p>` is never closed, so `text` and the `<i` line are left as written, but the
+attributes and `>` are placed from the `<i` line:
+
+```twig
+<div>
+  <p>
+      text
+    <i
+      class="a"
+      id="b"
+    >x</i>
+</div>
+```
 
 ### Known gaps
 
 - **Multi-line Twig is not laid out inside.** The parameters of an `{% include 'x' with { ... } %}`
-  written over several lines, and the inner lines of any multi-line print or tag, keep whatever
-  indentation the author wrote. Only the line the Twig starts on is indented.
+  written over several lines, and the inner lines of any multi-line `{{ }}` expression or tag (a long
+  hash or ternary, for example), keep whatever indentation the author wrote. Only the line the Twig
+  starts on is indented. `vue/html-indent` indents the inner lines of an expression like JavaScript.
 
 ## Options
 
@@ -156,10 +175,10 @@ preset of eslint-plugin-vue 10:
 |---|---|---|
 | Indent size | `2` | `2` |
 | `attribute`, `closeBracket`, `alignAttributesVertically` | `1`, `0`, `true` | Same |
-| `ignores` | AST selectors | Element names |
+| `ignores` | AST selectors, so an element can be ignored by attribute or position | Element names only |
 | `baseIndent` | `1`: children of `<template>` are indented | Not needed: Twig templates have no root wrapper, so top-level content is at column 0 |
 | Twig and Vue blocks | `v-if` lives on the element, so blocks add no level | Every Twig block body adds a level |
-| Expressions inside `{{ }}` | Indented like JavaScript | Inner lines left alone |
+| Expressions inside `{{ }}` | Indented like JavaScript | Inner lines left alone (see Known gaps) |
 | Comments before a closing tag | May line up with the line above or the closing tag | Indented like the content around them |
 | Message | `Expected indentation of 2 spaces but found 0 spaces.` | Same |
 
@@ -173,7 +192,8 @@ Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-
 | Twig blocks | Not known: the lines inside `{% if %}` and `{% for %}` stay at the level of the Twig tag | The body of every Twig block is one step in |
 | Attribute option | `Attribute` (at least 1, default 1) | `attribute` (at least 0, default 1) |
 | Other options | `tagChildrenIndent`, `ignoreComment`, `templateIndentBase` | `closeBracket`, `alignAttributesVertically`, `ignores` |
-| Elements left alone | `pre`, `xmp` | `pre`, `textarea`, `script`, `style` content, plus `ignores` |
+| Elements left alone | `pre` and `xmp`, including their own tag lines | The content of `pre`, `textarea`, `script` and `style`, plus `ignores`; their tags are still indented |
+| `script` and `style` content | Left alone | Left alone |
 | Multi-line `include` parameters | Inner lines left alone | Inner lines left alone |
 
 ## Testing

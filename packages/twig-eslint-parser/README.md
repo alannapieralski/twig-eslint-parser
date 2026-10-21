@@ -143,6 +143,10 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
   as one document, so the element appears unclosed. Rules can tell such elements apart with the
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
+- **A print touching a tag name** is read as the end of the name only when a close tag elsewhere in the file
+  spells the same Twig (`<h{{ level }}>...</h{{ level }}>`). Otherwise it is read as attributes, so
+  `<h{{ heading }} class="a">x</h1>` has the attributes `{{ heading }}` and `class`, and rules that move
+  attributes can split the tag name.
 - **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
   the tag is read as `h` with the Twig blocks and the digits as attributes.
 - **Very deep nesting.** ESLint itself overflows the call stack at roughly 4,000 nested elements (for example

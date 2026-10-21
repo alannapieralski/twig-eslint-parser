@@ -110,7 +110,7 @@ The HTML half follows [`@html-eslint/quotes`](https://html-eslint.org/docs/rules
 | Default HTML quote | Double | Double |
 | Value containing the wanted quote | Left alone | Left alone |
 | Unquoted value | Reported and wrapped | Reported, and wrapped when that cannot change the output |
-| Value containing a template | Skipped unless `enforceTemplatedAttrValue`, which then fixes `class='{{ x }}'` whatever the Twig prints | Checked, since Twig is opaque to HTML, and fixed only when the Twig prints nothing |
+| Value containing a template | Skipped unless `enforceTemplatedAttrValue`, which then fixes `class='{{ x }}'` whatever the Twig prints | Always checked, but fixed only when the Twig cannot print a quote: `class='a{% if b %}c{% endif %}'` is fixed, `class='{{ x }}'` is only reported |
 | Twig strings | Not read | Checked with their own style |
 
 ## Testing

@@ -69,5 +69,5 @@ command, and the canary when there is one. No counts, dates or results of runs.
 ## Package READMEs
 
 Installation, Usage, Rules (a table with one-line descriptions that link to the rule pages),
-Known limitations (only gaps that cut across rules, one line each with a link), Licence. Rule
+What each rule skips (a table of where the rules differ, twig-html only), Known limitations (only gaps that cut across rules, one line each with a link), Licence. Rule
 detail stays on the rule page.
