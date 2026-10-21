@@ -95,12 +95,6 @@ The defaults match Vue's threshold.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/attrs-newline` does the same for real templates, and also checks a second pass changes nothing (see the repository README).
 
-Run over 15 real Drupal projects (17,914 templates, Drupal core and contrib included): 4,770 tags
-were reported at a threshold of 2. The fix changed only whitespace in every file, every fixed template
-still parsed and was stable on a second pass. The only tags left unfixed were two with a Twig comment
-between attributes, as designed. One template had an unclosed tag, so it failed to parse and was
-skipped.
-
 ## When not to use it
 
 Turn it off if your templates are laid out by a formatter.

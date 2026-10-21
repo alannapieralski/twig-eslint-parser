@@ -11,8 +11,8 @@ Each line is indented one step for every element and every Twig block it sits in
 - Children of an element are one step in from the element. The closing tag is in line with the
   opening tag.
 - The body of a Twig block (`if`, `for`, `block`, `embed`, `macro`, `apply`, block-form `set` and
-  any other tag closed by `end<name>`) is one step in from the opening tag. `else`, `elseif` and
-  the `end` tag are in line with the opening tag.
+  any other tag closed by `end<name>`) is one step in from the opening tag. `else`, `elseif`, `plural`
+  (in a Drupal `trans`) and the `end` tag are in line with the opening tag.
 - Every line of multi-line text is at the child indent.
 - An attribute on its own line is one step in from the tag. If the first attribute is on the tag's
   line, the others line up with it instead (see `alignAttributesVertically`).
@@ -65,8 +65,10 @@ Examples of **correct** code:
 
 These lines keep whatever indentation the author wrote:
 
-- Content of `pre` and `textarea`, including the line of their closing tag, because whitespace
-  there is content.
+- Content of `pre`, `textarea` and any element named in the parser's `rawContentTags` option,
+  including the line of their closing tag, because whitespace there is content. The text of a
+  `title` is not left alone: browsers trim it, so it is indented like other content, unless you
+  list `title` in `rawContentTags`.
 - Content of `script` and `style`, and of any element named in `ignores`. Their closing tags are
   still indented.
 - Inner lines of a multi-line attribute value. `eslint-plugin-twig-tailwind` wraps `class` values
@@ -87,8 +89,10 @@ These lines keep whatever indentation the author wrote:
 - A tag whose own markup a Twig branch splits, such as one ending in `>` in one branch and `/>` in
   another. The whole tag is left alone, its first line included.
 - YAML front matter between `---` lines at the top of the file, as in Drupal help topics.
-- Everything after an open tag that has no `>`, and the content of an element that is never
-  closed, because the parser cannot tell where they end.
+- An open tag with no `>` at the end of the file, and the markup swallowed by an unquoted
+  attribute value that runs into the next tag (`<li id=b<span>`). Anywhere else a missing `>` is a
+  parsing error and no rule runs. Also the content of an element that is never closed. The parser
+  cannot tell where these end.
 
 Inside an element split across branches or never closed, the depth of a tag is unknown but its own
 line is not. The attribute lines and closing `>` of a tag there are still checked, measured from
@@ -110,7 +114,7 @@ lines and moved content stay at the tag's own indentation.
 
 ## Options
 
-The first option is the indent size: a number of spaces (default `2`) or `'tab'`. The second is an
+The first option is the indent size: a whole number of spaces of at least 1 (default `2`) or `'tab'`. The second is an
 object:
 
 | Option | Default | Description |
@@ -146,13 +150,13 @@ preset of eslint-plugin-vue 10:
 - `test/indent.test.ts` covers nested HTML, Twig blocks with `else` and `elseif`, block, embed and
   block-form set, inline set and the short block form, whitespace control, multi-line Twig, verbatim,
   unpaired Twig, conditional wrappers and elements split across branches, each attribute and close
-  bracket option, Twig between attributes, multi-line attribute values, `pre`, `textarea`, `script`,
+  bracket option, Twig between attributes, multi-line attribute values, `pre`, `textarea`, `title`, `rawContentTags`, `script`,
   `style`, `ignores`, open tags missing their `>`, tabs, other sizes, Windows line endings and
   front matter and fixing a deep tree in one pass.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace
   and still parses.
 - `npm run corpus -- --rule twig-html/indent` does the same for real templates. The canary
-  `tools/corpus/canaries/indent.twig` must report and fix to `indent.expected`.
+  `tools/corpus/canaries/indent.html.twig` must report and fix to `indent.expected`.
 
 ## When not to use it
 

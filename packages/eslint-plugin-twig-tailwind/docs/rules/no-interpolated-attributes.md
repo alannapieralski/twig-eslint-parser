@@ -7,7 +7,7 @@ Enabled as an error by `createConfig()`.
 ## Rule details
 
 `class="flex {{ modifier }}"` hides classes from every linter: nothing can know what the Twig
-produces. This rule reports Twig (`{{ }}` or `{% %}`) inside `class=""` and points to the
+produces. This rule reports Twig (`{{ }}`, `{% %}` or `{# #}`) inside `class=""` and points to the
 alternatives, `{% set classes = [...] %}` with `attributes.addClass()`, or `{ classes: [...] }`
 passed to an include.
 

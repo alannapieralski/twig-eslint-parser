@@ -59,7 +59,7 @@ Examples of **correct** code:
 >
 </div>
 
-<h2 id="a" class="b">Elements on one line stay as they are</h2>
+<h2 id="a">Elements on one line stay as they are</h2>
 ```
 
 What it leaves alone:
@@ -78,9 +78,10 @@ What it leaves alone:
 - Tags with no closing tag, such as `<img>`.
 - An open tag that is missing its `>`, where the parser reads the markup after it as attributes.
 
-It only fixes elements known to be block-level, such as `div`, `p`, `li` and `table`, `button` and SVG containers.
-Other elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an
-inline element can render as a space.
+It only fixes elements whose edge whitespace browsers do not render, such as `div`, `p`, `li`, `table`, `button`, `title`
+and SVG containers. A `title` is fixed even though the parser reads its content as raw text: browsers trim it. Other
+elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an inline
+element can render as a space.
 
 The fix only places line breaks. A line it creates starts at the indentation of the tag's line, and when it removes
 blank lines it keeps the indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix
@@ -110,7 +111,7 @@ multi-line element's content on its own lines, text included.
 
 ## Testing
 
-- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, the fix leaving indentation to `indent`, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
+- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, the fix leaving indentation to `indent`, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, the text of a `title`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
 - `npm run corpus -- --rule twig-html/multiline-html-element-content-newline` does the same for real templates.
 

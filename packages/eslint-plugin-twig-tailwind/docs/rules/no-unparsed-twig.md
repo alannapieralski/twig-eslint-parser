@@ -18,7 +18,7 @@ Examples of **incorrect** code:
 
 ```twig
 {{ title subtitle }}
-{% set classes = ['flex' 'gap-4'] %}
+{% set classes = ['flex' ~] %}
 ```
 
 Examples of **correct** code:

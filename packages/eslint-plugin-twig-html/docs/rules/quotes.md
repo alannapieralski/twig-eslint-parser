@@ -39,8 +39,8 @@ Examples of **correct** code:
   `eslint-plugin-twig-tailwind`'s recommended config, are still checked.
 - Twig inside a value is opaque to HTML. In `class='{{ "a" }}'` only the outer quotes are HTML
   quotes, so the rule never reads quotes inside Twig as part of the value.
-- An unquoted value (`class=flex`, `data-id={{ id }}`) is reported. Plain text is wrapped in the
-  HTML quote.
+- An unquoted value (`class=flex`, `data-id={{ id }}`) is reported. It is wrapped in the HTML quote
+  only when it is plain text without quotes, `=`, `<`, `>` or backticks.
 - Quotes in text, comments, `<script>` and `<style>` content, and `<textarea>` and `<title>` text
   have no meaning to HTML, so they are left alone. So are DOCTYPE identifiers.
 
@@ -64,9 +64,10 @@ escapes, such as `\n` or `\x41`, mean the same in both kinds of string and are k
 The rule never adds an escape, and never changes what a template renders. It does not report:
 
 - a value or string that contains the wanted quote, such as `title='say "hi"'` or `{{ "it's" }}`
-- a double-quoted Twig string that interpolates, such as `"a #{b}"`, since only double quotes
-  interpolate
-- a single-quoted Twig string containing `#{`, since double quotes would start interpolating it
+- with `twig: 'single'`, a double-quoted Twig string that interpolates, such as `"a #{b}"`, since only
+  double quotes interpolate
+- with `twig: 'double'`, a single-quoted Twig string containing `#{`, since double quotes would start
+  interpolating it
 
 It reports but does not fix:
 
@@ -75,12 +76,12 @@ It reports but does not fix:
   branch
 - a quoted value holding Twig that prints, such as `{{ x }}`, `{{ 'Say "hi"'|t }}`, `|raw` or
   `{% include %}`, since Drupal markup, `|raw` and included templates are not escaped and may
-  print the new quote. Only comments and `if` and `for` tags are allowed around the value's text
+  print the new quote. Only comments and `if` and `for` tags (with their `else`, `elseif` and end tags) are allowed around the value's text
 - an unquoted value holding any Twig, such as `data-id={{ id }}` or
   `class={% if a %}"a"{% else %}'b'{% endif %}`, since that Twig may print spaces, attributes or
   quotes of its own
-- an attribute in an open tag that swallowed the markup after it, such as `<li id=b<span>` with no
-  `>`, since the parser has misread where that tag ends
+- an attribute in an open tag that swallowed the markup after it, such as `<li id=b<span>`, where the `li`
+  open tag has no `>` of its own, since the parser has misread where that tag ends
 
 ## Options
 
@@ -115,9 +116,6 @@ The HTML half follows [`@html-eslint/quotes`](https://html-eslint.org/docs/rules
   parses, and has as many Twig strings and interpolations as before.
 - `npm run corpus -- --rule twig-html/quotes` does the same for real templates. The
   `quotes.html.twig` canary checks the fixed output exactly.
-
-Run over 27 theme folders of real Drupal projects (4,169 templates): 2,344 values and strings were
-reported in 1,152 templates. Every fixed template still parsed and was stable on a second pass.
 
 ## When not to use it
 

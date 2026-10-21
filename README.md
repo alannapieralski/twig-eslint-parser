@@ -21,8 +21,8 @@ npm install
 
 | Command | What it does |
 |---|---|
-| `npm test` | Builds the parser, then runs every package's tests. |
-| `npm run typecheck` | Builds the parser, then type-checks every package. |
+| `npm test` | Builds the parser, then runs every package's tests and the corpus tool's unit tests. |
+| `npm run typecheck` | Builds the parser, then type-checks every package and the corpus tool. |
 | `npm run build` | Compiles every package to its `dist`. |
 
 Package-specific commands, such as the twig-lexer fork checks, are listed in each package's README
@@ -68,6 +68,10 @@ the templates you actually have: Drupal core, contributed modules and your theme
   - `metamorphic`: rewrites that cannot change the meaning (spaces inside Twig delimiters, a space
     between a Twig tag and an attribute name, Windows line endings) must not change the tree.
   - `converts-every-block`: every Twig block converts to an expression tree.
+  - `line-coverage`: a per-line report of which lines the parser read, and what damaged the ones it
+    did not.
+  - `mutation-recall`: applies small defects and harmless rewrites to a sample of templates and
+    checks the parser flags the defects.
 - **Rules** (`packages/*/test/corpus.ts`): every rule of a plugin gets a check automatically. It
   runs the rule alone and counts its reports. For a fixable rule it applies the fixes one pass at a
   time and fails if a fix does not resolve its own report, oscillates, or has not settled after 10
@@ -99,9 +103,10 @@ Everything is written to `corpus-report/` (git-ignored, because it holds local p
 
 - `summary.md`: one row per check, the first new failures of each, stale baseline entries, the
   canaries still pending, and what changed since the last run.
-- `findings.ndjson`: one JSON object per finding: check, status (`report`, `new`, `known` or
-  `skipped`), root, file, line, column, message, the source line, and whether the template is in a
+- `findings.ndjson`: one JSON object per finding: check, status (`report`, `new`, `known`,
+  `expected` or `skipped`), root, file, line, column, message, the source line, and whether the template is in a
   `core`, `contrib` or `dist` folder.
+- `coverage.ndjson`: with `line-coverage`, the per-line coverage of each template.
 - `failures/<check>/`: the before and after of a failed fix, as a diff.
 - `samples/<check>/`: with `--sample`, fix diffs and `reports.md`, reports in context grouped by
   message.
@@ -131,7 +136,7 @@ array. The runner and the config live in `tools/corpus`, which is not published,
 its own unit tests.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org), scoped to the
-package they change (`fix(parser): ...`, `feat(plugin): ...`). The release changelog is built from
+package they change (`fix(parser): ...`, `feat(twig-html): ...`). The release changelog is built from
 them.
 
 ### Dependency policy
