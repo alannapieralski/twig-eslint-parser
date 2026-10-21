@@ -6,10 +6,12 @@ Enabled as a warning in `configs.recommended`. Fixable.
 
 ## Rule details
 
-An element is multi-line when its closing tag starts on a later line than its opening tag. Its content then
-goes on lines of its own, with exactly one line break after the `>` of the opening tag and one before the closing tag.
-This is the layout `twig-html/attrs-newline` produces for a tag with several attributes, so the two rules
-finish each other's job.
+### Overview
+
+An element is multi-line when its closing tag starts on a later line than its opening tag. Its
+content then goes on lines of its own, with exactly one line break after the `>` of the opening tag
+and one before the closing tag. This is the layout `twig-html/attrs-newline` produces for a tag with
+several attributes, so the two rules finish each other's job.
 
 Examples of **incorrect** code:
 
@@ -62,34 +64,68 @@ Examples of **correct** code:
 <h2 id="a">Elements on one line stay as they are</h2>
 ```
 
-What it leaves alone:
+### What counts as multi-line
 
-- An element that starts and ends on one line, however long its content.
-- An empty element, `></div>`, unless `ignoreWhenEmpty` is off. Whitespace-only content is not empty: it is
-  reduced to one line break, so `>\n\n</div>` becomes `>\n</div>`.
-- Elements in `ignores`, and everything inside them. By default that is `pre`, `textarea` and common inline
-  elements (`a`, `span`, `strong`, `label`, `svg` and the like), where a line break may render as a space.
-- `pre` and `textarea`, and everything inside them, even when `ignores` leaves them out, since their whitespace is content.
-- An element whose content starts or ends in a different Twig branch from the element, such as a wrapper opened in
-  `{% if wrap %}<div>{% endif %}` and closed in `{% if wrap %}</div>{% endif %}`. Moving the edges would move the
-  Twig tags with them. Twig blocks that open and close inside the content are fine.
-- Tags whose name is Twig, such as `<{{ element }}>` or `<h{{ level }}>`, since Twig may render them as an inline element.
-- `<script>` and `<style>`, which this rule does not check (`attrs-newline` does).
-- Tags with no closing tag, such as `<img>`.
-- An open tag that is missing its `>`, where the parser reads the markup after it as attributes.
+- **Measured from the tags, not the content.** The element is multi-line when its closing tag starts on
+  a later line than its opening tag, however short the content is.
+- **Text is content.** A multi-line `<h2>` holding only text is fixed too, like an element that holds
+  other elements.
 
-It only fixes elements whose edge whitespace browsers do not render, such as `div`, `p`, `li`, `table`, `button`, `title`
-and SVG containers. A `title` is fixed even though the parser reads its content as raw text: browsers trim it. Other
-elements, such as custom elements and unknown tags, are reported but not fixed, since a line break inside an inline
-element can render as a space.
+### What the fix does
 
-The fix only places line breaks. A line it creates starts at the indentation of the tag's line, and when it removes
-blank lines it keeps the indentation already there. [`twig-html/indent`](indent.md) indents the content on the next fix
-pass, so keep it on with this rule, as `configs.recommended` does. Where `indent` cannot know the depth, such as inside an
-element that is never closed, moved content stays at the tag's indentation.
+- **Exactly one line break at each edge.** More than one is reduced to one, none is added. With
+  `allowEmptyLines`, blank lines are allowed and only a missing line break is reported.
+- **Whitespace-only content is not empty.** It is reduced to one line break, so `>\n\n</div>` becomes
+  `>\n</div>`. Content with no characters at all is the empty case: see `ignoreWhenEmpty`.
+- **Only HTML whitespace is changed** (space, tab, line feed, carriage return and form feed), so a
+  non-breaking space at the edge of the content is kept.
+- **Indentation:** a line it creates starts at the indentation of the tag's line, and when it removes
+  blank lines it keeps the indentation already there.
+- **Line endings:** the file's line endings are used, so `\r\n` stays `\r\n`.
 
-The fix only changes HTML whitespace (space, tab, line feed, carriage return and form feed), so a non-breaking space at
-the edge of the content is kept. It uses the file's line endings (`\r\n` stays `\r\n`).
+### Which elements are fixed
+
+- **Elements whose edge whitespace browsers do not render:** `div`, `p`, `li`, `table` and its parts,
+  headings, `button`, `title` and SVG containers, among others. A `title` is fixed even though the
+  parser reads its content as raw text, because browsers trim it.
+- **Other elements** are reported but not fixed: see What it skips.
+
+### Working with other rules
+
+[`twig-html/indent`](indent.md) indents the content on the next fix pass, so keep it on with this
+rule, as `configs.recommended` does. Where `indent` cannot know the depth, such as inside an element
+that is never closed, moved content stays at the tag's indentation.
+
+## What it skips
+
+### Left alone
+
+- **An element that starts and ends on one line**, however long its content, because it is not
+  multi-line.
+- **An empty element** (`></div>`), unless `ignoreWhenEmpty` is off. Setting it off turns a multi-line
+  `></div>` into `>\n</div>`.
+- **Elements in `ignores`, and everything inside them.** By default that is `pre`, `textarea` and
+  common inline elements (`a`, `span`, `strong`, `label`, `svg` and the like), where a line break may
+  render as a space.
+- **`pre` and `textarea`, and everything inside them**, even when `ignores` leaves them out, since
+  their whitespace is content.
+- **Tags whose name is Twig**, such as `<{{ element }}>` or `<h{{ level }}>`, since Twig may render
+  them as an inline element.
+- **`<script>` and `<style>`**, which this rule does not check (`attrs-newline` does).
+- **Tags with no closing tag**, such as `<img>`.
+
+### Reported but not fixed
+
+- **Elements not known to ignore edge whitespace**, such as custom elements and unknown tags. A line
+  break inside an inline element can render as a space.
+
+### Not checked at all
+
+- **An element whose content starts or ends in a different Twig branch from the element**, such as a
+  wrapper opened in `{% if wrap %}<div>{% endif %}` and closed in `{% if wrap %}</div>{% endif %}`.
+  Moving the edges would move the Twig tags with them. Twig blocks that open and close inside the
+  content are fine.
+- **An open tag that is missing its `>`**, where the parser reads the markup after it as attributes.
 
 ## Options
 
@@ -103,19 +139,42 @@ the edge of the content is kept. It uses the file's line endings (`\r\n` stays `
 'twig-html/multiline-html-element-content-newline': ['warn', { allowEmptyLines: true }],
 ```
 
-## Why not @html-eslint's `element-newline`
+## Compared with `vue/multiline-html-element-content-newline`
 
-`@html-eslint/element-newline` treats text as inline, and only breaks after the opening tag when a
-child is a block-level element. A multi-line `<h2>` with only text is left alone, while this rule puts every
-multi-line element's content on its own lines, text included.
+The rule follows `vue/multiline-html-element-content-newline`. Checked against the
+`flat/recommended` preset of eslint-plugin-vue 10:
+
+| | `vue` | `twig-html/multiline-html-element-content-newline` |
+|---|---|---|
+| Options and defaults | `ignores`, `ignoreWhenEmpty`, `allowEmptyLines`; ignores `pre`, `textarea` and inline elements | Same, with the same inline element list |
+| Multi-line element | Closing tag starts on a later line than the opening tag | Same |
+| Message | ``Expected 1 line break after opening tag (`<div>`), but no line breaks found.`` | Same |
+| Elements fixed | Every element | Only elements whose edge whitespace browsers do not render; others are reported |
+| Indentation after the fix | Replaces the whitespace with a bare line break | Keeps the tag's indentation; `twig-html/indent` indents |
+| `pre` and `textarea` | Ignored by default | Always ignored |
+| Twig | Not applicable | Skips Twig-named tags and elements whose edges sit in another Twig branch |
+
+## Compared with `@html-eslint/element-newline`
+
+Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-eslint-parser`:
+
+| | `@html-eslint/element-newline` | `twig-html/multiline-html-element-content-newline` |
+|---|---|---|
+| Scope | Every element, even on one line: `<div><p>x</p></div>` is split | Only multi-line elements |
+| Text content | Treated as inline: a multi-line `<h2>` with only text is left alone | Moved onto its own lines |
+| Child elements | A line break after the opening tag when a child element is not in `inline` (none are by default) | One line break at each edge of any multi-line element |
+| Options | `inline`, `skip` | `ignores`, `ignoreWhenEmpty`, `allowEmptyLines` |
+| Elements left alone | `pre` and `code` by default | `pre`, `textarea` and inline elements by default |
 
 ## Testing
 
-- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only elements, blank lines, each option, each side being fixed on its own, the fix leaving indentation to `indent`, Windows line endings, ignored elements and their contents, `pre` and `textarea` with a custom `ignores`, the text of a `title`, elements that are reported but not fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and `style`, non-breaking spaces, inline SVG, tags without a closing tag, open tags missing their `>` and the interplay with `attrs-newline`.
-- `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace and still parses.
-- `npm run corpus -- --rule twig-html/multiline-html-element-content-newline` does the same for real templates.
-
-## When not to use it
-
-Turn it off if your templates are laid out by a formatter, or if you prefer `>text</h2>` after a
-multi-line opening tag.
+- `test/multiline-html-element-content-newline.test.ts` covers the layout, empty and whitespace-only
+  elements, blank lines, each option, each edge fixed on its own, indentation left to `indent`,
+  Windows line endings, ignored elements, `pre` and `textarea`, elements that are reported but not
+  fixed, Twig branches around the content, custom and unknown tags, tags named by Twig, `script` and
+  `style`, the text of a `title`, non-breaking spaces, inline SVG, tags without a closing tag, open
+  tags missing their `>` and the interplay with `attrs-newline`.
+- `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace
+  and still parses.
+- `npm run corpus -- --rule twig-html/multiline-html-element-content-newline` does the same for real
+  templates.

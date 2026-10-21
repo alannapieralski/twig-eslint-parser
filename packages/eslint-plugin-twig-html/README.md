@@ -44,23 +44,10 @@ still counts them, checks their quotes and leaves their values alone.
 | [`multiline-html-element-content-newline`](docs/rules/multiline-html-element-content-newline.md) | Require a line break before and after the content of a multi-line element | warn | yes |
 | [`quotes`](docs/rules/quotes.md) | Use double quotes around HTML attribute values and single quotes around Twig strings, each configurable | warn | yes |
 
-## Why not @html-eslint's rules
-
-[`@html-eslint/eslint-plugin`](https://html-eslint.org) has `attrs-newline` and `indent` rules, and
-they run on Twig through this parser. This plugin splits the work the same way: the layout rules
-only place line breaks and `twig-html/indent` owns indentation. The difference is Twig: html-eslint's
-`indent` rule does not know about Twig blocks, so it removes the indentation `{% if %}` and
-`{% for %}` add to the HTML inside them, and its `attrs-newline` fix rebuilds the tag from the
-attributes it parsed, which drops a Twig comment written between two attributes.
-`twig-html/indent` indents the body of every Twig block, and `twig-html/attrs-newline` only ever
-changes the whitespace between attributes, reporting without fixing a tag that has a Twig comment between its attributes.
-
 ## Known limitations
 
-Each rule's page lists what it leaves alone and why. The gaps still to build:
+Gaps in a single rule are listed on its page. These cut across rules:
 
-- **`indent` does not lay out the inside of multi-line Twig**, such as the parameters of an
-  `{% include 'x' with { ... } %}` written over several lines. See [`indent`](docs/rules/indent.md#lines-it-leaves-alone).
 - **Elements opened or closed in different Twig branches** are never fixed across a branch, by any rule.
 - **Open tags missing their `>`** are a parsing error, except when an unquoted value runs into the next tag
   (`<li id=b<span>`), where the parser swallows the markup after it. The rules never fix those.
