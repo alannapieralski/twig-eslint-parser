@@ -70,8 +70,9 @@ Examples of **correct** code:
 - **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** a line is one step in from
   the line that opened the innermost bracket, and a line that starts with the closing bracket lines up
   with the line that opened it. The opening line keeps whatever indentation it has, so `.addClass([`
-  on a continuation line works. This covers the parameters of `{% include 'x' with { ... } %}`,
-  hashes and arrays:
+  on a continuation line works. A closing bracket is left alone when it ends one argument of a call
+  that has more arguments after it. This covers the parameters of
+  `{% include 'x' with { ... } %}`, hashes and arrays:
 
   ```twig
   {% include 'card.twig' with {
@@ -88,6 +89,18 @@ Examples of **correct** code:
       'card--wide',
     ])
   %}
+  ```
+- **Method chains in `{{ }}` and `{% %}`:** a line starting with `.name` is one step in from the line
+  that starts the chain, inside brackets or not. A closing bracket does not start a new chain, so
+  `.setAttribute()` after `])` stays level with `.addClass([`:
+
+  ```twig
+  {% include 'icon.twig' with {
+    attributes: create_attribute()
+      .addClass(['icon'])
+      .setAttribute('aria-hidden', 'true'),
+    size: 'md',
+  } only %}
   ```
 
 ### Attributes and close brackets
@@ -119,8 +132,9 @@ These lines keep whatever indentation the author wrote:
   and owns their layout.
 - **Inner lines of a multi-line Twig or HTML comment.** A comment is free text.
 - **Lines that start inside a multi-line Twig string**, because the whitespace is part of the string.
-- **Lines of a multi-line `{{ }}` or `{% %}` that are not inside brackets**, such as a `?` or `.`
-  continuation, a long condition or the closing `%}`. How to wrap an expression is left to the author.
+- **Lines of a multi-line `{{ }}` or `{% %}` that are not inside brackets and not a method chain**,
+  such as a `?` continuation, a long condition or the closing `%}`. How to wrap the rest of an
+  expression is left to the author.
 - **Inner lines of Twig that starts inside a skipped region**, such as a multi-line attribute value.
 - **The bodies of `{% verbatim %}` and `{% raw %}`.** Twig prints them as written.
 - **YAML front matter** between `---` lines at the top of the file, as in Drupal help topics.
@@ -166,8 +180,9 @@ attributes and `>` are placed from the `<i` line:
 
 ### Known gaps
 
-- **Operators and continuation lines are not laid out.** A line outside any bracket, such as `? 'a'`,
-  `.addClass(x)` or the second line of a long `and` condition, keeps the author's indentation.
+- **Operators and continuation lines are not laid out.** A line outside any bracket that is not a
+  method chain, such as `? 'a'`, `|filter` or the second line of a long `and` condition, keeps the
+  author's indentation.
 
 ## Options
 
@@ -198,7 +213,7 @@ preset of eslint-plugin-vue 10:
 | `ignores` | AST selectors, so an element can be ignored by attribute or position | Element names only |
 | `baseIndent` | `1`: children of `<template>` are indented | Not needed: Twig templates have no root wrapper, so top-level content is at column 0 |
 | Twig and Vue blocks | `v-if` lives on the element, so blocks add no level | Every Twig block body adds a level |
-| Expressions inside `{{ }}` | Indented like JavaScript | Lines inside `{ }`, `[ ]` and `( )` are indented one step from the line that opened them; other lines are left alone (see Known gaps) |
+| Expressions inside `{{ }}` | Indented like JavaScript | Lines inside `{ }`, `[ ]` and `( )` are indented one step from the line that opened them, and `.method()` chains one step from the line that starts them; other lines are left alone (see Known gaps) |
 | Comments before a closing tag | May line up with the line above or the closing tag | Indented like the content around them |
 | Message | `Expected indentation of 2 spaces but found 0 spaces.` | Same |
 
@@ -220,7 +235,7 @@ Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-
 
 - `test/indent.test.ts` covers nested HTML, Twig blocks with `else` and `elseif`, block, embed and
   block-form set, inline set and the short block form, whitespace control, multi-line Twig
-  brackets and include parameters, verbatim,
+  brackets, method chains and include parameters, verbatim,
   unpaired Twig, conditional wrappers and elements split across branches, each attribute and close
   bracket option, Twig between attributes, multi-line attribute values, `pre`, `textarea`, `title`,
   `rawContentTags`, `script`, `style`, `ignores`, open tags missing their `>`, tabs, other sizes,

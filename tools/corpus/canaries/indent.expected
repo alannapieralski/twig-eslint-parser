@@ -28,3 +28,6 @@
 {{ attrs([
   'a',
 ]) }}
+{% set attrs = attrs
+  .addClass(classes)
+%}

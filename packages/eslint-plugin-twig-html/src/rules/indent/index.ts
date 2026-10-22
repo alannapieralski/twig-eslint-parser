@@ -6,7 +6,7 @@ import { createAttributesOf } from '../../shared/tag-attributes.js';
 import { findIndentProblems, type MarkupProgram } from './find-indent-problems.js';
 import { messages } from './messages.js';
 import { indentSizeSchema, optionsSchema, resolveOptions } from './options.js';
-import { readRawContentTags } from './raw-content-tags.js';
+import { readRawContentTags } from './html/raw-content-tags.js';
 
 export const indent: Rule.RuleModule = {
   meta: {

@@ -123,11 +123,22 @@ describe('twig-html/indent', () => {
     });
 
     it('measures from the line that opened the bracket, as written', async () => {
-      await expectUntouched('{% set attributes = attributes\n    .addClass([\n      \'a\',\n    ])\n%}\n{%\n  set classes = [\n    \'b\',\n  ]\n%}');
+      await expectUntouched("{%\n  set classes = [\n    'b',\n  ]\n%}\n{% set a = b\n  .c([\n    'd',\n  ])\n%}");
       expect(await fixed("{% set a = b\n  .c([\n'd',\n])\n%}")).toBe("{% set a = b\n  .c([\n    'd',\n  ])\n%}");
     });
 
-    it('leaves lines outside any bracket alone', async () => {
+    it('indents a method chain one step from the line that starts it, inside brackets or not', async () => {
+      expect(await fixed("{% include 'x' with {\nattributes: attributes\n.addClass([\n'a',\n])\n.setAttribute('b', c),\ntitle: t,\n} %}")).toBe(
+        "{% include 'x' with {\n  attributes: attributes\n    .addClass([\n      'a',\n    ])\n    .setAttribute('b', c),\n  title: t,\n} %}",
+      );
+      expect(await fixed('{% set a = b\n.c()\n      .d() %}\n{%\n  set e = f\n.g()\n%}')).toBe('{% set a = b\n  .c()\n  .d() %}\n{%\n  set e = f\n    .g()\n%}');
+    });
+
+    it('leaves the closing bracket of one argument among several alone', async () => {
+      await expectUntouched("{{ f(a, {\n  'b': 1,\n},\n  {\n    c: 2\n  })\n}}");
+    });
+
+    it('leaves lines outside any bracket and not part of a method chain alone', async () => {
       await expectUntouched("{% set a = b and\n      c %}\n{{ c\n? 'd'\n   : 'e' }}\n{% set f = g\n|h %}");
     });
 
