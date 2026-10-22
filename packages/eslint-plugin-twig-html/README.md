@@ -49,9 +49,6 @@ still counts them, checks their quotes and leaves their values alone.
 
 Gaps in a single rule are listed on its page. These cut across rules:
 
-- **`indent` skips a whole file, silently, when its Twig end tags do not pair up**, such as a bare
-  `{% end %}`. See [`indent`](docs/rules/indent.md#not-checked-at-all).
-
 - **Elements opened or closed in different Twig branches** are never fixed across a branch, by any rule.
 - **Open tags missing their `>`** are a parsing error, except when an unquoted value runs into the next tag
   (`<li id=b<span>`), where the parser swallows the markup after it. The rules never fix those.

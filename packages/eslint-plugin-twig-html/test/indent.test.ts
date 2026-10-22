@@ -122,9 +122,9 @@ describe('twig-html/indent', () => {
       await expectUntouched('<div>\n  <li\n  class="a"\n      id="b"\n');
     });
 
-    it('reports nothing when Twig tags do not pair up', async () => {
-      await expectUntouched('<div>\n<p>a</p>\n{% endif %}\n</div>');
-      await expectUntouched('{% if a %}\n<p>a</p>\n{% endfor %}');
+    it('reports a parsing error, and nothing else, when Twig tags do not pair up', async () => {
+      const { messages } = await lint('<div>\n<p>a</p>\n{% endif %}\n</div>', [], false);
+      expect(messages).toMatchObject([{ ruleId: null, fatal: true, line: 3, column: 1, message: expect.stringContaining("Twig tags don't pair up") }]);
     });
 
     it('leaves the content of an element opened and closed in different Twig branches alone', async () => {

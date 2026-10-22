@@ -275,7 +275,7 @@ describe('tags', () => {
   });
 
   it('supports {% set %} capture blocks and destructuring', () => {
-    expect(onlyStatement('{% set c %}')).toMatchObject({ type: 'VariableDeclaration' });
+    expect(onlyStatement('{% set c %}{% endset %}')).toMatchObject({ type: 'VariableDeclaration' });
     expect(onlyStatement('{% set [a, b] = x %}')).toMatchObject({ type: 'VariableDeclaration' });
     expect(expressionOf('{% do {name: userName} = user %}')).toMatchObject({ type: 'AssignmentExpression' });
   });
@@ -286,29 +286,48 @@ describe('tags', () => {
       callee: { name: 'include' },
       arguments: [{ type: 'TemplateLiteral', quasis: [{ value: { cooked: 'card' } }] }, { type: 'ObjectExpression' }],
     });
-    expect(expressionOf("{% embed 'card' ignore missing with { a: 1 } %}")).toMatchObject({ type: 'CallExpression', callee: { name: 'embed' } });
+    expect(expressionOf("{% embed 'card' ignore missing with { a: 1 } %}{% endembed %}")).toMatchObject({ type: 'CallExpression', callee: { name: 'embed' } });
   });
 
   it('parses the iterated expression of {% for %}, including the Twig 2 if filter', () => {
-    expect(expressionOf('{% for key, item in items %}')).toMatchObject({ type: 'Identifier', name: 'items' });
-    expect(expressionOf("{% for item in items if item != '' %}")).toMatchObject({ type: 'SequenceExpression' });
+    expect(expressionOf('{% for key, item in items %}{% endfor %}')).toMatchObject({ type: 'Identifier', name: 'items' });
+    expect(expressionOf("{% for item in items if item != '' %}{% endfor %}")).toMatchObject({ type: 'SequenceExpression' });
   });
 
-  it.each(['{% if a and b %}', '{% elseif a %}', '{% do x = 1 %}', "{% with { a: 1 } only %}", "{% macro input(classes = ['a']) %}", "{% block title 'value' %}"])(
+  it.each(['{% if a and b %}{% endif %}', '{% do x = 1 %}', '{% with { a: 1 } only %}{% endwith %}', "{% macro input(classes = ['a']) %}{% endmacro %}", "{% block title 'value' %}"])(
     'parses the expression in %s',
     (code) => {
       expect(onlyStatement(code)).toBeDefined();
     },
   );
 
-  it.each(["{% extends 'base' %}", '{% endif %}', '{% else %}', "{% trans %}", "{% cache 'key' ttl(300) %}", "{% my_custom_tag some 'argument' %}", '{% block title %}'])(
-    'leaves %s out without reporting it as a failure',
-    (code) => {
-      const { statements, services } = parse(code);
-      expect(statements).toEqual([]);
-      expect(services).toMatchObject({ ignoredBlockCount: 1, unconvertedBlocks: [] });
-    },
-  );
+  it('parses the expression in {% elseif a %}', () => {
+    expect(parse('{% if x %}{% elseif a %}{% endif %}').statements).toHaveLength(2);
+  });
+
+  it.each([
+    ["{% extends 'base' %}", 1],
+    ["{% my_custom_tag some 'argument' %}", 1],
+    ['{% trans %}{% endtrans %}', 2],
+    ["{% cache 'key' ttl(300) %}{% endcache %}", 2],
+    ['{% block title %}{% endblock %}', 2],
+  ])('leaves %s out without reporting it as a failure', (code, ignoredBlockCount) => {
+    const { statements, services } = parse(code);
+    expect(statements).toEqual([]);
+    expect(services).toMatchObject({ ignoredBlockCount, unconvertedBlocks: [] });
+  });
+
+  it.each([
+    ['an end tag with no tag open', '<div>\n{% endif %}\n</div>', 2, "{% endif %} has no tag to belong to"],
+    ['an else with no tag open', '<div>\n{% else %}\n</div>', 2, "{% else %} has no tag to belong to"],
+    ['a bare end tag', '{% if a %}\n{% end %}', 2, '{% end %} cannot close {% if %}, which needs {% endif %}'],
+    ['an end tag closing the wrong tag', '{% if a %}\n{% endfor %}', 2, '{% endfor %} cannot close {% if %}, which needs {% endif %}'],
+    ['an extra end tag', '{% for a in b %}{% endfor %}\n{% endfor %}', 2, '{% endfor %} has no tag to belong to'],
+    ['a tag that is never closed', '<p>\n  {% if a %}\n</p>', 2, '{% if %} is never closed, it needs {% endif %}'],
+    ['a tag left open when its end tag comes', '{% if a %}\n{% if b %}\n{% endif %}', 1, '{% if %} is never closed, it needs {% endif %}'],
+  ])('throws a syntax error for %s', (_name, code, line, message) => {
+    expect(() => parse(code)).toThrow(expect.objectContaining({ name: 'TwigSyntaxError', lineNumber: line, message: expect.stringContaining(message) }));
+  });
 
   it('does not lex the contents of {% verbatim %}', () => {
     expect(parse('{% verbatim %}{{ not.lexed }}{% endverbatim %}').statements).toEqual([]);

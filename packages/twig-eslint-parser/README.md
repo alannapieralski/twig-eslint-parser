@@ -134,6 +134,12 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
 
 ## Known limitations
 
+- **Twig tags that do not pair up** are a parsing error ("Twig tags don't pair up: ..."), reported at
+  the first tag that is wrong. A closing tag must be `end` plus the name of the tag it closes, so an
+  `{% endif %}` with no `{% if %}`, a bare `{% end %}`, an `{% endfor %}` closing an `{% if %}` and an
+  `{% if %}` that is never closed all fail. Twig rejects these templates when it renders them. Block tags
+  are told from one-line tags by name (`if`, `for`, `trans`, `cache` and so on), and any other tag
+  counts as a block tag when an `end` tag of its name appears in the file.
 - **JavaScript reserved words** used as bare Twig variables (`{{ class }}`) are renamed to a
   same-length identifier (`_lass`) so the expression parses; rules see the new name.
 - **Concatenated strings** (`'c-grid--' ~ count ~ '-items'`) stay separate strings joined by `+`,
