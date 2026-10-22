@@ -43,7 +43,7 @@ files, not general JavaScript rules such as `no-undef`.
 npm install --save-dev twig-eslint-parser eslint
 ```
 
-Requires Node.js 24 or later and ESLint 9 or 10. The package is ESM only.
+Requires Node.js 20.19 or later and ESLint 8.57 or later, using flat config. The package is ESM only.
 
 ## Usage
 
