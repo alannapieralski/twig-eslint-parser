@@ -32,3 +32,5 @@ export type IndentLayout = {
 };
 
 export type LineStart = { readonly lineStart: number; readonly contentStart: number };
+
+export type BracketLine = LineStart & { readonly indentation: string };
