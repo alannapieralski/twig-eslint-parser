@@ -96,17 +96,16 @@ parsing error with its position. The exception is an unquoted attribute value th
 The markup reader knows where every Twig block is, and what kind it is, so a block means what its
 position in the markup says:
 
-- A Twig tag or comment, or a print that outputs a whole attribute list (`{{ attributes }}`,
-  `{{ x.addClass(...) }}`, `{{ create_attribute(...) }}`), ends a tag name or an attribute name.
-  Tags and attribute prints become attributes of their own (`<span {% if x %}class="a"{% endif %}>`
-  has the attributes `{% if x %}`, `class` and `{% endif %}`); comments between attributes are
-  skipped.
-- A print touching the end of a tag name is read as attributes (`<div{{ attr }}>`, whatever the
-  expression is called) unless a close tag spells the same Twig into the name
-  (`<h{{ level }}>...</h{{ level }}>`), in which case it continues the name. An element with no
-  close tag, such as `<input{{ attr }}>`, is therefore read as attributes. A print straight after
-  `<` (`<{{ html_element }}>`) is the tag name, and any other print touching a name continues it
-  (`data-{{ name }}="x"`). The tag's `name` is the Twig as written.
+- Twig touching the end of a tag name is part of the open tag start (`openStart`), not an
+  attribute, whatever it outputs, and the name ends where it starts: `<div{{ attributes }}>` is
+  named `div` and `<h{{ level }}>` is named `h`. Close tags end their name the same way, so
+  `</h{{ level }}>` closes `<h{{ level }}>` and `<input{{ attr }}>` stays a void `input`. Twig with
+  whitespace before it, as in `<div {{ attributes }}>`, is an attribute. A print straight after `<`
+  (`<{{ html_element }}>`) is the tag name, kept as written.
+- A Twig tag ends an attribute name and becomes an attribute of its own
+  (`<span {% if x %}class="a"{% endif %}>` has the attributes `{% if x %}`, `class` and
+  `{% endif %}`); comments between attributes are skipped. A print touching an attribute name
+  continues it (`data-{{ name }}="x"`).
 - Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
   `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
   as a browser does, so one element that is never closed stays open on its own instead of
@@ -143,12 +142,6 @@ the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
   `{% if url %}<a href="{{ url }}">{% else %}<span>{% endif %}`, cannot be paired: the markup is read
   as one document, so the element appears unclosed. Rules can tell such elements apart with the
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes.
-- **A print touching a tag name** is read as the end of the name only when a close tag elsewhere in the file
-  spells the same Twig (`<h{{ level }}>...</h{{ level }}>`). Otherwise it is read as attributes, so
-  `<h{{ heading }} class="a">x</h1>` has the attributes `{{ heading }}` and `class`, and rules that move
-  attributes can split the tag name.
-- **A Twig tag inside a tag name**, such as `<h{% if big %}1{% else %}2{% endif %}>`, ends the name:
-  the tag is read as `h` with the Twig blocks and the digits as attributes.
 - **Very deep nesting.** ESLint itself overflows the call stack at roughly 4,000 nested elements (for example
   thousands of `<li>` without their close tags), and the run fails with "Maximum call stack size exceeded". Above
   roughly 7,000 levels the parser stops first with a "nested too deeply" error, which ESLint reports as a

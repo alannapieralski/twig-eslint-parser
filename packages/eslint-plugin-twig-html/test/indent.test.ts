@@ -157,6 +157,10 @@ describe('twig-html/indent', () => {
       expect(await fixed('  <div>\n<input\nclass="a"\n        id="b"\n>\n  </div>')).toBe('<div>\n  <input\n    class="a"\n    id="b"\n  >\n</div>');
     });
 
+    it('indents attributes one step from the tag when only Twig glued to the tag name is on the tag line', async () => {
+      expect(await fixed('<div{{ attributes }}\n      class="a"\n id="b"\n>\n</div>')).toBe('<div{{ attributes }}\n  class="a"\n  id="b"\n>\n</div>');
+    });
+
     it('indents attributes one step when alignAttributesVertically is off', async () => {
       expect(await fixed('<div class="a"\n     id="b">\n</div>', [2, { alignAttributesVertically: false }])).toBe('<div class="a"\n  id="b">\n</div>');
     });

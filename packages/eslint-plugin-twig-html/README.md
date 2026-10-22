@@ -49,9 +49,6 @@ still counts them, checks their quotes and leaves their values alone.
 
 Gaps in a single rule are listed on its page. These cut across rules:
 
-- **A print that builds a tag name is read as an attribute** when no close tag in the file spells it, so
-  `<h{{ heading }} class="a" id="b">x</h1>` is split as `<h`, `{{ heading }}`, ... and breaks the tag.
-  See [`attrs-newline`](docs/rules/attrs-newline.md#known-gaps).
 - **`indent` skips a whole file, silently, when its Twig end tags do not pair up**, such as a bare
   `{% end %}`. See [`indent`](docs/rules/indent.md#not-checked-at-all).
 

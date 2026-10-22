@@ -72,7 +72,8 @@ Examples of **correct** code:
 
 - **Attributes on their own line:** one step in from the tag (the `attribute` option).
 - **First attribute on the tag's line:** the other attributes line up with it. With
-  `alignAttributesVertically: false` they are indented `attribute` steps from the tag instead.
+  `alignAttributesVertically: false` they are indented `attribute` steps from the tag instead. Twig
+  touching the tag name, as in `<div{{ attributes }}`, is part of the tag, not a first attribute.
 - **A `>` or `/>` on its own line:** in line with the tag (the `closeBracket` option).
 
 ### Working with other rules
