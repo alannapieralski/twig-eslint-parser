@@ -16,8 +16,8 @@ const plugin = {
 
 export const createConfig = createConfigFactory(plugin);
 
-export { drupalSelectors } from './selectors/drupal.js';
-export { twigSelectors } from './selectors/twig.js';
+export { DRUPAL_SELECTORS } from './selectors/drupal.js';
+export { TWIG_SELECTORS } from './selectors/twig.js';
 export type { ClassSelector } from './selectors/class-selector.js';
 export type { ConfigOptions } from './configs/config-options.js';
 export default Object.assign(plugin, { createConfig, configs: { recommended: createConfig(), drupal: createConfig({ drupal: true }) } });

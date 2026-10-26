@@ -1,16 +1,16 @@
-import { rawTextElementNames } from 'twig-eslint-parser';
+import { RAW_TEXT_ELEMENT_NAMES } from 'twig-eslint-parser';
 
-export const hardSkippedElements: readonly string[] = Object.values(rawTextElementNames);
+export const HARD_SKIPPED_ELEMENTS: readonly string[] = Object.values(RAW_TEXT_ELEMENT_NAMES);
 
-export const whitespaceSensitiveElements: readonly string[] = ['pre', 'textarea'];
+export const WHITESPACE_SENSITIVE_ELEMENTS: readonly string[] = ['pre', 'textarea'];
 
-export const inlineNonVoidElements: readonly string[] = [
+export const INLINE_NON_VOID_ELEMENTS: readonly string[] = [
   'a', 'abbr', 'audio', 'b', 'bdi', 'bdo', 'canvas', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'iframe', 'ins', 'kbd', 'label', 'map',
   'mark', 'noscript', 'object', 'output', 'picture', 'q', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'time', 'u',
   'var', 'video',
 ];
 
-export const elementsWithUnrenderedEdgeWhitespace: ReadonlySet<string> = new Set([
+export const ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE: ReadonlySet<string> = new Set([
   'title',
   'address', 'article', 'aside', 'blockquote', 'body', 'button', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
   'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',

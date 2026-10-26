@@ -1,7 +1,7 @@
 import type { ClassSelector } from './class-selector.js';
 
-const drupalClassMethods: readonly string[] = ['addClass', 'removeClass'];
+const DRUPAL_CLASS_METHODS: readonly string[] = ['addClass', 'removeClass'];
 
-export const drupalSelectors: readonly ClassSelector[] = [
-  { kind: 'callee', name: `^(?:${drupalClassMethods.join('|')})$`, match: [{ type: 'strings' }] },
+export const DRUPAL_SELECTORS: readonly ClassSelector[] = [
+  { kind: 'callee', name: `^(?:${DRUPAL_CLASS_METHODS.join('|')})$`, match: [{ type: 'strings' }] },
 ];

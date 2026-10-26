@@ -1,11 +1,11 @@
 export type SourcePosition = { line: number; column: number };
 export type SourceLocation = { start: SourcePosition; end: SourcePosition };
 
-const lineBreakPattern = /\r\n|[\r\n\u2028\u2029]/g;
+const LINE_BREAK_PATTERN = /\r\n|[\r\n\u2028\u2029]/g;
 
 export function createOffsetLocator(source: string): (offset: number) => SourcePosition {
   const lineStartOffsets = [0];
-  for (const lineBreak of source.matchAll(lineBreakPattern)) {
+  for (const lineBreak of source.matchAll(LINE_BREAK_PATTERN)) {
     lineStartOffsets.push(lineBreak.index + lineBreak[0].length);
   }
 

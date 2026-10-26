@@ -3,10 +3,10 @@ import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { MarkupElement, SourceToken } from './markup-elements.js';
 
-const endTagName = /^<\/\s*([^\s>]+)/;
+const END_TAG_NAME = /^<\/\s*([^\s>]+)/;
 
 function nameOfEndTag(token: SourceToken): string {
-  return (endTagName.exec(token.value)?.[1] ?? '').toLowerCase();
+  return (END_TAG_NAME.exec(token.value)?.[1] ?? '').toLowerCase();
 }
 
 function findVoidElementNames(elements: readonly MarkupElement[]): ReadonlySet<string> {

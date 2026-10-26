@@ -1,4 +1,4 @@
-import { blockTags } from './syntax.js';
+import { BLOCK_TAGS } from './syntax.js';
 import { isSignificant, type TwigToken, type TwigTokenType } from './tokens.js';
 
 export type TwigBlockKind = 'print' | 'tag' | 'comment';
@@ -19,8 +19,8 @@ export type TwigBlockSummary = {
   readonly bracketPairs: readonly (readonly [number, number])[];
 };
 
-const openingBrackets: ReadonlySet<string> = new Set(['{', '[', '(']);
-const closingBrackets: ReadonlySet<string> = new Set(['}', ']', ')']);
+const OPENING_BRACKETS: ReadonlySet<string> = new Set(['{', '[', '(']);
+const CLOSING_BRACKETS: ReadonlySet<string> = new Set(['}', ']', ')']);
 
 function findBracketPairs(block: TwigBlock): (readonly [number, number])[] {
   const pairs: (readonly [number, number])[] = [];
@@ -28,8 +28,8 @@ function findBracketPairs(block: TwigBlock): (readonly [number, number])[] {
 
   for (const token of block.tokens) {
     if (token.type !== 'PUNCTUATION') continue;
-    if (openingBrackets.has(token.value)) openOffsets.push(token.start);
-    if (!closingBrackets.has(token.value)) continue;
+    if (OPENING_BRACKETS.has(token.value)) openOffsets.push(token.start);
+    if (!CLOSING_BRACKETS.has(token.value)) continue;
 
     const openOffset = openOffsets.pop();
     if (openOffset === undefined) throw new Error(`A Twig bracket closes at ${token.start} without having opened.`);
@@ -60,7 +60,7 @@ export function isShortFormTag(block: TwigBlock): boolean {
 }
 
 function opensNesting(block: TwigBlock, closedTagNames: ReadonlySet<string>): boolean {
-  if (block.tagName === undefined || !(blockTags.has(block.tagName) || closedTagNames.has(block.tagName))) return false;
+  if (block.tagName === undefined || !(BLOCK_TAGS.has(block.tagName) || closedTagNames.has(block.tagName))) return false;
   return !isShortFormTag(block);
 }
 
@@ -74,7 +74,7 @@ export function summariseTwigBlocks(blocks: readonly TwigBlock[]): TwigBlockSumm
   return blocks.map((block) => ({ kind: block.kind, tagName: block.tagName, range: [block.start, block.end], depthChange: nestingDepthChange(block, closedTagNames), bracketPairs: findBracketPairs(block) }));
 }
 
-const blockKindByOpeningType: Partial<Record<TwigTokenType, { kind: TwigBlockKind; closingType: TwigTokenType }>> = {
+const BLOCK_KIND_BY_OPENING_TYPE: Partial<Record<TwigTokenType, { kind: TwigBlockKind; closingType: TwigTokenType }>> = {
   VARIABLE_START: { kind: 'print', closingType: 'VARIABLE_END' },
   TAG_START: { kind: 'tag', closingType: 'TAG_END' },
   COMMENT_START: { kind: 'comment', closingType: 'COMMENT_END' },
@@ -102,7 +102,7 @@ export function groupTwigBlocks(tokens: readonly TwigToken[]): TwigBlock[] {
 
   while (index < tokens.length) {
     const opening = tokens[index];
-    const blockKind = opening && blockKindByOpeningType[opening.type];
+    const blockKind = opening && BLOCK_KIND_BY_OPENING_TYPE[opening.type];
     if (!blockKind) {
       index += 1;
       continue;

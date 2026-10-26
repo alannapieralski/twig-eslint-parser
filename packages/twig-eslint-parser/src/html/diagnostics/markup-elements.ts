@@ -1,12 +1,12 @@
 import type { AttributeNode } from '../../attributes.js';
 import type { Range } from '../../range.js';
-import { elementNodeTypes } from '../syntax.js';
+import { ELEMENT_NODE_TYPES } from '../syntax.js';
 
 type MarkupToken = { readonly range: Range; readonly value: string };
 
-export type MarkupNode = { readonly type: string; readonly children?: readonly MarkupNode[] };
+export type MarkupTreeNode = { readonly type: string; readonly children?: readonly MarkupTreeNode[] };
 
-export type MarkupElement = MarkupNode & {
+export type MarkupElement = MarkupTreeNode & {
   readonly name?: string;
   readonly range: Range;
   readonly openStart: MarkupToken;
@@ -18,11 +18,11 @@ export type MarkupElement = MarkupNode & {
 
 export type SourceToken = { readonly type: string; readonly range: Range; readonly value: string };
 
-function isMarkupElement(node: MarkupNode): node is MarkupElement {
-  return elementNodeTypes.includes(node.type) && 'openStart' in node;
+function isMarkupElement(node: MarkupTreeNode): node is MarkupElement {
+  return ELEMENT_NODE_TYPES.includes(node.type) && 'openStart' in node;
 }
 
-export function findMarkupElements(document: MarkupNode): MarkupElement[] {
+export function findMarkupElements(document: MarkupTreeNode): MarkupElement[] {
   const elements: MarkupElement[] = [];
   const toVisit = [document];
 

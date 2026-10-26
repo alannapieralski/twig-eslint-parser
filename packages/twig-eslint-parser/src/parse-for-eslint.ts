@@ -4,7 +4,7 @@ import { omitInterpolatedAttributes, type OmittedAttribute } from './attributes.
 import { compareDiagnostics, type TwigDiagnostic } from './diagnostics.js';
 import { parseJavaScriptAt, type EstreeNode } from './estree.js';
 import { findMarkupDiagnostics } from './html/diagnostics/find-markup-diagnostics.js';
-import type { MarkupNode, SourceToken } from './html/diagnostics/markup-elements.js';
+import type { MarkupTreeNode, SourceToken } from './html/diagnostics/markup-elements.js';
 import { parseMarkup } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator, type SourcePosition } from './source-text.js';
@@ -89,7 +89,7 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
   }
 
   const markup = parseMarkupWithinStack(code, blocks, rawContentTags);
-  const markupDiagnostics = findMarkupDiagnostics({ document: markup.ast.body[0] as MarkupNode, tokens: markup.ast.tokens as SourceToken[], text: code, blocks: blockSummaries });
+  const markupDiagnostics = findMarkupDiagnostics({ document: markup.ast.body[0] as MarkupTreeNode, tokens: markup.ast.tokens as SourceToken[], text: code, blocks: blockSummaries });
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, unparsedBlockDiagnostics, ...blockCounts } = convertTwigBlocks(blocks, createOffsetLocator(code));
   const diagnostics = [...markupDiagnostics, ...findMisplacedTwigTagDiagnostics(blockSummaries), ...unparsedBlockDiagnostics].sort(compareDiagnostics);

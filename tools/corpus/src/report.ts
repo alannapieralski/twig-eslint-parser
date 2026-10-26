@@ -29,10 +29,10 @@ export type CheckReport = {
   readonly seconds: number;
 };
 
-const maxFailureFilesPerCheck = 25;
-const maxListedFailuresPerCheck = 10;
-const vendorPath = /(^|\/)(core|contrib|dist)\//;
-const excerptContextLines = 2;
+const MAX_FAILURE_FILES_PER_CHECK = 25;
+const MAX_LISTED_FAILURES_PER_CHECK = 10;
+const VENDOR_PATH = /(^|\/)(core|contrib|dist)\//;
+const EXCERPT_CONTEXT_LINES = 2;
 
 export function buildCheckReport({ package: packageName, check, outcome, seconds }: CheckResult, baseline: ReadonlySet<string>, isExpectedFailure: (finding: Finding) => boolean = () => false): CheckReport {
   const failures = outcome.findings.filter((finding) => finding.severity === 'failure');
@@ -86,8 +86,8 @@ function renderSummary(reports: readonly CheckReport[], templateCount: number, r
   }
   for (const report of reports.filter((candidate) => candidate.newFailures.length > 0)) {
     lines.push('', `## New failures: ${report.id}`, '');
-    for (const finding of report.newFailures.slice(0, maxListedFailuresPerCheck)) lines.push(`- ${describeLocation(finding)}: ${finding.message}`);
-    const unlisted = report.newFailures.length - maxListedFailuresPerCheck;
+    for (const finding of report.newFailures.slice(0, MAX_LISTED_FAILURES_PER_CHECK)) lines.push(`- ${describeLocation(finding)}: ${finding.message}`);
+    const unlisted = report.newFailures.length - MAX_LISTED_FAILURES_PER_CHECK;
     if (unlisted > 0) lines.push(`- ... and ${unlisted} more in findings.ndjson`);
   }
   return `${lines.join('\n')}\n`;
@@ -104,8 +104,8 @@ function writeCoverage(directory: string, results: readonly CheckResult[]): void
 
 function renderStaleBaseline(staleKeys: readonly string[]): string {
   if (staleKeys.length === 0) return '';
-  const listed = staleKeys.slice(0, maxListedFailuresPerCheck).map((key) => `- ${key}`);
-  const unlisted = staleKeys.length > maxListedFailuresPerCheck ? [`- ... and ${staleKeys.length - maxListedFailuresPerCheck} more`] : [];
+  const listed = staleKeys.slice(0, MAX_LISTED_FAILURES_PER_CHECK).map((key) => `- ${key}`);
+  const unlisted = staleKeys.length > MAX_LISTED_FAILURES_PER_CHECK ? [`- ... and ${staleKeys.length - MAX_LISTED_FAILURES_PER_CHECK} more`] : [];
   return `${['', `## Stale baseline entries: ${staleKeys.length}`, '', 'These known failures no longer happen. Run with --update-baseline to drop them.', '', ...listed, ...unlisted].join('\n')}\n`;
 }
 
@@ -132,7 +132,7 @@ function writeFindings(directory: string, results: readonly CheckResult[], basel
     endColumn: finding.endColumn,
     message: finding.message,
     excerpt: excerptOf(finding),
-    vendor: vendorPath.test(finding.template.relativePath),
+    vendor: VENDOR_PATH.test(finding.template.relativePath),
     templateHash: hashText(finding.template.source),
   })));
   writeFileSync(join(directory, 'findings.ndjson'), lines.length === 0 ? '' : `${lines.join('\n')}\n`);
@@ -144,7 +144,7 @@ function writeFailureFiles(directory: string, results: readonly CheckResult[]): 
     if (withDiffs.length === 0) continue;
     const checkDirectory = join(directory, 'failures', checkDirectoryName(check.id));
     mkdirSync(checkDirectory, { recursive: true });
-    withDiffs.slice(0, maxFailureFilesPerCheck).forEach((finding, index) => {
+    withDiffs.slice(0, MAX_FAILURE_FILES_PER_CHECK).forEach((finding, index) => {
       const body = `${describeLocation(finding)}\n${finding.message}\n\n${unifiedDiff(finding.before ?? '', finding.after ?? '')}`;
       writeFileSync(join(checkDirectory, `${String(index + 1).padStart(2, '0')}-${basename(finding.template.path)}.txt`), body);
     });
@@ -154,13 +154,13 @@ function writeFailureFiles(directory: string, results: readonly CheckResult[]): 
 function describeReportInContext(finding: Finding): string {
   const lines = finding.template.source.split(/\r?\n/);
   const line = finding.line ?? 1;
-  const first = Math.max(1, line - excerptContextLines);
-  const context = lines.slice(first - 1, line + excerptContextLines).map((text, index) => `${String(first + index).padStart(5)}${first + index === line ? ' >' : '  '} ${text}`);
+  const first = Math.max(1, line - EXCERPT_CONTEXT_LINES);
+  const context = lines.slice(first - 1, line + EXCERPT_CONTEXT_LINES).map((text, index) => `${String(first + index).padStart(5)}${first + index === line ? ' >' : '  '} ${text}`);
   return [`${describeLocation(finding)}${finding.column === undefined ? '' : `:${finding.column}`}`, finding.message, '', '```twig', ...context, '```', ''].join('\n');
 }
 
 function writeReportSamples(directory: string, check: Check, reports: readonly Finding[], sampleSize: number): void {
-  const byMessage = Map.groupBy(reports.filter((finding) => !vendorPath.test(finding.template.relativePath)), (finding) => finding.message.replace(/\d+/g, '#').split(': ').slice(0, 2).join(': '));
+  const byMessage = Map.groupBy(reports.filter((finding) => !VENDOR_PATH.test(finding.template.relativePath)), (finding) => finding.message.replace(/\d+/g, '#').split(': ').slice(0, 2).join(': '));
   const perMessage = Math.max(1, Math.ceil(sampleSize / Math.max(byMessage.size, 1)));
   const sections = [...byMessage].flatMap(([message, findings]) => [`## ${message} (${findings.length})`, '', ...evenlySpaced(findings, perMessage).map(describeReportInContext)]);
   const checkDirectory = join(directory, 'samples', checkDirectoryName(check.id));

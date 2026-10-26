@@ -8,12 +8,12 @@ import type { CloseStyle, Options } from './options.js';
 import type { TagSource } from '../../shared/tag-source.js';
 import type { AttributeSeparator } from './types.js';
 
-const whitespaceOnly = /^\s*$/;
-const ignoredIndentation = /^[ \t]*$/;
+const WHITESPACE_ONLY = /^\s*$/;
+const IGNORED_INDENTATION = /^[ \t]*$/;
 
 function isSeparatorCorrect(separatorText: string, separator: AttributeSeparator, lineBreak: string): boolean {
   if (!separator.isLineBreak) return separatorText === separator.expected;
-  return separatorText.startsWith(lineBreak) && ignoredIndentation.test(separatorText.slice(lineBreak.length));
+  return separatorText.startsWith(lineBreak) && IGNORED_INDENTATION.test(separatorText.slice(lineBreak.length));
 }
 
 function messageIdForSeparator(separator: AttributeSeparator, closeStyle: CloseStyle): string {
@@ -39,7 +39,7 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   const firstWrongSeparator = wrongSeparators[0];
   if (!firstWrongSeparator) return [];
 
-  const areAllSeparatorsWhitespace = separators.every((separator) => whitespaceOnly.test(text.slice(...separator.range)));
+  const areAllSeparatorsWhitespace = separators.every((separator) => WHITESPACE_ONLY.test(text.slice(...separator.range)));
   const isFixable = areAllSeparatorsWhitespace && !isOpenTagUnreadable(tag, unreadableTagStarts);
 
   return [{

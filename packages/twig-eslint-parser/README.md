@@ -82,7 +82,7 @@ silently.
 |---|---|
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
-| `diagnostics` | Every problem the parser read past instead of throwing on, in source order: each has a `code`, a `message` and a `range`. The codes are `diagnosticCodes`, and [`twig-html/no-parse-errors`](../eslint-plugin-twig-html/docs/rules/no-parse-errors.md) lists what each one means and when it stays quiet. |
+| `diagnostics` | Every problem the parser read past instead of throwing on, in source order: each has a `code`, a `message` and a `range`. The codes are `DIAGNOSTIC_CODES`, and [`twig-html/no-parse-errors`](../eslint-plugin-twig-html/docs/rules/no-parse-errors.md) lists what each one means and when it stays quiet. |
 | `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. `bracketPairs` lists the offsets of each `{`, `[` or `(` and its closing bracket, read from the lexer, so strings and `#{ }` are never mistaken for brackets. The `twig-html` rules use it, for example to keep attributes wrapped in a Twig block together and to indent the lines inside brackets. |
 | `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range, the `Attribute` node itself and its `owner`, the `Tag`, `ScriptTag` or `StyleTag` node it was taken from. `twig-tailwind/no-twig-interpolation` reports them, and every `twig-html` rule puts them back in their place among the owner's attributes. |
 | `strings` | Every Twig string literal, read from the lexer, with its range (quotes included), its `quote` (`'` or `"`) and whether it interpolates `#{ }`. It covers tags that never become JavaScript nodes, such as `{% extends %}` and `{% trans %}`, and blocks that fail to convert. `twig-html/quotes` uses it. |
@@ -116,7 +116,7 @@ position in the markup says:
   taking in the rest of the document.
 - Drupal: `<head-placeholder>`, `<css-placeholder>`, `<js-placeholder>` and
   `<js-bottom-placeholder>` are always void elements, whatever the project, because Drupal swaps the exact opening tag and the
-  templates leave them unclosed. The list is `drupalVoidElements` in `src/drupal.ts`, next to the
+  templates leave them unclosed. The list is `DRUPAL_VOID_ELEMENTS` in `src/drupal.ts`, next to the
   rest of the parser's Drupal knowledge; everything else in this section is plain Twig and HTML.
 - `textarea` and `title` content is raw text, as in HTML, and Twig inside `script`, `style` and raw
   text never ends the element early.
@@ -142,9 +142,9 @@ Rules import these instead of keeping their own copies.
 
 | Export | Use |
 |---|---|
-| `elementNodeTypes` | The node types that are elements: `Tag`, `ScriptTag` and `StyleTag`. |
-| `rawTextElementNames` | The element name of each raw-text node type (`ScriptTag` is `script`, `StyleTag` is `style`). |
-| `singleTokenNodeTypes` | The node types that are one token, `Comment` and `Doctype`. |
+| `ELEMENT_NODE_TYPES` | The node types that are elements: `Tag`, `ScriptTag` and `StyleTag`. |
+| `RAW_TEXT_ELEMENT_NAMES` | The element name of each raw-text node type (`ScriptTag` is `script`, `StyleTag` is `style`). |
+| `SINGLE_TOKEN_NODE_TYPES` | The node types that are one token, `Comment` and `Doctype`. |
 | `isOpeningTag(block)`, `isClosingTag(block)`, `isMiddleTag(block)` | Tell what a Twig block does to nesting: `{% if %}`, `{% endif %}`, `{% else %}`, `{% elseif %}` or `{% plural %}`. |
 | `depthChangeWithin(range, blocks)`, `isTwigBalancedWithin(range, blocks)` | Measure the Twig nesting inside a range. |
 

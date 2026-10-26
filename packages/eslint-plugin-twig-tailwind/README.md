@@ -52,7 +52,7 @@ supported yet.
 
 | Option | Default | Effect |
 |---|---|---|
-| `drupal` | `false` | Adds `drupalSelectors`, so Drupal's `addClass()` and `removeClass()` are linted (see [What gets linted](#what-gets-linted)) |
+| `drupal` | `false` | Adds `DRUPAL_SELECTORS`, so Drupal's `addClass()` and `removeClass()` are linted (see [What gets linted](#what-gets-linted)) |
 | `selectors` | `[]` | Extra [better-tailwindcss selectors](https://github.com/schoero/eslint-plugin-better-tailwindcss/blob/main/docs/configuration/advanced.md), added to the built-in ones instead of replacing them |
 
 An unknown option, or an option of the wrong type, throws when the config is built.
@@ -64,7 +64,7 @@ The config applies to `**/*.twig` and sets:
 
 - `twig-eslint-parser` as the parser, with `ignoreInterpolatedAttributes: ['class']`;
 - the `twig-tailwind/twig` processor (see [Interpolated strings](#interpolated-strings));
-- better-tailwindcss's selectors plus `twigSelectors`, then `drupalSelectors` and your `selectors`
+- better-tailwindcss's selectors plus `TWIG_SELECTORS`, then `DRUPAL_SELECTORS` and your `selectors`
   when asked for;
 - better-tailwindcss's recommended rules, with `enforce-consistent-line-wrapping` limited to HTML
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
@@ -95,10 +95,10 @@ are reported as unknown. That is usually the first sign an alias is missing.
 | Twig | Selector |
 |---|---|
 | `class="..."` without Twig inside | better-tailwindcss defaults |
-| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `twigSelectors`: variables named `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` (not one named just `class`: the parser renames that reserved word) |
-| `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `twigSelectors`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
-| `{% set classes = classes\|merge([...]) %}` | `twigSelectors`: strings merged into a variable with such a name |
-| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `drupalSelectors` (`drupal: true`): matched by method name, on any object |
+| `{% set classes = [...] %}`, `{% set title_class = '...' %}`, `{% set bgColorClass = '...' %}` | `TWIG_SELECTORS`: variables named `classes`, or ending in `_class`, `_classes`, `Class` or `Classes` (not one named just `class`: the parser renames that reserved word) |
+| `{% include 'x' with { classes: [...] } %}`, `{ wrapper_classes: '...' }`, `{ attrs: { class: '...' } }` | `TWIG_SELECTORS`: a hash value under such a key, passed to any function or tag, including `include`, `embed` and `create_attribute()` |
+| `{% set classes = classes\|merge([...]) %}` | `TWIG_SELECTORS`: strings merged into a variable with such a name |
+| `attributes.addClass(...)`, `.removeClass(...)`, including every call in a chain | `DRUPAL_SELECTORS` (`drupal: true`): matched by method name, on any object |
 
 better-tailwindcss's default selector for variables named `style` or `styles` is left out, since
 in Twig those usually hold inline CSS or a variant name rather than classes.
@@ -118,7 +118,7 @@ twigTailwind.createConfig({
 
 Use the `selectors` option rather than a `selectors` setting of your own: ESLint replaces arrays
 in `settings` instead of merging them, so the setting would drop every built-in selector.
-`twigSelectors` and `drupalSelectors` are exported as plain better-tailwindcss selector objects for
+`TWIG_SELECTORS` and `DRUPAL_SELECTORS` are exported as plain better-tailwindcss selector objects for
 anyone who still wants to build the whole list by hand.
 
 ## Rules

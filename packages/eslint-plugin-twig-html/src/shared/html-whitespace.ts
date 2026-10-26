@@ -1,10 +1,10 @@
-const leadingHtmlWhitespace = /^[ \t\n\r\f]*/;
-const trailingHtmlWhitespace = /[ \t\n\r\f]*$/;
+const LEADING_HTML_WHITESPACE = /^[ \t\n\r\f]*/;
+const TRAILING_HTML_WHITESPACE = /[ \t\n\r\f]*$/;
 
 export function countLeadingHtmlWhitespace(text: string): number {
-  return text.match(leadingHtmlWhitespace)?.[0].length ?? 0;
+  return text.match(LEADING_HTML_WHITESPACE)?.[0].length ?? 0;
 }
 
 export function countTrailingHtmlWhitespace(text: string): number {
-  return text.match(trailingHtmlWhitespace)?.[0].length ?? 0;
+  return text.match(TRAILING_HTML_WHITESPACE)?.[0].length ?? 0;
 }

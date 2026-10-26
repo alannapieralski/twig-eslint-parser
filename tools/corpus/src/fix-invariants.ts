@@ -14,16 +14,16 @@ type Leaf = { readonly type: string; readonly range: Range; readonly isPreformat
 type ParsedTemplate = { readonly result: TwigParseResult } | { readonly error: string };
 type OpenTagRange = { readonly start: number; readonly attributesStart: number; readonly closeBracketStart: number };
 
-const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
-const cubeDelimiters = new Set(['[', ']', '|', '][']);
-const twigSpan = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
-const indentationAfterLineBreak = /(\n)[ \t]+/g;
-const leadingIndentation = /[ \t]*/y;
-const preformattedElements = new Set(['pre', 'textarea']);
-const layoutTextTypes = new Set(['Text', 'RawContent']);
-const leavesWithLooseEdges = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
-const lineBreak = /\r\n|\r|\n/g;
-const lineBreakNames: Readonly<Record<string, string>> = { '\r\n': '\\r\\n', '\r': '\\r', '\n': '\\n' };
+const KEYS_OUTSIDE_THE_HTML_TREE = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
+const CUBE_DELIMITERS = new Set(['[', ']', '|', '][']);
+const TWIG_SPAN = /\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}|\{#[\s\S]*?#\}/g;
+const INDENTATION_AFTER_LINE_BREAK = /(\n)[ \t]+/g;
+const LEADING_INDENTATION = /[ \t]*/y;
+const PREFORMATTED_ELEMENTS = new Set(['pre', 'textarea']);
+const LAYOUT_TEXT_TYPES = new Set(['Text', 'RawContent']);
+const LEAVES_WITH_LOOSE_EDGES = new Set(['Text', 'ScriptTagContent', 'StyleTagContent']);
+const LINE_BREAK = /\r\n|\r|\n/g;
+const LINE_BREAK_NAMES: Readonly<Record<string, string>> = { '\r\n': '\\r\\n', '\r': '\\r', '\n': '\\n' };
 
 function parse(code: string): ParsedTemplate {
   try {
@@ -34,7 +34,7 @@ function parse(code: string): ParsedTemplate {
 }
 
 function isPreformattedElement(node: Record<string, unknown>): boolean {
-  return node['type'] === 'Tag' && typeof node['name'] === 'string' && preformattedElements.has(node['name'].toLowerCase());
+  return node['type'] === 'Tag' && typeof node['name'] === 'string' && PREFORMATTED_ELEMENTS.has(node['name'].toLowerCase());
 }
 
 function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<object>(), isPreformatted = false): Leaf[] {
@@ -50,7 +50,7 @@ function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<objec
   }
   const isChildPreformatted = isPreformatted || isPreformattedElement(node);
   for (const [key, child] of Object.entries(node)) {
-    if (!keysOutsideTheHtmlTree.has(key)) collectLeaves(child, leaves, seen, isChildPreformatted);
+    if (!KEYS_OUTSIDE_THE_HTML_TREE.has(key)) collectLeaves(child, leaves, seen, isChildPreformatted);
   }
   return leaves;
 }
@@ -58,11 +58,11 @@ function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<objec
 function withoutIndentationOutsideTwig(text: string): string {
   let result = '';
   let markupStart = 0;
-  for (const twig of text.matchAll(twigSpan)) {
-    result += text.slice(markupStart, twig.index).replace(indentationAfterLineBreak, '$1') + twig[0];
+  for (const twig of text.matchAll(TWIG_SPAN)) {
+    result += text.slice(markupStart, twig.index).replace(INDENTATION_AFTER_LINE_BREAK, '$1') + twig[0];
     markupStart = twig.index + twig[0].length;
   }
-  return result + text.slice(markupStart).replace(indentationAfterLineBreak, '$1');
+  return result + text.slice(markupStart).replace(INDENTATION_AFTER_LINE_BREAK, '$1');
 }
 
 function withoutIndentationOutsideStrings(span: string): string {
@@ -84,16 +84,16 @@ function withoutIndentationOutsideStrings(span: string): string {
 }
 
 function withoutIndentationInTwigExpressions(text: string): string {
-  return text.replace(twigSpan, (span) => (span.startsWith('{#') ? span : withoutIndentationOutsideStrings(span)));
+  return text.replace(TWIG_SPAN, (span) => (span.startsWith('{#') ? span : withoutIndentationOutsideStrings(span)));
 }
 
 function isLayoutText(leaf: Leaf): boolean {
-  return layoutTextTypes.has(leaf.type) && !leaf.isPreformatted;
+  return LAYOUT_TEXT_TYPES.has(leaf.type) && !leaf.isPreformatted;
 }
 
 function layoutTextOf(leaf: Leaf, text: string): string {
   if (isLayoutText(leaf)) return withoutIndentationInTwigExpressions(withoutIndentationOutsideTwig(text.trim()));
-  if (leavesWithLooseEdges.has(leaf.type)) return withoutIndentationInTwigExpressions(text.trim());
+  if (LEAVES_WITH_LOOSE_EDGES.has(leaf.type)) return withoutIndentationInTwigExpressions(text.trim());
   return withoutIndentationInTwigExpressions(text);
 }
 
@@ -134,12 +134,12 @@ function withoutSurroundingQuotes(text: string): string {
 }
 
 function readClassList(text: string): ClassList {
-  const twig = text.match(twigSpan) ?? [];
-  const tokens = withoutSurroundingQuotes(text).replace(twigSpan, ' ').split(/\s+/).filter((token) => token !== '');
+  const twig = text.match(TWIG_SPAN) ?? [];
+  const tokens = withoutSurroundingQuotes(text).replace(TWIG_SPAN, ' ').split(/\s+/).filter((token) => token !== '');
   const groups: string[][] = [[]];
   let delimiters = '';
   for (const token of tokens) {
-    if (cubeDelimiters.has(token)) {
+    if (CUBE_DELIMITERS.has(token)) {
       delimiters += ` ${token}`;
       groups.push([]);
     } else {
@@ -203,14 +203,14 @@ function reviewClassListFix(fix: AppliedFix, source: string, roles: ClassRuleRol
 }
 
 function lineBreakKindsIn(code: string): Set<string> {
-  return new Set(code.match(lineBreak));
+  return new Set(code.match(LINE_BREAK));
 }
 
 function describeAddedLineBreaks(source: string, fixed: string): FixProblem[] {
   const kindsInSource = lineBreakKindsIn(source);
   const allowedKinds = kindsInSource.size === 0 ? new Set(['\n']) : kindsInSource;
   const addedKinds = [...lineBreakKindsIn(fixed)].filter((kind) => !allowedKinds.has(kind));
-  return addedKinds.map((kind) => ({ message: `the fix adds ${lineBreakNames[kind]} line breaks to a template that has none` }));
+  return addedKinds.map((kind) => ({ message: `the fix adds ${LINE_BREAK_NAMES[kind]} line breaks to a template that has none` }));
 }
 
 function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new Set<object>()): OpenTagRange[] {
@@ -225,21 +225,21 @@ function collectOpenTags(value: unknown, tags: OpenTagRange[] = [], seen = new S
   const openEnd = (node['openEnd'] as { range?: Range } | undefined)?.range;
   if (openStart && openEnd) tags.push({ start: openStart[0], attributesStart: openStart[1], closeBracketStart: openEnd[0] });
   for (const [key, child] of Object.entries(node)) {
-    if (!keysOutsideTheHtmlTree.has(key)) collectOpenTags(child, tags, seen);
+    if (!KEYS_OUTSIDE_THE_HTML_TREE.has(key)) collectOpenTags(child, tags, seen);
   }
   return tags;
 }
 
 function indentationOfLineAt(code: string, offset: number): string {
   const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
-  leadingIndentation.lastIndex = lineStart;
-  return leadingIndentation.exec(code)?.[0] ?? '';
+  LEADING_INDENTATION.lastIndex = lineStart;
+  return LEADING_INDENTATION.exec(code)?.[0] ?? '';
 }
 
 function lineStartsWithin(code: string, start: number, end: number): number[] {
   const lineStarts: number[] = [];
-  for (let lineBreak = code.indexOf('\n', start); lineBreak !== -1 && lineBreak < end; lineBreak = code.indexOf('\n', lineBreak + 1)) {
-    lineStarts.push(lineBreak + 1);
+  for (let LINE_BREAK = code.indexOf('\n', start); LINE_BREAK !== -1 && LINE_BREAK < end; LINE_BREAK = code.indexOf('\n', LINE_BREAK + 1)) {
+    lineStarts.push(LINE_BREAK + 1);
   }
   return lineStarts;
 }

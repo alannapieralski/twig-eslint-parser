@@ -1,7 +1,7 @@
-const leadingIndentation = /^[ \t]*/;
+const LEADING_INDENTATION = /^[ \t]*/;
 
 export function indentationOf(line: string): string {
-  return line.match(leadingIndentation)?.[0] ?? '';
+  return line.match(LEADING_INDENTATION)?.[0] ?? '';
 }
 
 export function lineStartOf(text: string, offset: number): number {

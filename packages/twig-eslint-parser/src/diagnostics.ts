@@ -1,4 +1,4 @@
-export const diagnosticCodes = [
+export const DIAGNOSTIC_CODES = [
   'eof-in-tag',
   'unexpected-character-in-attribute-name',
   'unexpected-character-in-unquoted-attribute-value',
@@ -8,7 +8,7 @@ export const diagnosticCodes = [
   'x-unparsed-twig',
 ] as const;
 
-export type DiagnosticCode = (typeof diagnosticCodes)[number];
+export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[number];
 
 export type TwigDiagnostic = {
   readonly code: DiagnosticCode;

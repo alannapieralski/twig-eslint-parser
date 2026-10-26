@@ -1,4 +1,4 @@
-import { rawTextElementNames } from 'twig-eslint-parser';
+import { RAW_TEXT_ELEMENT_NAMES } from 'twig-eslint-parser';
 import type { Range } from './range.js';
 
 export type Token = { readonly range: Range; readonly value: string };
@@ -15,6 +15,6 @@ export type ParsedTag = {
 export type TagNode = ParsedTag & { readonly openEnd: Token };
 
 export function elementNameOf(node: Pick<ParsedTag, 'type' | 'name'>): string {
-  const name = node.name ?? rawTextElementNames[node.type ?? ''] ?? '';
+  const name = node.name ?? RAW_TEXT_ELEMENT_NAMES[node.type ?? ''] ?? '';
   return name.toLowerCase();
 }

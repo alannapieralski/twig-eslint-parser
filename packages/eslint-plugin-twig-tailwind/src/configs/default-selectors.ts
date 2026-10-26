@@ -2,9 +2,9 @@ import { betterTailwindcss } from './better-tailwindcss.js';
 
 type DefaultSelector = ReturnType<typeof betterTailwindcss.getDefaultSelectors>[number];
 
-const styleVariableNames = ['style', 'styles'];
+const STYLE_VARIABLE_NAMES = ['style', 'styles'];
 
 export const isAttributeSelector = (selector: DefaultSelector) => selector.kind === 'attribute';
 
 export const isStyleVariableSelector = (selector: DefaultSelector) =>
-  selector.kind === 'variable' && styleVariableNames.some((variableName) => new RegExp(selector.name).test(variableName));
+  selector.kind === 'variable' && STYLE_VARIABLE_NAMES.some((variableName) => new RegExp(selector.name).test(variableName));

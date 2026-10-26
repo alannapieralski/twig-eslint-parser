@@ -1,4 +1,4 @@
-import { elementNodeTypes } from 'twig-eslint-parser';
+import { ELEMENT_NODE_TYPES } from 'twig-eslint-parser';
 import type { Range } from '../../../shared/range.js';
 import type { Element, MarkupNode } from './types.js';
 
@@ -15,7 +15,7 @@ export function flattenMarkup(nodes: readonly MarkupNode[]): MarkupNode[] {
 }
 
 export function isElement(node: MarkupNode): node is Element {
-  return elementNodeTypes.includes(node.type) && node.openStart !== undefined;
+  return ELEMENT_NODE_TYPES.includes(node.type) && node.openStart !== undefined;
 }
 
 export function interiorOf(range: Range): Range {

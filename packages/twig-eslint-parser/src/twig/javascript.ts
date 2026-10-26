@@ -1,14 +1,14 @@
 import { blankPreservingLineBreaks } from '../source-text.js';
 import { isShortFormTag, type TwigBlock } from './blocks.js';
 import {
-  expressionTags,
-  includeKeywordsToBlank,
-  includeTags,
-  javascriptByTwigOperator,
-  javascriptByTwigTestOperator,
-  reservedJavaScriptWords,
-  tagsLeftUnconverted,
-  twoWordTests,
+  EXPRESSION_TAGS,
+  INCLUDE_KEYWORDS_TO_BLANK,
+  INCLUDE_TAGS,
+  JAVASCRIPT_BY_TWIG_OPERATOR,
+  JAVASCRIPT_BY_TWIG_TEST_OPERATOR,
+  RESERVED_JAVA_SCRIPT_WORDS,
+  TAGS_LEFT_UNCONVERTED,
+  TWO_WORD_TESTS,
 } from './syntax.js';
 import { isSignificant, type TwigToken } from './tokens.js';
 
@@ -100,13 +100,13 @@ function describeSetLayout(block: TwigBlock, afterTagName: number, topLevelIndic
 
 function describeTagLayout(block: TwigBlock): ExpressionLayout | undefined {
   const tagName = block.tagName;
-  if (!tagName || tagsLeftUnconverted.has(tagName)) return undefined;
+  if (!tagName || TAGS_LEFT_UNCONVERTED.has(tagName)) return undefined;
 
   const afterTagName = indexAfterTagName(block);
   const topLevelIndices = findTopLevelIndices(block.tokens);
 
   if (tagName === 'set') return describeSetLayout(block, afterTagName, topLevelIndices);
-  if (expressionTags.has(tagName)) {
+  if (EXPRESSION_TAGS.has(tagName)) {
     const replacements = new Map<number, string>();
     if (tagName === 'with') {
       block.tokens.forEach((token, index) => {
@@ -129,7 +129,7 @@ function describeTagLayout(block: TwigBlock): ExpressionLayout | undefined {
     });
     return { wrapInParentheses: true, expressionStartIndex: inIndex + 1, replacements };
   }
-  if (includeTags.has(tagName)) return describeIncludeLayout(block, tagName, afterTagName, topLevelIndices);
+  if (INCLUDE_TAGS.has(tagName)) return describeIncludeLayout(block, tagName, afterTagName, topLevelIndices);
   return undefined;
 }
 
@@ -138,7 +138,7 @@ function describeIncludeLayout(block: TwigBlock, tagName: string, afterTagName: 
   block.tokens.forEach((token, index) => {
     if (!topLevelIndices.has(index) || token.type !== 'NAME' || index < afterTagName) return;
     if (token.value === 'with') keywordReplacements.set(index, padTo(',', token.value.length));
-    if (includeKeywordsToBlank.has(token.value)) keywordReplacements.set(index, padTo('', token.value.length));
+    if (INCLUDE_KEYWORDS_TO_BLANK.has(token.value)) keywordReplacements.set(index, padTo('', token.value.length));
   });
 
   const whitespaceAfterTagName = block.tokens[afterTagName];
@@ -344,7 +344,7 @@ function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex:
     switch (token.type) {
       case 'OPERATOR': {
         const normalisedOperator = token.value.replace(/\s+/g, ' ');
-        const javascript = javascriptByTwigOperator[normalisedOperator];
+        const javascript = JAVASCRIPT_BY_TWIG_OPERATOR[normalisedOperator];
         if (javascript !== undefined) pieces[index] = padTo(javascript, token.value.length);
         break;
       }
@@ -357,15 +357,15 @@ function mapExpression(tokens: readonly TwigToken[], fromIndex: number, toIndex:
       }
       case 'TEST_OPERATOR': {
         const normalisedOperator = token.value.replace(/\s+/g, ' ');
-        pieces[index] = padTo(javascriptByTwigTestOperator[normalisedOperator] ?? '==', token.value.length);
+        pieces[index] = padTo(JAVASCRIPT_BY_TWIG_TEST_OPERATOR[normalisedOperator] ?? '==', token.value.length);
         break;
       }
       case 'NAME': {
         const isPropertyName = isPunctuation(previous, '.') || isPunctuation(previous, '|') || (previous?.type === 'OPERATOR' && previous.value === '?.');
         const isHashKey = frame.opener === '{' && frame.hashExpects === 'key';
-        const secondTestWord = previous?.type === 'NAME' && beforePrevious?.type === 'TEST_OPERATOR' ? twoWordTests[previous.value] : undefined;
+        const secondTestWord = previous?.type === 'NAME' && beforePrevious?.type === 'TEST_OPERATOR' ? TWO_WORD_TESTS[previous.value] : undefined;
         if (secondTestWord === token.value) pieces[index] = padTo('', token.value.length);
-        else if (!isPropertyName && !isHashKey && reservedJavaScriptWords.has(token.value)) pieces[index] = `_${token.value.slice(1)}`;
+        else if (!isPropertyName && !isHashKey && RESERVED_JAVA_SCRIPT_WORDS.has(token.value)) pieces[index] = `_${token.value.slice(1)}`;
         break;
       }
       case 'PUNCTUATION': {

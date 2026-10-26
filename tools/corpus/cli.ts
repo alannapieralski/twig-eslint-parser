@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 
 const repositoryRoot = resolve(import.meta.dirname, '../..');
 
-const usage = `Usage: npm run corpus -- [options]
+const USAGE = `Usage: npm run corpus -- [options]
 
   --package <name>     Only the checks of one package, e.g. eslint-plugin-twig-html
   --rule <id>          Only one rule, e.g. twig-html/attrs-newline (or attrs-newline)
@@ -36,7 +36,7 @@ const { values } = parseArgs({
 });
 
 if (values.help) {
-  console.info(usage);
+  console.info(USAGE);
   process.exit(0);
 }
 

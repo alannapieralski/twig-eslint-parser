@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseForESLint } from '../src/index.js';
-import { convertedTags, tagsLeftUnconverted, twoWordTests } from '../src/twig/syntax.js';
+import { CONVERTED_TAGS, TAGS_LEFT_UNCONVERTED, TWO_WORD_TESTS } from '../src/twig/syntax.js';
 import { tokenizeTwig } from '../src/twig/tokens.js';
 import { checkParserOutput } from './support/output-checks.js';
 
@@ -144,13 +144,13 @@ describe(`Twig ${inventory.twig} syntax coverage`, () => {
   });
 
   it('knows whether to convert or skip every Twig tag', () => {
-    const unclassified = inventory.tags.map((tag) => tag.name).filter((tag) => !convertedTags.has(tag) && !tagsLeftUnconverted.has(tag));
-    expect(unclassified, 'Add these to convertedTags or tagsLeftUnconverted in src/twig/syntax.ts').toEqual([]);
+    const unclassified = inventory.tags.map((tag) => tag.name).filter((tag) => !CONVERTED_TAGS.has(tag) && !TAGS_LEFT_UNCONVERTED.has(tag));
+    expect(unclassified, 'Add these to CONVERTED_TAGS or TAGS_LEFT_UNCONVERTED in src/twig/syntax.ts').toEqual([]);
   });
 
   it('knows the second word of every two-word test', () => {
     const twoWordTestNames = inventory.tests.filter((test) => test.includes(' '));
-    expect(Object.entries(twoWordTests).map(([first, second]) => `${first} ${second}`).sort(), 'Update twoWordTests in src/twig/syntax.ts').toEqual(twoWordTestNames.sort());
+    expect(Object.entries(TWO_WORD_TESTS).map(([first, second]) => `${first} ${second}`).sort(), 'Update TWO_WORD_TESTS in src/twig/syntax.ts').toEqual(twoWordTestNames.sort());
   });
 
   const binaryOperators = inventory.expressions
@@ -158,17 +158,17 @@ describe(`Twig ${inventory.twig} syntax coverage`, () => {
     .flatMap((expression) => [expression.name, ...expression.aliases]);
   it.each(binaryOperators)('converts the binary operator %s', (operator) => {
     const code = /^has (some|every)$/.test(operator) ? `{{ a ${operator} x => x }}` : `{{ a ${operator} b }}`;
-    expect(checkParserOutput(code), 'Map the operator in javascriptByTwigOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(code), 'Map the operator in JAVASCRIPT_BY_TWIG_OPERATOR in src/twig/syntax.ts').toEqual([]);
     expect(parseForESLint(code).ast.twigBody).toHaveLength(1);
   });
 
   const unaryOperators = inventory.expressions.filter((expression) => expression.parser === 'UnaryOperatorExpressionParser').map((expression) => expression.name);
   it.each(unaryOperators)('converts the unary operator %s', (operator) => {
     const code = operator === '...' ? '{{ [...a] }}' : `{{ ${operator} a }}`;
-    expect(checkParserOutput(code), 'Map the operator in javascriptByTwigOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(code), 'Map the operator in JAVASCRIPT_BY_TWIG_OPERATOR in src/twig/syntax.ts').toEqual([]);
   });
 
   it.each(inventory.tests.flatMap((test) => [`is ${test}`, `is not ${test}`]))('converts the test "a %s"', (test) => {
-    expect(checkParserOutput(`{{ a ${test} }}`), 'Update twoWordTests or javascriptByTwigTestOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(`{{ a ${test} }}`), 'Update TWO_WORD_TESTS or JAVASCRIPT_BY_TWIG_TEST_OPERATOR in src/twig/syntax.ts').toEqual([]);
   });
 });

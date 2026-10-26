@@ -1,7 +1,7 @@
 import type { Rule } from 'eslint';
-import { elementNodeTypes, readTwigServices } from 'twig-eslint-parser';
+import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
-import { hardSkippedElements } from '../../shared/html-elements.js';
+import { HARD_SKIPPED_ELEMENTS } from '../../shared/html-elements.js';
 import { createIgnoredInsideCheck } from '../../shared/ignored-inside.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { findUnreadableTagStarts } from '../../shared/unreadable-open-tags.js';
@@ -32,13 +32,13 @@ export const quotes: Rule.RuleModule = {
     const { blocks, strings, omittedAttributes, diagnostics } = readTwigServices(sourceCode, context.id);
     const source = { text: sourceCode.text, blocks, unreadableTagStarts: findUnreadableTagStarts(diagnostics), ...quotesFor(options) };
     const attributesOf = createAttributesOf(omittedAttributes);
-    const isSkipped = createIgnoredInsideCheck(sourceCode, hardSkippedElements);
+    const isSkipped = createIgnoredInsideCheck(sourceCode, HARD_SKIPPED_ELEMENTS);
 
     const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, attributesOf, source, isSkipped));
 
     return {
       Program: () => reportProblems(context, findTwigStringProblems(strings, source)),
-      ...tagListeners(checkTag, elementNodeTypes),
+      ...tagListeners(checkTag, ELEMENT_NODE_TYPES),
     };
   },
 };

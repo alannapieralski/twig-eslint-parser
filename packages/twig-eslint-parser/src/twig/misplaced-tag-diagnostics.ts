@@ -1,7 +1,7 @@
 import type { TwigDiagnostic } from '../diagnostics.js';
 import type { TwigBlockSummary } from './blocks.js';
 import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
-import { parentsOfMiddleTag, tagsThatCannotFollowElse } from './syntax.js';
+import { PARENTS_OF_MIDDLE_TAG, TAGS_THAT_CANNOT_FOLLOW_ELSE } from './syntax.js';
 import { tagText } from './tag-text.js';
 
 type OpenFrame = { readonly name: string; hasElse: boolean };
@@ -9,9 +9,9 @@ type OpenFrame = { readonly name: string; hasElse: boolean };
 const orList = new Intl.ListFormat('en', { type: 'disjunction' });
 
 function describeMisplacedTag(tagName: string, frame: OpenFrame): string | undefined {
-  const allowedParents = parentsOfMiddleTag[tagName];
+  const allowedParents = PARENTS_OF_MIDDLE_TAG[tagName];
   if (allowedParents && !allowedParents.has(frame.name)) return `${tagText(tagName)} cannot sit inside ${tagText(frame.name)}. Twig allows it only inside ${orList.format([...allowedParents].map(tagText))}.`;
-  if (frame.hasElse && tagsThatCannotFollowElse.has(tagName)) return `${tagText(tagName)} cannot follow ${tagText('else')}. Twig expects ${tagText(`end${frame.name}`)} next.`;
+  if (frame.hasElse && TAGS_THAT_CANNOT_FOLLOW_ELSE.has(tagName)) return `${tagText(tagName)} cannot follow ${tagText('else')}. Twig expects ${tagText(`end${frame.name}`)} next.`;
 
   return undefined;
 }

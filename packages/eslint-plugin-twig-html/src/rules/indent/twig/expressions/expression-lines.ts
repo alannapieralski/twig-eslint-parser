@@ -15,7 +15,7 @@ type ExpressionLayoutInput = {
   readonly strings: readonly TwigStringSummary[];
 };
 
-const lineRules: readonly LineRule[] = [chainRule, bracketRule];
+const LINE_RULES: readonly LineRule[] = [chainRule, bracketRule];
 
 function findLineStartsWithin(text: string, range: readonly [number, number]): number[] {
   const lineStarts: number[] = [];
@@ -56,7 +56,7 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
     if (isBlankFrom(text, contentStart) || isInsideString(lineStart, strings)) continue;
 
     const line: LineContext = { text, block, unitText, lineStart, contentStart, indentationOfLineAt, chainHeads };
-    const indentation = findFirstIndentation(lineRules, line);
+    const indentation = findFirstIndentation(LINE_RULES, line);
 
     if (indentation !== undefined) {
       indentations.set(lineStart, indentation);

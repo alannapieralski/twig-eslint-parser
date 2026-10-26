@@ -1,6 +1,6 @@
 import type { Rule } from 'eslint';
-import { elementNodeTypes, readTwigServices } from 'twig-eslint-parser';
-import { hardSkippedElements } from '../../shared/html-elements.js';
+import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
+import { HARD_SKIPPED_ELEMENTS } from '../../shared/html-elements.js';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { balancedTagListeners } from '../../shared/tag-listeners.js';
@@ -25,10 +25,10 @@ export const attrsNewline: Rule.RuleModule = {
   create(context) {
     const options = resolveOptions(context.options[0]);
     const services = readTwigServices(context.sourceCode, context.id);
-    const source = createTagSource(context.sourceCode, services, [...hardSkippedElements, ...options.ignores]);
+    const source = createTagSource(context.sourceCode, services, [...HARD_SKIPPED_ELEMENTS, ...options.ignores]);
 
     const checkTag = (tag: TagNode) => reportProblems(context, findAttributeProblems(tag, source, options));
 
-    return balancedTagListeners(checkTag, elementNodeTypes, services.blocks);
+    return balancedTagListeners(checkTag, ELEMENT_NODE_TYPES, services.blocks);
   },
 };

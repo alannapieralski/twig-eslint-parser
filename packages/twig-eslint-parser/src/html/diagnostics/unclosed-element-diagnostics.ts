@@ -3,13 +3,13 @@ import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { MarkupElement } from './markup-elements.js';
 
-const endTagOptionalElements: ReadonlySet<string> = new Set([
+const END_TAG_OPTIONAL_ELEMENTS: ReadonlySet<string> = new Set([
   'body', 'caption', 'colgroup', 'dd', 'dt', 'head', 'html', 'li', 'optgroup', 'option', 'p', 'rp', 'rt', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr',
 ]);
 
 function isMissingItsEndTag(element: MarkupElement): boolean {
   const isOpenTagComplete = element.openEnd !== undefined;
-  const isEndTagRequired = !endTagOptionalElements.has(element.name ?? '');
+  const isEndTagRequired = !END_TAG_OPTIONAL_ELEMENTS.has(element.name ?? '');
 
   return isOpenTagComplete && !element.selfClosing && !element.close && isEndTagRequired;
 }

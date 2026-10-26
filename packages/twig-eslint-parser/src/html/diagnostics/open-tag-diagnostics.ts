@@ -6,15 +6,15 @@ import type { MarkupElement } from './markup-elements.js';
 
 type StrayCharacterDiagnostic = Pick<TwigDiagnostic, 'code' | 'message'>;
 
-const quotedValue = /"[^"]*"|'[^']*'/g;
-const characterThatBreaksAnAttribute = /["'<]/;
+const QUOTED_VALUE = /"[^"]*"|'[^']*'/g;
+const CHARACTER_THAT_BREAKS_AN_ATTRIBUTE = /["'<]/;
 
-const strayCharacterInName: StrayCharacterDiagnostic = {
+const STRAY_CHARACTER_IN_NAME: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-attribute-name',
   message: 'An attribute name contains a quote or "<", so an attribute value was probably quoted wrongly. Check the quotes before it.',
 };
 
-const strayCharacterInValue: StrayCharacterDiagnostic = {
+const STRAY_CHARACTER_IN_VALUE: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-unquoted-attribute-value',
   message: 'An unquoted attribute value contains a quote or "<", so the tag takes in the markup after it. Quote the value or close the tag.',
 };
@@ -33,11 +33,11 @@ function textWithoutTwig(text: string, range: Range, blocks: readonly TwigBlockS
 }
 
 function describeStrayCharacter(attribute: AttributeNode, text: string, blocks: readonly TwigBlockSummary[]): StrayCharacterDiagnostic | undefined {
-  const withoutQuotedValues = textWithoutTwig(text, attribute.range, blocks).replace(quotedValue, '');
-  if (!characterThatBreaksAnAttribute.test(withoutQuotedValues)) return undefined;
+  const withoutQuotedValues = textWithoutTwig(text, attribute.range, blocks).replace(QUOTED_VALUE, '');
+  if (!CHARACTER_THAT_BREAKS_AN_ATTRIBUTE.test(withoutQuotedValues)) return undefined;
 
   const [name = ''] = withoutQuotedValues.split('=');
-  return characterThatBreaksAnAttribute.test(name) ? strayCharacterInName : strayCharacterInValue;
+  return CHARACTER_THAT_BREAKS_AN_ATTRIBUTE.test(name) ? STRAY_CHARACTER_IN_NAME : STRAY_CHARACTER_IN_VALUE;
 }
 
 function findUnterminatedOpenTag(element: MarkupElement): TwigDiagnostic {

@@ -3,7 +3,7 @@ import { ESLint, type Linter } from 'eslint';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
 import type { ParserOptions } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind, { createConfig, twigSelectors, type ClassSelector } from '../../src/index.js';
+import twigTailwind, { TWIG_SELECTORS, createConfig, type ClassSelector } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
@@ -144,7 +144,7 @@ describe('createConfig({ drupal: true })', () => {
 
   it('lets a later selectors setting replace the Drupal selectors', async () => {
     const code = "<div{{ attributes.addClass('nope') }}>x</div>{% set classes = ['nope2'] %}";
-    const result = await lint(code, { selectors: [...getDefaultSelectors(), ...twigSelectors] });
+    const result = await lint(code, { selectors: [...getDefaultSelectors(), ...TWIG_SELECTORS] });
     expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope2')]);
   });
 

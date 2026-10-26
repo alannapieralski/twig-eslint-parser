@@ -1,3 +1,10 @@
+---
+paths:
+  - "packages/*/src/**"
+  - "packages/*/test/**"
+  - "tools/**"
+---
+
 # Common mistakes
 
 Each one was found in review more than once. The placement ladder is in
@@ -27,10 +34,38 @@ Each one was found in review more than once. The placement ladder is in
 
 ## Naming
 
-- Do not use "swallow" or "unsound". Say an open tag is **unreadable**, or that a tag **takes in**
-  the markup after it.
-- A name that says how an option works, such as `ignores`, means the same in every rule. Check the
-  other rules before reusing it with a different meaning.
+A name says what a thing is or does, in the words a reader of HTML, Twig or ESLint already knows.
+Someone who has never seen the file should be able to say what it holds from the name alone. If a
+name needs a comment to explain it, rename it.
+
+- **Functions are a verb and what they work on**: `findMarkupElements`, `describeSeparators`.
+  **Booleans start with `is`, `has`, `can` or `should`**: `isOpeningTag`. **Types are nouns**:
+  `TwigBlockSummary`.
+- **Say what it means, not how it feels or how it is built.** A metaphor or a mechanism is a bad
+  name. A plain description of the situation is a good one.
+- **Use the same word for the same thing in every rule and package.** Check how the other rules
+  name it before reusing a word with a different meaning (`ignores` means one thing everywhere).
+- **Longer and plain beats short and clever.** The repo is verbose on purpose.
+
+| Bad | Why | Better |
+|---|---|---|
+| `unsound`, `isInSoundTag` | Borrowed from logic. Says nothing about the tag. | `unreadable`, `isInReadableTag` |
+| `swallows the markup` | A metaphor. Does not say what happens. | `takes in the markup`, `ran into the next tag` |
+| `utils`, `helpers`, `common` | Says where it sits, not what it is. | Name the concept: `line-text`, `block-roles` |
+| `check`, `handle`, `process`, `data`, `info`, `flag`, `temp` | Could be anything. | Say what is checked or done: `isFixable`, `findGaps` |
+| `skippedElements` when every rule skips them | Hides that it is shared by all rules. | `hardSkippedElements` |
+
+## Constants
+
+- **A module-level constant is `SCREAMING_SNAKE_CASE`**: a value that never changes, such as a
+  number, string, regular expression, list of names, `Set`, `Map` or lookup table.
+  `ELEMENT_NODE_TYPES`, `MAX_PASSES`, `LEADING_INDENTATION`. The name tells a reader it is a fixed
+  value, not something computed.
+- **These stay `camelCase`**: functions, rule modules, plugin and config objects, ESLint `meta` and
+  `messages`, option schemas and default option objects, visitor keys, and anything that is changed
+  after it is created, such as a cache.
+- **In an import list, constants come first, then functions, then types**:
+  `import { ELEMENT_NODE_TYPES, readTwigServices, type TwigBlockSummary }`.
 
 ## Changing behaviour
 

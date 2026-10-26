@@ -4,16 +4,16 @@ import type { CorpusOptions, CorpusRoot, TailwindSettings, Template } from './ty
 
 export type CorpusConfig = { readonly roots: readonly CorpusRoot[]; readonly exclude: readonly string[]; readonly isFromEnvironment: boolean };
 
-const defaultExcludedDirectories = ['node_modules', 'vendor', '.git'];
+const DEFAULT_EXCLUDED_DIRECTORIES = ['node_modules', 'vendor', '.git'];
 
-const tailwindSettingNames = ['cwd', 'entryPoint', 'tsconfig'] as const;
+const TAILWIND_SETTING_NAMES = ['cwd', 'entryPoint', 'tsconfig'] as const;
 
 function parseTailwindSettings(rootPath: string, value: unknown): TailwindSettings {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`"tailwind" for ${rootPath} must be an object with ${tailwindSettingNames.join(', ')}.`);
-  const unknownNames = Object.keys(value).filter((name) => !(tailwindSettingNames as readonly string[]).includes(name));
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`"tailwind" for ${rootPath} must be an object with ${TAILWIND_SETTING_NAMES.join(', ')}.`);
+  const unknownNames = Object.keys(value).filter((name) => !(TAILWIND_SETTING_NAMES as readonly string[]).includes(name));
   if (unknownNames.length > 0) throw new Error(`"tailwind" for ${rootPath} has unknown settings: ${unknownNames.join(', ')}.`);
   const settings: Record<string, string> = {};
-  for (const name of tailwindSettingNames) {
+  for (const name of TAILWIND_SETTING_NAMES) {
     const setting = (value as Record<string, unknown>)[name];
     if (setting === undefined) continue;
     if (typeof setting !== 'string' || setting === '') throw new Error(`"tailwind.${name}" for ${rootPath} must be a path.`);
@@ -34,7 +34,7 @@ function parseRoot(entry: unknown): CorpusRoot {
 
 function parseConfigFile(configPath: string): CorpusConfig {
   const raw: unknown = JSON.parse(readFileSync(configPath, 'utf8'));
-  const { roots, exclude = defaultExcludedDirectories } = raw as { roots?: unknown; exclude?: string[] };
+  const { roots, exclude = DEFAULT_EXCLUDED_DIRECTORIES } = raw as { roots?: unknown; exclude?: string[] };
   if (!Array.isArray(roots) || roots.length === 0) throw new Error(`${configPath} must have a non-empty "roots" array.`);
   return { roots: roots.map(parseRoot), exclude, isFromEnvironment: false };
 }
@@ -42,7 +42,7 @@ function parseConfigFile(configPath: string): CorpusConfig {
 export function loadConfig(repositoryRoot: string, environment: NodeJS.ProcessEnv): CorpusConfig {
   const fromEnvironment = (environment['TWIG_CORPUS'] ?? '').split(':').filter((directory) => directory !== '');
   const config = fromEnvironment.length > 0
-    ? { roots: fromEnvironment.map(parseRoot), exclude: defaultExcludedDirectories, isFromEnvironment: true }
+    ? { roots: fromEnvironment.map(parseRoot), exclude: DEFAULT_EXCLUDED_DIRECTORIES, isFromEnvironment: true }
     : readLocalConfig(repositoryRoot);
 
   const missing = config.roots.filter((root) => !existsSync(root.path));

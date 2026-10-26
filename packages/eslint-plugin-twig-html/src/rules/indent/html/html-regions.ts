@@ -1,5 +1,5 @@
-import { rawTextElementNames, singleTokenNodeTypes } from 'twig-eslint-parser';
-import { whitespaceSensitiveElements } from '../../../shared/html-elements.js';
+import { RAW_TEXT_ELEMENT_NAMES, SINGLE_TOKEN_NODE_TYPES } from 'twig-eslint-parser';
+import { WHITESPACE_SENSITIVE_ELEMENTS } from '../../../shared/html-elements.js';
 import { elementNameSet } from '../../../shared/ignores.js';
 import { lineIndentationAt } from '../../../shared/line-text.js';
 import type { Range } from '../../../shared/range.js';
@@ -48,7 +48,7 @@ function findSkippedInElement(
 
   if (whitespaceSensitiveNames.has(elementNameOf(element))) return [...attributeInteriors, [openEnd.range[1], close.range[1]]];
 
-  const isContentLeftAlone = Object.hasOwn(rawTextElementNames, element.type) || ignoredNames.has(elementNameOf(element));
+  const isContentLeftAlone = Object.hasOwn(RAW_TEXT_ELEMENT_NAMES, element.type) || ignoredNames.has(elementNameOf(element));
   if (isContentLeftAlone) return [...attributeInteriors, [openEnd.range[1], close.range[0]]];
 
   return attributeInteriors;
@@ -63,11 +63,11 @@ function findUnclosedContent(element: Element): Range | undefined {
 export function findHtmlRegions(document: MarkupNode, source: HtmlSource): HtmlRegions {
   const { attributesOf, unreadableTagStarts } = source;
   const ignoredNames = elementNameSet(source.ignores);
-  const whitespaceSensitiveNames = elementNameSet([...whitespaceSensitiveElements, ...source.rawContentTags]);
+  const whitespaceSensitiveNames = elementNameSet([...WHITESPACE_SENSITIVE_ELEMENTS, ...source.rawContentTags]);
   const markupNodes = flattenMarkup(document.children ?? []);
   const elements = markupNodes.filter(isElement);
 
-  const tokenInteriors = markupNodes.filter((node) => singleTokenNodeTypes.includes(node.type)).map((node) => interiorOf(node.range));
+  const tokenInteriors = markupNodes.filter((node) => SINGLE_TOKEN_NODE_TYPES.includes(node.type)).map((node) => interiorOf(node.range));
   const elementSkips = elements.flatMap((element) => findSkippedInElement(element, unreadableTagStarts, attributesOf(element), ignoredNames, whitespaceSensitiveNames));
 
   return {

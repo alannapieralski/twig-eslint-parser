@@ -7,8 +7,8 @@ type Pass = { readonly output: string; readonly applied: readonly AppliedFix[] }
 
 type FixableMessage = Linter.LintMessage & { readonly fix: Rule.Fix };
 
-const maxPasses = 10;
-const byteOrderMark = '\uFEFF';
+const MAX_PASSES = 10;
+const BYTE_ORDER_MARK = '\uFEFF';
 
 function isFixable(message: Linter.LintMessage): message is FixableMessage {
   return message.fix !== undefined;
@@ -20,11 +20,11 @@ function byFixRange(first: FixableMessage, second: FixableMessage): number {
 
 function removesByteOrderMark(fix: Rule.Fix): boolean {
   const [start, end] = fix.range;
-  return (start < 0 && end >= 0) || (start === 0 && fix.text.startsWith(byteOrderMark));
+  return (start < 0 && end >= 0) || (start === 0 && fix.text.startsWith(BYTE_ORDER_MARK));
 }
 
 export function applyOnePass(sourceText: string, messages: readonly Linter.LintMessage[]): Pass {
-  const leadingMark = sourceText.startsWith(byteOrderMark) ? byteOrderMark : '';
+  const leadingMark = sourceText.startsWith(BYTE_ORDER_MARK) ? BYTE_ORDER_MARK : '';
   const text = sourceText.slice(leadingMark.length);
   const fixable = messages.filter(isFixable).toSorted(byFixRange);
   const applied: AppliedFix[] = [];
@@ -52,7 +52,7 @@ export async function fixUntilSettled(
   const applied: AppliedFix[] = [];
   let current = source;
   let messages = firstMessages;
-  for (let pass = 1; pass <= maxPasses; pass += 1) {
+  for (let pass = 1; pass <= MAX_PASSES; pass += 1) {
     if (!messages.some(isFixable)) return { outcome: 'settled', output: current, passes: pass - 1, applied };
     const next = applyOnePass(current, messages);
     applied.push(...next.applied);
@@ -62,7 +62,7 @@ export async function fixUntilSettled(
     current = next.output;
     messages = await lint(current);
   }
-  return { outcome: messages.some(isFixable) ? 'unsettled' : 'settled', output: current, passes: maxPasses, applied };
+  return { outcome: messages.some(isFixable) ? 'unsettled' : 'settled', output: current, passes: MAX_PASSES, applied };
 }
 
 export function describeFixOutcome(run: FixRun): string | undefined {
@@ -74,6 +74,6 @@ export function describeFixOutcome(run: FixRun): string | undefined {
     case 'oscillates':
       return `the fix oscillates: pass ${run.passes} brings back an earlier version of the template`;
     case 'unsettled':
-      return `the fix does not settle: the template still changes after ${maxPasses} passes`;
+      return `the fix does not settle: the template still changes after ${MAX_PASSES} passes`;
   }
 }

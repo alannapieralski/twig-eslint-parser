@@ -2,7 +2,7 @@ import type { Linter } from 'eslint';
 import { containsGroupDelimiter, isGroupDelimiter } from './class-groups.js';
 import { offsetOf, type FileSpans } from './file-spans.js';
 
-const silencedRulePrefix = 'better-tailwindcss/';
+const SILENCED_RULE_PREFIX = 'better-tailwindcss/';
 
 function isInsideInterpolatedString(message: Linter.LintMessage, spans: FileSpans): boolean {
   const offset = offsetOf(spans, message.line, message.column);
@@ -27,7 +27,7 @@ function isAboutAGroupedClassList(message: Linter.LintMessage, spans: FileSpans)
 }
 
 export function isSilencedMessage(message: Linter.LintMessage, spans: FileSpans): boolean {
-  if (!message.ruleId?.startsWith(silencedRulePrefix)) return false;
+  if (!message.ruleId?.startsWith(SILENCED_RULE_PREFIX)) return false;
 
   return isInsideInterpolatedString(message, spans) || isAboutAGroupedClassList(message, spans);
 }
