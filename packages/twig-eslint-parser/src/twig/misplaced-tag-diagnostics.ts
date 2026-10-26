@@ -1,19 +1,12 @@
 import type { TwigDiagnostic } from '../diagnostics.js';
 import type { TwigBlockSummary } from './blocks.js';
 import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
+import { parentsOfMiddleTag, tagsThatCannotFollowElse } from './syntax.js';
 import { tagText } from './tag-text.js';
 
 type OpenFrame = { readonly name: string; hasElse: boolean };
 
-const parentsOfMiddleTag: Readonly<Record<string, ReadonlySet<string>>> = {
-  else: new Set(['if', 'for', 'guard']),
-  elseif: new Set(['if']),
-  plural: new Set(['trans']),
-};
-
 const orList = new Intl.ListFormat('en', { type: 'disjunction' });
-
-const tagsThatCannotFollowElse: ReadonlySet<string> = new Set(['else', 'elseif']);
 
 function describeMisplacedTag(tagName: string, frame: OpenFrame): string | undefined {
   const allowedParents = parentsOfMiddleTag[tagName];

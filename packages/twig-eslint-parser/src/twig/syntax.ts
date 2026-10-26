@@ -33,6 +33,14 @@ export const blockTags: ReadonlySet<string> = new Set([
 
 export const middleTags: ReadonlySet<string> = new Set(['else', 'elseif', 'plural']);
 
+export const parentsOfMiddleTag: Readonly<Record<string, ReadonlySet<string>>> = {
+  else: new Set(['if', 'for', 'guard']),
+  elseif: new Set(['if']),
+  plural: new Set(['trans']),
+};
+
+export const tagsThatCannotFollowElse: ReadonlySet<string> = new Set(['else', 'elseif']);
+
 export const includeTags: ReadonlySet<string> = new Set(['include', 'embed']);
 
 export const includeKeywordsToBlank: ReadonlySet<string> = new Set(['only', 'ignore', 'missing']);
