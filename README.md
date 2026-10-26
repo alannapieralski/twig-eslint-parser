@@ -23,6 +23,7 @@ npm install
 |---|---|
 | `npm test` | Builds the parser, then runs every package's tests and the corpus tool's unit tests. |
 | `npm run typecheck` | Builds the parser, then type-checks every package and the corpus tool. |
+| `npm run lint` | Lints the TypeScript with `eslint.config.js`. Warnings fail the run. `npm run lint:fix` applies the fixes it can. |
 | `npm run build` | Compiles every package to its `dist`. |
 
 Package-specific commands, such as the twig-lexer fork checks, are listed in each package's README

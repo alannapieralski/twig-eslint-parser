@@ -7,7 +7,9 @@ paths:
 
 # Common mistakes
 
-Each one was found in review more than once. The placement ladder is in
+Each one was found in review more than once. `npm run lint` enforces the import style, constant
+naming and formatting below, so run it before finishing. Duplication and naming quality are only
+caught in review. The placement ladder is in
 `.claude/skills/eslint-create/references/shared-code.md`.
 
 ## Duplication
