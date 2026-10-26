@@ -9,7 +9,7 @@ import { elementNameOf } from '../../../shared/tag-node.js';
 import { bodyOf, flattenMarkup, interiorOf, isElement } from './html-elements.js';
 import type { Element, MarkupNode, OpenTag } from './types.js';
 
-type HtmlSource = {
+export type HtmlSource = {
   readonly text: string;
   readonly attributesOf: AttributesOf;
   readonly ignores: readonly string[];
