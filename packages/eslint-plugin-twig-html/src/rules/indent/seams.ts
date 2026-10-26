@@ -1,5 +1,5 @@
-import type { Range } from '../../shared/range.js';
 import { bodyOf, extentOf, openTagOf } from './html/html-elements.js';
+import type { Range } from '../../shared/range.js';
 import type { Element } from './html/types.js';
 import type { TwigSegment } from './twig/types.js';
 

@@ -1,5 +1,5 @@
-import type { TwigBlock } from '../twig/blocks.js';
 import { TWIG_DELIMITERS } from '../twig/syntax.js';
+import type { TwigBlock } from '../twig/blocks.js';
 import type { Range } from '../range.js';
 
 export type VerbatimMaskedText = { readonly text: string; readonly maskedRanges: readonly Range[] };

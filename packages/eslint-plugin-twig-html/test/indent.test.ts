@@ -1,6 +1,7 @@
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
+import type { Linter } from 'eslint';
 
 async function lint(code: string, ruleOptions: unknown[] = [], fix = true, parserOptions: Record<string, unknown> = {}) {
   const rules: Linter.RulesRecord = {

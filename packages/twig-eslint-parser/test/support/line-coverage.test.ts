@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { measureLineCoverage, type TwigReading } from './line-coverage.js';
+import { measureLineCoverage } from './line-coverage.js';
+import type { TwigReading } from './line-coverage.js';
 
 const ownLexer: TwigReading = { kind: 'own-lexer' };
 

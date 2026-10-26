@@ -1,8 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { parseForESLint } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
+import type { Linter } from 'eslint';
 
 const parserFixturesDirectory = new URL('../../twig-eslint-parser/test/fixtures/twig/', import.meta.url);
 const parserFixtures = readdirSync(parserFixturesDirectory).filter((name) => name.endsWith('.twig')).sort();

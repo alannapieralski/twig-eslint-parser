@@ -1,7 +1,8 @@
-import { parse as parseCss, toPlainObject, type CssNodePlain } from 'css-tree';
+import { parse as parseCss, toPlainObject } from 'css-tree';
 import { parse as parseMarkupTree, TokenTypes } from '../es-html-parser/index.js';
-import type { TemplateInfo } from '../es-html-parser/types/index.js';
 import { cssVisitorKeys, htmlVisitorKeys } from './visitor-keys.js';
+import type { CssNodePlain } from 'css-tree';
+import type { TemplateInfo } from '../es-html-parser/types/index.js';
 
 type Position = { line: number; column: number };
 type Node = { type: string; range: [number, number]; loc: { start: Position; end: Position }; [key: string]: unknown };

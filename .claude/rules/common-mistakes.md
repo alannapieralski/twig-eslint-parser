@@ -64,8 +64,25 @@ name needs a comment to explain it, rename it.
 - **These stay `camelCase`**: functions, rule modules, plugin and config objects, ESLint `meta` and
   `messages`, option schemas and default option objects, visitor keys, and anything that is changed
   after it is created, such as a cache.
-- **In an import list, constants come first, then functions, then types**:
-  `import { ELEMENT_NODE_TYPES, readTwigServices, type TwigBlockSummary }`.
+- **In a value import list, constants come first, then functions**:
+  `import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';`
+
+## Imports
+
+- **Types are imported in their own `import type { … }` statement. Never write an inline `type`
+  specifier inside a value import.**
+- **All `import type` statements come after all value imports**, as one block at the end of the
+  imports. Inside each block, packages come first, then relative paths, in the order the file already
+  used.
+- A module needed for both gets two statements: the value import in the first block, the type
+  import in the second.
+
+```ts
+import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
+import { reportProblems } from '../../shared/report-problems.js';
+import type { Rule } from 'eslint';
+import type { TwigBlockSummary } from 'twig-eslint-parser';
+```
 
 ## Changing behaviour
 

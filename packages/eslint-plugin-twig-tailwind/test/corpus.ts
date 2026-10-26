@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
-import { configChecks, ruleChecks, type PackageCorpus } from '../../../tools/corpus/src/index.js';
+import { configChecks, ruleChecks } from '../../../tools/corpus/src/index.js';
 import twigTailwind from '../src/index.js';
+import type { PackageCorpus } from '../../../tools/corpus/src/index.js';
 
 const { recommended, drupal } = twigTailwind.configs;
 

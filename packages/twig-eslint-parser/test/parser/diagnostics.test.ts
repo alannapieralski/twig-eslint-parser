@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseForESLint, type DiagnosticCode } from '../../src/index.js';
+import { parseForESLint } from '../../src/index.js';
+import type { DiagnosticCode } from '../../src/index.js';
 
 function diagnosticsOf(code: string) {
   return parseForESLint(code).services.twig.diagnostics;

@@ -1,5 +1,5 @@
-import type { Problem } from '../../shared/problem.js';
 import { describeIndentation } from './describe-indentation.js';
+import type { Problem } from '../../shared/problem.js';
 import type { ResolvedOptions } from './options.js';
 import type { LineStart } from './types.js';
 

@@ -1,4 +1,5 @@
-import { DIAGNOSTIC_CODES, type DiagnosticCode } from 'twig-eslint-parser';
+import { DIAGNOSTIC_CODES } from 'twig-eslint-parser';
+import type { DiagnosticCode } from 'twig-eslint-parser';
 
 export type Options = { [Code in DiagnosticCode]?: boolean };
 

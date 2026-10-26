@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseHtmlProgram } from '../../src/html/program.js';
 import { parseForESLint } from '../../src/index.js';
+import { compareWithHtmlOracle, twigRangesFromOracle } from './html-oracle.js';
 import type { Golden } from '../lexer/parity.js';
-import { compareWithHtmlOracle, twigRangesFromOracle, type TwigRange } from './html-oracle.js';
+import type { TwigRange } from './html-oracle.js';
 
 const twigTypeByKind = {
   text: 'text',

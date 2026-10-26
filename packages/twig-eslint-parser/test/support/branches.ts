@@ -1,5 +1,6 @@
-import { groupTwigBlocks, summariseTwigBlocks, type TwigBlockSummary } from '../../src/twig/blocks.js';
+import { groupTwigBlocks, summariseTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import type { TwigBlockSummary } from '../../src/twig/blocks.js';
 
 export type BranchSegment = { readonly groupId: number; readonly branchIndex: number; readonly start: number; readonly end: number };
 

@@ -1,10 +1,10 @@
-import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
 import { contentStartOf, indentationOf, lineStartOf } from '../../../../shared/line-text.js';
 import { isBlankFrom } from '../../line-starts.js';
-import type { ExpressionLine } from '../../types.js';
 import { bracketLevelOf, findClosedPair, outsideAnyBracket } from './bracket-pairs.js';
 import { bracketRule } from './bracket-rule.js';
 import { chainRule, isChainLine } from './chain-rule.js';
+import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
+import type { ExpressionLine } from '../../types.js';
 import type { LineContext, LineRule } from './types.js';
 
 type ExpressionLayoutInput = {

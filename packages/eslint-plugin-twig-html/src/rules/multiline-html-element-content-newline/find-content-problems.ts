@@ -1,12 +1,12 @@
 import { isTwigBalancedWithin } from 'twig-eslint-parser';
 import { ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE } from '../../shared/html-elements.js';
 import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
-import type { Problem } from '../../shared/problem.js';
-import type { Range } from '../../shared/range.js';
 import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
-import type { TagNode } from '../../shared/tag-node.js';
 import { findContentEdges } from './find-content-edges.js';
 import { countLineBreaks, indentationAfterLastLineBreak } from './line-breaks.js';
+import type { Problem } from '../../shared/problem.js';
+import type { Range } from '../../shared/range.js';
+import type { TagNode } from '../../shared/tag-node.js';
 import type { Options } from './options.js';
 import type { TagSource } from '../../shared/tag-source.js';
 import type { ContentEdge } from './types.js';

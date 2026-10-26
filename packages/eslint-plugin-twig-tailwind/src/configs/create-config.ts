@@ -1,10 +1,11 @@
-import type { ESLint, Linter } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { DRUPAL_SELECTORS } from '../selectors/drupal.js';
 import { TWIG_SELECTORS } from '../selectors/twig.js';
 import { betterTailwindcss } from './better-tailwindcss.js';
-import { parseConfigOptions, type ConfigOptions } from './config-options.js';
+import { parseConfigOptions } from './config-options.js';
 import { isAttributeSelector, isStyleVariableSelector } from './default-selectors.js';
+import type { ESLint, Linter } from 'eslint';
+import type { ConfigOptions } from './config-options.js';
 
 export function createConfigFactory(plugin: ESLint.Plugin): (options?: ConfigOptions) => Linter.Config {
   const defaultSelectors = betterTailwindcss.getDefaultSelectors();

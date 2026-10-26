@@ -1,9 +1,11 @@
 import { HtmlSyntaxError, parseForESLint, TwigSyntaxError } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { toSameLengthJavaScript } from '../../src/twig/javascript.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch, type BranchSegment } from './branches.js';
+import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch } from './branches.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
+import type { BranchSegment } from './branches.js';
 
 export type OutputIssue = { readonly check: string; readonly detail: string; readonly line?: number; readonly range?: readonly [number, number] };
 

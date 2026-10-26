@@ -1,6 +1,6 @@
+import { twigBlockEnd } from './twig-frames.js';
 import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { Range } from '../../../shared/range.js';
-import { twigBlockEnd } from './twig-frames.js';
 import type { TwigSegment } from './types.js';
 
 export type TwigRegions = {

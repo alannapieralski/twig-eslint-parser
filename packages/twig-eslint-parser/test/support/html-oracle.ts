@@ -1,7 +1,9 @@
 import { DRUPAL_VOID_ELEMENTS } from '../../src/drupal.js';
 import { branchSegmentsOf, isClosedInAnotherBranch } from './branches.js';
-import { TokenizerMode, type Token } from 'parse5';
-import { SAXParser, type EndTag, type StartTag } from 'parse5-sax-parser';
+import { TokenizerMode } from 'parse5';
+import { SAXParser } from 'parse5-sax-parser';
+import type { Token } from 'parse5';
+import type { EndTag, StartTag } from 'parse5-sax-parser';
 import type { Golden } from '../lexer/parity.js';
 import type { OutputIssue } from './output-checks.js';
 

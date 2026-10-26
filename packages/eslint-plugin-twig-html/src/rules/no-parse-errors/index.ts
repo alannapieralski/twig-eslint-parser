@@ -1,10 +1,10 @@
-import type { Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { findParseErrorProblems } from './find-parse-error-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
+import type { Rule } from 'eslint';
 
 export const noParseErrors: Rule.RuleModule = {
   meta: {

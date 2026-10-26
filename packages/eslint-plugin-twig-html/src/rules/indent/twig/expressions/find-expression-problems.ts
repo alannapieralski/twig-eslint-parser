@@ -1,11 +1,11 @@
-import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
 import { contentStartOf, lineStartOf } from '../../../../shared/line-text.js';
-import type { Problem } from '../../../../shared/problem.js';
 import { expectedIndentAt, isChecked } from '../../expected-indent.js';
 import { indentationProblem } from '../../indentation-problem.js';
+import { findExpressionLines } from './expression-lines.js';
+import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
+import type { Problem } from '../../../../shared/problem.js';
 import type { ResolvedOptions } from '../../options.js';
 import type { IndentLayout } from '../../types.js';
-import { findExpressionLines } from './expression-lines.js';
 
 function findBlockProblems(block: TwigBlockSummary, layout: IndentLayout, text: string, options: ResolvedOptions, strings: readonly TwigStringSummary[]): Problem[] {
   const startLineContent = contentStartOf(text, lineStartOf(text, block.range[0]));

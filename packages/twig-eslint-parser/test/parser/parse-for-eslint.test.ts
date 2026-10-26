@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findInterpolatedStrings, parseForESLint, readTwigServices, type ParserOptions, type TwigParserServices } from '../../src/index.js';
+import { findInterpolatedStrings, parseForESLint, readTwigServices } from '../../src/index.js';
 import { checkParserOutput } from '../support/output-checks.js';
+import type { ParserOptions, TwigParserServices } from '../../src/index.js';
 
 type Node = { type: string; range: [number, number]; loc: { start: { line: number; column: number } }; [key: string]: unknown };
 

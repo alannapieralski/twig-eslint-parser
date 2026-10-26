@@ -1,6 +1,6 @@
+import { isMiddleTag } from './block-roles.js';
 import type { Range } from '../range.js';
 import type { TwigBlockSummary } from './blocks.js';
-import { isMiddleTag } from './block-roles.js';
 
 
 function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]): number {

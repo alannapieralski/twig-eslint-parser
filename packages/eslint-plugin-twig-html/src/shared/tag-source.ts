@@ -1,9 +1,10 @@
-import type { SourceCode } from 'eslint';
-import type { TwigBlockSummary, TwigParserServices } from 'twig-eslint-parser';
 import { createIgnoredInsideCheck } from './ignored-inside.js';
 import { lineBreakUsedIn } from './line-ending.js';
 import { findUnreadableTagStarts } from './unreadable-open-tags.js';
-import { createAttributesOf, type AttributesOf } from './tag-attributes.js';
+import { createAttributesOf } from './tag-attributes.js';
+import type { SourceCode } from 'eslint';
+import type { TwigBlockSummary, TwigParserServices } from 'twig-eslint-parser';
+import type { AttributesOf } from './tag-attributes.js';
 import type { TagNode } from './tag-node.js';
 
 export type TagSource = {

@@ -1,6 +1,6 @@
-import type { TwigBlockSummary } from './blocks.js';
 import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
 import { tagText } from './tag-text.js';
+import type { TwigBlockSummary } from './blocks.js';
 
 export type UnpairedTwigTag = { readonly block: TwigBlockSummary; readonly message: string };
 

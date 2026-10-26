@@ -1,14 +1,14 @@
-import type { Rule } from 'eslint';
 import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
 import { HARD_SKIPPED_ELEMENTS } from '../../shared/html-elements.js';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { balancedTagListeners } from '../../shared/tag-listeners.js';
-import type { TagNode } from '../../shared/tag-node.js';
 import { createTagSource } from '../../shared/tag-source.js';
 import { findAttributeProblems } from './find-attribute-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
+import type { Rule } from 'eslint';
+import type { TagNode } from '../../shared/tag-node.js';
 
 export const attrsNewline: Rule.RuleModule = {
   meta: {

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
 import { parseHtmlProgram } from '../../src/html/program.js';
-import { checkRewritesKeepTheTree, rewrites, type TreeParser } from './metamorphic.js';
+import { checkRewritesKeepTheTree, rewrites } from './metamorphic.js';
+import type { TreeParser } from './metamorphic.js';
 
 const parseWithoutTwigKinds: TreeParser = (source) => {
   const templateInfos = groupTwigBlocks(tokenizeTwig(source)).map((block): [number, number] => [block.start, block.end]);

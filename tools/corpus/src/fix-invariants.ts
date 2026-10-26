@@ -1,4 +1,5 @@
-import { parseForESLint, type TwigParseResult } from 'twig-eslint-parser';
+import { parseForESLint } from 'twig-eslint-parser';
+import type { TwigParseResult } from 'twig-eslint-parser';
 import type { AppliedFix } from './fixing.js';
 
 export type FixKeeps = 'layout' | 'class-tokens' | 'code';

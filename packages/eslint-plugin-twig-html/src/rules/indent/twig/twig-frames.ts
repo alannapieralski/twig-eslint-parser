@@ -1,4 +1,5 @@
-import { isClosingTag, isMiddleTag, isOpeningTag, type TwigBlockSummary } from 'twig-eslint-parser';
+import { isClosingTag, isMiddleTag, isOpeningTag } from 'twig-eslint-parser';
+import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { TwigSegment } from './types.js';
 
 type OpenFrame = { readonly name: string; readonly frameStart: number; readonly segmentStart: number; readonly boundaryStart: number };

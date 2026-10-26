@@ -1,9 +1,10 @@
-import type { TwigDiagnostic } from '../../diagnostics.js';
-import type { TwigBlockSummary } from '../../twig/blocks.js';
 import { findEndTagDiagnostics } from './end-tag-diagnostics.js';
-import { findMarkupElements, type MarkupTreeNode, type SourceToken } from './markup-elements.js';
+import { findMarkupElements } from './markup-elements.js';
 import { findOpenTagDiagnostics } from './open-tag-diagnostics.js';
 import { findUnclosedElementDiagnostics } from './unclosed-element-diagnostics.js';
+import type { TwigDiagnostic } from '../../diagnostics.js';
+import type { TwigBlockSummary } from '../../twig/blocks.js';
+import type { MarkupTreeNode, SourceToken } from './markup-elements.js';
 
 export type MarkupSource = { readonly document: MarkupTreeNode; readonly tokens: readonly SourceToken[]; readonly text: string; readonly blocks: readonly TwigBlockSummary[] };
 

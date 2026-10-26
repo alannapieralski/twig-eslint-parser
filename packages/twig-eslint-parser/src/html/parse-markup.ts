@@ -1,10 +1,11 @@
 import { DRUPAL_VOID_ELEMENTS } from '../drupal.js';
 import { createOffsetLocator } from '../source-text.js';
-import type { TwigBlock } from '../twig/blocks.js';
-import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './program.js';
+import { parseHtmlProgram, visitorKeys } from './program.js';
 import { HtmlSyntaxError } from './syntax-error.js';
 import { templateInfosOf } from './template-infos.js';
 import { maskVerbatimDelimiters, restoreVerbatimDelimiters } from './verbatim-text.js';
+import type { TwigBlock } from '../twig/blocks.js';
+import type { HtmlProgram } from './program.js';
 
 type HtmlParseResult = { readonly ast: HtmlProgram; readonly visitorKeys: typeof visitorKeys };
 

@@ -1,15 +1,21 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { evenlySpaced, type Check, type CheckOutcome, type Finding, type PackageCorpus, type Template, type TemplateCoverage } from '../../../tools/corpus/src/index.js';
-import { parseForESLint, type TwigDiagnostic } from '../src/index.js';
+import { evenlySpaced } from '../../../tools/corpus/src/index.js';
+import { parseForESLint } from '../src/index.js';
 import { createOffsetLocator } from '../src/source-text.js';
-import { findParityMismatches, type Golden } from './lexer/parity.js';
+import { findParityMismatches } from './lexer/parity.js';
 import { branchPairedEndTagCheck, compareWithHtmlOracle, twigRangesFromOracle } from './support/html-oracle.js';
-import { measureLineCoverage, statusOfDamage, type LineCoverage, type TwigReading } from './support/line-coverage.js';
+import { measureLineCoverage, statusOfDamage } from './support/line-coverage.js';
 import { checkRewritesKeepTheTree } from './support/metamorphic.js';
-import { mutators, runMutations, seedFrom, type MutationOutcome } from './support/mutations.js';
-import { checkParserOutput, templateDefectChecks, type OutputIssue } from './support/output-checks.js';
+import { mutators, runMutations, seedFrom } from './support/mutations.js';
+import { checkParserOutput, templateDefectChecks } from './support/output-checks.js';
+import type { Check, CheckOutcome, Finding, PackageCorpus, Template, TemplateCoverage } from '../../../tools/corpus/src/index.js';
+import type { TwigDiagnostic } from '../src/index.js';
+import type { Golden } from './lexer/parity.js';
+import type { LineCoverage, TwigReading } from './support/line-coverage.js';
+import type { MutationOutcome } from './support/mutations.js';
+import type { OutputIssue } from './support/output-checks.js';
 
 type OracleResult = Partial<Golden> & { path: string; twig: string; error?: string; line?: number };
 

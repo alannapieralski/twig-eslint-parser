@@ -1,4 +1,5 @@
-import { containsTwig, isAttributeNode, type AttributeNode, type OmittedAttribute, type TwigStringSummary } from 'twig-eslint-parser';
+import { containsTwig, isAttributeNode } from 'twig-eslint-parser';
+import type { AttributeNode, OmittedAttribute, TwigStringSummary } from 'twig-eslint-parser';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { ResolvedOptions } from './options.js';

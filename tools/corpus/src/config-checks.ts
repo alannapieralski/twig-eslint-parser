@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
+import { runLintCheck } from './lint-check.js';
+import type { Linter } from 'eslint';
 import type { FixKeeps } from './fix-invariants.js';
-import { runLintCheck, type LintTarget, type RootLinter } from './lint-check.js';
+import type { LintTarget, RootLinter } from './lint-check.js';
 import type { Check, CheckContext, CheckOutcome, CorpusRoot, Template } from './types.js';
 
 type TailwindResolution =

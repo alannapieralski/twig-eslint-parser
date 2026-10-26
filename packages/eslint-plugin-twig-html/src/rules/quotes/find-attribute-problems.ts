@@ -1,7 +1,8 @@
-import { containsTwig, depthChangeWithin, type AttributeNode } from 'twig-eslint-parser';
-import type { Problem } from '../../shared/problem.js';
+import { containsTwig, depthChangeWithin } from 'twig-eslint-parser';
 import { htmlTextOf, printsTwigOutput } from './attribute-value.js';
 import { describeQuote } from './quote-style.js';
+import type { AttributeNode } from 'twig-eslint-parser';
+import type { Problem } from '../../shared/problem.js';
 import type { AttributeValue, AttributeWrapper, QuoteSource } from './types.js';
 
 const CHARACTER_THAT_NEEDS_QUOTES = /["'=<>`]/;

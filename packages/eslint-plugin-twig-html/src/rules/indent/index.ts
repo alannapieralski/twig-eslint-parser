@@ -1,13 +1,14 @@
-import type { Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { findUnreadableTagStarts } from '../../shared/unreadable-open-tags.js';
 import { createAttributesOf } from '../../shared/tag-attributes.js';
-import { findIndentProblems, type MarkupProgram } from './find-indent-problems.js';
+import { findIndentProblems } from './find-indent-problems.js';
 import { messages } from './messages.js';
 import { indentSizeSchema, optionsSchema, resolveOptions } from './options.js';
 import { readRawContentTags } from './html/raw-content-tags.js';
+import type { Rule } from 'eslint';
+import type { MarkupProgram } from './find-indent-problems.js';
 
 export const indent: Rule.RuleModule = {
   meta: {

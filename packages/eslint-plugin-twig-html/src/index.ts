@@ -1,11 +1,11 @@
 import { createRequire } from 'node:module';
-import type { ESLint, Linter } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { attrsNewline } from './rules/attrs-newline/index.js';
 import { indent } from './rules/indent/index.js';
 import { multilineHtmlElementContentNewline } from './rules/multiline-html-element-content-newline/index.js';
 import { noParseErrors } from './rules/no-parse-errors/index.js';
 import { quotes } from './rules/quotes/index.js';
+import type { ESLint, Linter } from 'eslint';
 
 const { name, version } = createRequire(import.meta.url)('../package.json') as { name: string; version: string };
 

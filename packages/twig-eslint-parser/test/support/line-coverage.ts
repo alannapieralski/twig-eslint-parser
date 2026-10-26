@@ -2,9 +2,11 @@ import { parseForESLint } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import { branchPairedEndTagCheck, compareWithHtmlOracle, twigRangesFromOracle } from './html-oracle.js';
+import { checkParserOutput } from './output-checks.js';
 import type { Golden } from '../lexer/parity.js';
-import { branchPairedEndTagCheck, compareWithHtmlOracle, twigRangesFromOracle, type TwigRange } from './html-oracle.js';
-import { checkParserOutput, type OutputIssue } from './output-checks.js';
+import type { TwigRange } from './html-oracle.js';
+import type { OutputIssue } from './output-checks.js';
 
 export type DamageCause = 'unparseable' | 'twig-unconverted' | 'unread' | 'misread' | 'misplaced' | 'malformed-node' | 'branch-split' | 'template-defect';
 export type LineStatus = 'parsed' | 'fault' | 'branchSplit' | 'templateDefect';

@@ -1,4 +1,5 @@
-import { tokenizeTwig, type TwigToken } from './tokens.js';
+import { tokenizeTwig } from './tokens.js';
+import type { TwigToken } from './tokens.js';
 
 export type TwigQuote = "'" | '"';
 

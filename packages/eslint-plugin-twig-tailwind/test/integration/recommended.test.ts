@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
-import type { ParserOptions } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind, { TWIG_SELECTORS, createConfig, type ClassSelector } from '../../src/index.js';
+import twigTailwind, { TWIG_SELECTORS, createConfig } from '../../src/index.js';
+import type { Linter } from 'eslint';
+import type { ParserOptions } from 'twig-eslint-parser';
+import type { ClassSelector } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 

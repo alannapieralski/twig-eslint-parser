@@ -1,6 +1,6 @@
+import { ELEMENT_NODE_TYPES } from '../syntax.js';
 import type { AttributeNode } from '../../attributes.js';
 import type { Range } from '../../range.js';
-import { ELEMENT_NODE_TYPES } from '../syntax.js';
 
 type MarkupToken = { readonly range: Range; readonly value: string };
 

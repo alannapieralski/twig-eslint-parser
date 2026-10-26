@@ -1,5 +1,5 @@
 import { blankPreservingLineBreaks } from '../source-text.js';
-import { isShortFormTag, type TwigBlock } from './blocks.js';
+import { isShortFormTag } from './blocks.js';
 import {
   EXPRESSION_TAGS,
   INCLUDE_KEYWORDS_TO_BLANK,
@@ -10,7 +10,9 @@ import {
   TAGS_LEFT_UNCONVERTED,
   TWO_WORD_TESTS,
 } from './syntax.js';
-import { isSignificant, type TwigToken } from './tokens.js';
+import { isSignificant } from './tokens.js';
+import type { TwigBlock } from './blocks.js';
+import type { TwigToken } from './tokens.js';
 
 type ExpressionLayout = {
   readonly wrapInParentheses: boolean;

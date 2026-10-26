@@ -1,5 +1,5 @@
-import type { ClassSelector } from '../selectors/class-selector.js';
 import { isSelector } from './selector-validation.js';
+import type { ClassSelector } from '../selectors/class-selector.js';
 
 export type ConfigOptions = {
   readonly drupal?: boolean;

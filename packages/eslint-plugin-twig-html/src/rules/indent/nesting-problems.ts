@@ -1,7 +1,7 @@
-import type { Problem } from '../../shared/problem.js';
 import { expectedIndentAt, isChecked } from './expected-indent.js';
 import { indentationProblem } from './indentation-problem.js';
 import { findLineStarts } from './line-starts.js';
+import type { Problem } from '../../shared/problem.js';
 import type { ResolvedOptions } from './options.js';
 import type { IndentLayout } from './types.js';
 

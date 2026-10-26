@@ -1,6 +1,7 @@
-import type { SourceCode } from 'eslint';
 import { elementNameSet } from './ignores.js';
-import { elementNameOf, type ParsedTag } from './tag-node.js';
+import { elementNameOf } from './tag-node.js';
+import type { SourceCode } from 'eslint';
+import type { ParsedTag } from './tag-node.js';
 
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 

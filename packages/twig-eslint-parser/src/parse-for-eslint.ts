@@ -1,19 +1,25 @@
-import type { Linter } from 'eslint';
 import { unionWith } from 'eslint-visitor-keys';
-import { omitInterpolatedAttributes, type OmittedAttribute } from './attributes.js';
-import { compareDiagnostics, type TwigDiagnostic } from './diagnostics.js';
-import { parseJavaScriptAt, type EstreeNode } from './estree.js';
+import { omitInterpolatedAttributes } from './attributes.js';
+import { compareDiagnostics } from './diagnostics.js';
+import { parseJavaScriptAt } from './estree.js';
 import { findMarkupDiagnostics } from './html/diagnostics/find-markup-diagnostics.js';
-import type { MarkupTreeNode, SourceToken } from './html/diagnostics/markup-elements.js';
 import { parseMarkup } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
-import { createOffsetLocator, type SourcePosition } from './source-text.js';
-import { groupTwigBlocks, summariseTwigBlocks, type TwigBlock, type TwigBlockSummary } from './twig/blocks.js';
+import { createOffsetLocator } from './source-text.js';
+import { groupTwigBlocks, summariseTwigBlocks } from './twig/blocks.js';
 import { findMisplacedTwigTagDiagnostics } from './twig/misplaced-tag-diagnostics.js';
 import { findUnpairedTwigTag } from './twig/pairing.js';
 import { toSameLengthJavaScript } from './twig/javascript.js';
-import { summariseTwigStrings, type TwigStringSummary } from './twig/strings.js';
+import { summariseTwigStrings } from './twig/strings.js';
 import { TwigSyntaxError, tokenizeTwig } from './twig/tokens.js';
+import type { Linter } from 'eslint';
+import type { OmittedAttribute } from './attributes.js';
+import type { TwigDiagnostic } from './diagnostics.js';
+import type { EstreeNode } from './estree.js';
+import type { MarkupTreeNode, SourceToken } from './html/diagnostics/markup-elements.js';
+import type { SourcePosition } from './source-text.js';
+import type { TwigBlock, TwigBlockSummary } from './twig/blocks.js';
+import type { TwigStringSummary } from './twig/strings.js';
 
 export type ParserOptions = { readonly ignoreInterpolatedAttributes?: readonly string[]; readonly rawContentTags?: readonly string[] } & Record<string, unknown>;
 

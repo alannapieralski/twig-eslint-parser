@@ -1,9 +1,9 @@
 import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
+import { describeSeparators } from './describe-separators.js';
+import { groupAttributes } from './group-attributes.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
-import { describeSeparators } from './describe-separators.js';
-import { groupAttributes } from './group-attributes.js';
 import type { CloseStyle, Options } from './options.js';
 import type { TagSource } from '../../shared/tag-source.js';
 import type { AttributeSeparator } from './types.js';

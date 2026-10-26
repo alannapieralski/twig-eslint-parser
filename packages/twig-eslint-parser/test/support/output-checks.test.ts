@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseForESLint } from '../../src/index.js';
-import { checkParserOutput, templateDefectChecks, type ParseForOutputChecks } from './output-checks.js';
+import { checkParserOutput, templateDefectChecks } from './output-checks.js';
+import type { ParseForOutputChecks } from './output-checks.js';
 
 type Mutable = Record<string, unknown>;
 

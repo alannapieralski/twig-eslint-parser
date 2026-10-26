@@ -1,7 +1,9 @@
 import { blankPreservingLineBreaks, createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { measureLineCoverage, statusOfDamage, type DamageSpan } from './line-coverage.js';
+import { measureLineCoverage, statusOfDamage } from './line-coverage.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
+import type { DamageSpan } from './line-coverage.js';
 
 export type MutationKind = 'defect' | 'harmless';
 export type Edit = { readonly start: number; readonly end: number; readonly replacement: string };

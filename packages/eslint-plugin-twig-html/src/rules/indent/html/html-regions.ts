@@ -2,11 +2,11 @@ import { RAW_TEXT_ELEMENT_NAMES, SINGLE_TOKEN_NODE_TYPES } from 'twig-eslint-par
 import { WHITESPACE_SENSITIVE_ELEMENTS } from '../../../shared/html-elements.js';
 import { elementNameSet } from '../../../shared/ignores.js';
 import { lineIndentationAt } from '../../../shared/line-text.js';
-import type { Range } from '../../../shared/range.js';
 import { isOpenTagUnreadable } from '../../../shared/unreadable-open-tags.js';
-import type { AttributesOf } from '../../../shared/tag-attributes.js';
 import { elementNameOf } from '../../../shared/tag-node.js';
 import { bodyOf, flattenMarkup, interiorOf, isElement } from './html-elements.js';
+import type { Range } from '../../../shared/range.js';
+import type { AttributesOf } from '../../../shared/tag-attributes.js';
 import type { Element, MarkupNode, OpenTag } from './types.js';
 
 export type HtmlSource = {

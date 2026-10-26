@@ -1,4 +1,5 @@
-import { layoutOptionDefaults, layoutOptionProperties, type LayoutOptions } from '../../shared/layout-options.js';
+import { layoutOptionDefaults, layoutOptionProperties } from '../../shared/layout-options.js';
+import type { LayoutOptions } from '../../shared/layout-options.js';
 
 export type CloseStyle = 'newline' | 'sameline';
 

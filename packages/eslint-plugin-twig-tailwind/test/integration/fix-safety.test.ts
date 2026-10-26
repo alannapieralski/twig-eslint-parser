@@ -1,10 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { parseForESLint } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../src/index.js';
+import type { Linter } from 'eslint';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 const parserFixturesDirectory = new URL('../../../twig-eslint-parser/test/fixtures/twig/', import.meta.url);

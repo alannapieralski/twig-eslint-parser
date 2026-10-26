@@ -2,10 +2,11 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { findingKey } from './baseline.js';
 import { isCanary } from './canaries.js';
-import { coverageNdjson, renderCoverage, summariseCoverage, type CoverageTotals } from './coverage.js';
+import { coverageNdjson, renderCoverage, summariseCoverage } from './coverage.js';
 import { hashText } from './hash.js';
 import { evenlySpaced } from './sampling.js';
 import { unifiedDiff } from './diff.js';
+import type { CoverageTotals } from './coverage.js';
 import type { Check, CheckOutcome, Finding, FixChange } from './types.js';
 
 export type CheckResult = {

@@ -1,4 +1,3 @@
-import type { Rule } from 'eslint';
 import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { HARD_SKIPPED_ELEMENTS } from '../../shared/html-elements.js';
@@ -12,6 +11,7 @@ import { findTwigStringProblems } from './find-twig-string-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
 import { quotesFor } from './quote-style.js';
+import type { Rule } from 'eslint';
 import type { TagWithAttributes } from './types.js';
 
 export const quotes: Rule.RuleModule = {

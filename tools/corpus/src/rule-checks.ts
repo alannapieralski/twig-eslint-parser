@@ -1,6 +1,8 @@
-import { ESLint, type Linter, type Rule } from 'eslint';
+import { ESLint } from 'eslint';
+import { runLintCheck } from './lint-check.js';
+import type { Linter, Rule } from 'eslint';
 import type { FixKeeps } from './fix-invariants.js';
-import { runLintCheck, type LintTarget, type RootLinter } from './lint-check.js';
+import type { LintTarget, RootLinter } from './lint-check.js';
 import type { Check, Template } from './types.js';
 
 export type RuleCorpusSettings = {

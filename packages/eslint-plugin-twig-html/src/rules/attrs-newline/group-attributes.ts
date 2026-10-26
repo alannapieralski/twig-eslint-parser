@@ -1,4 +1,5 @@
-import { depthChangeWithin, type TwigBlockSummary } from 'twig-eslint-parser';
+import { depthChangeWithin } from 'twig-eslint-parser';
+import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
 

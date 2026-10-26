@@ -1,10 +1,10 @@
-import type { Rule } from 'eslint';
 import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { findInterpolatedAttributeProblems, findInterpolatedStringProblems, findOmittedAttributeProblems } from './find-twig-interpolation-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
+import type { Rule } from 'eslint';
 import type { TagWithAttributes } from './types.js';
 
 export const noTwigInterpolation: Rule.RuleModule = {

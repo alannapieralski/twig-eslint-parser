@@ -5,8 +5,9 @@ import { canaryRoot, discoverCanaries, evaluateCanaries, isExpectedCanaryFailure
 import { discoverTemplates, loadConfig } from './src/config.js';
 import { compareRuns, describeStrictViolations, loadHistory, mergeHistory, recordRun, renderComparison, writeHistory } from './src/history.js';
 import { createProgressReporter, stderrOutput } from './src/progress.js';
-import { buildCheckReport, buildCheckReports, renderCanaries, writeReport, type CheckResult } from './src/report.js';
+import { buildCheckReport, buildCheckReports, renderCanaries, writeReport } from './src/report.js';
 import { selectChecks } from './src/select.js';
+import type { CheckResult } from './src/report.js';
 import type { CorpusOptions, CorpusRoot, PackageCorpus, Template } from './src/types.js';
 
 const repositoryRoot = resolve(import.meta.dirname, '../..');

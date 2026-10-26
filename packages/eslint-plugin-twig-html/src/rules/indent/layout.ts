@@ -1,11 +1,12 @@
-import type { TwigBlockSummary } from 'twig-eslint-parser';
-import { describeOpenTags, findHtmlRegions, type HtmlSource } from './html/html-regions.js';
-import type { MarkupNode } from './html/types.js';
+import { describeOpenTags, findHtmlRegions } from './html/html-regions.js';
 import { findSeams } from './seams.js';
 import { findTwigRegions } from './twig/twig-regions.js';
+import { findYamlFrontMatter } from './yaml-front-matter.js';
+import type { TwigBlockSummary } from 'twig-eslint-parser';
+import type { HtmlSource } from './html/html-regions.js';
+import type { MarkupNode } from './html/types.js';
 import type { TwigSegment } from './twig/types.js';
 import type { IndentLayout } from './types.js';
-import { findYamlFrontMatter } from './yaml-front-matter.js';
 
 export type LayoutSource = HtmlSource & { readonly blocks: readonly TwigBlockSummary[] };
 

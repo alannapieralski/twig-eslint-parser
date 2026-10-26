@@ -1,7 +1,8 @@
 import { parseForESLint } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
 import type { OutputIssue } from './output-checks.js';
 
 export type Rewrite = { readonly name: string; readonly apply: (source: string, blocks: readonly TwigBlock[]) => string };

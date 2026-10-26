@@ -1,5 +1,5 @@
-import type { Range } from '../../../shared/range.js';
 import { depthAt, repeatUnit } from '../nesting.js';
+import type { Range } from '../../../shared/range.js';
 import type { ResolvedOptions } from '../options.js';
 import type { IndentLayout } from '../types.js';
 import type { OpenTag } from './types.js';

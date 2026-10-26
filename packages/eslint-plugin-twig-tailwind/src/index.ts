@@ -1,8 +1,8 @@
 import { createRequire } from 'node:module';
-import type { ESLint } from 'eslint';
 import { createConfigFactory } from './configs/create-config.js';
 import { createProcessor } from './processors/twig-processor.js';
 import { noTwigInterpolation } from './rules/no-twig-interpolation/index.js';
+import type { ESLint } from 'eslint';
 
 const { name, version } = createRequire(import.meta.url)('../package.json') as { name: string; version: string };
 

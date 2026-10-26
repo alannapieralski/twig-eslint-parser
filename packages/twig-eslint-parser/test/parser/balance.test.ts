@@ -1,6 +1,6 @@
-import type { TwigBlockSummary } from '../../src/twig/blocks.js';
 import { describe, expect, it } from 'vitest';
 import { depthChangeWithin, isTwigBalancedWithin } from '../../src/twig/balance.js';
+import type { TwigBlockSummary } from '../../src/twig/blocks.js';
 
 const block = (tagName: string, start: number, depthChange: TwigBlockSummary['depthChange']): TwigBlockSummary => ({
   kind: 'tag',

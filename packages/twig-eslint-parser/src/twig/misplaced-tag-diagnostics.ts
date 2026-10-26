@@ -1,8 +1,8 @@
-import type { TwigDiagnostic } from '../diagnostics.js';
-import type { TwigBlockSummary } from './blocks.js';
 import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
 import { PARENTS_OF_MIDDLE_TAG, TAGS_THAT_CANNOT_FOLLOW_ELSE } from './syntax.js';
 import { tagText } from './tag-text.js';
+import type { TwigDiagnostic } from '../diagnostics.js';
+import type { TwigBlockSummary } from './blocks.js';
 
 type OpenFrame = { readonly name: string; hasElse: boolean };
 

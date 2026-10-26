@@ -1,13 +1,13 @@
-import type { Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { balancedTagListeners } from '../../shared/tag-listeners.js';
-import type { TagNode } from '../../shared/tag-node.js';
 import { createTagSource } from '../../shared/tag-source.js';
 import { findContentProblems } from './find-content-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions, resolveSkippedElements } from './options.js';
+import type { Rule } from 'eslint';
+import type { TagNode } from '../../shared/tag-node.js';
 
 export const multilineHtmlElementContentNewline: Rule.RuleModule = {
   meta: {

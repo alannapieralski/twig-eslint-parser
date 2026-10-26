@@ -1,6 +1,7 @@
-import type { Linter } from 'eslint';
 import { containsGroupDelimiter, isGroupDelimiter } from './class-groups.js';
-import { offsetOf, type FileSpans } from './file-spans.js';
+import { offsetOf } from './file-spans.js';
+import type { Linter } from 'eslint';
+import type { FileSpans } from './file-spans.js';
 
 const SILENCED_RULE_PREFIX = 'better-tailwindcss/';
 

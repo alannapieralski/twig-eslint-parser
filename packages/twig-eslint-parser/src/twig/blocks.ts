@@ -1,5 +1,6 @@
 import { BLOCK_TAGS } from './syntax.js';
-import { isSignificant, type TwigToken, type TwigTokenType } from './tokens.js';
+import { isSignificant } from './tokens.js';
+import type { TwigToken, TwigTokenType } from './tokens.js';
 
 export type TwigBlockKind = 'print' | 'tag' | 'comment';
 
