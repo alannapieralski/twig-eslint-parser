@@ -1,4 +1,5 @@
 import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
+import { contentStartOf, indentationOf, lineStartOf } from '../../../../shared/line-text.js';
 import { isBlankFrom } from '../../line-starts.js';
 import type { ExpressionLine } from '../../types.js';
 import { bracketLevelOf, findClosedPair, outsideAnyBracket } from './bracket-pairs.js';
@@ -14,13 +15,7 @@ type ExpressionLayoutInput = {
   readonly strings: readonly TwigStringSummary[];
 };
 
-const leadingIndentation = /^[ \t]*/;
-
 const lineRules: readonly LineRule[] = [chainRule, bracketRule];
-
-function lineStartOf(text: string, offset: number): number {
-  return text.lastIndexOf('\n', offset - 1) + 1;
-}
 
 function findLineStartsWithin(text: string, range: readonly [number, number]): number[] {
   const lineStarts: number[] = [];
@@ -53,11 +48,11 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
 
   const indentationOfLineAt = (offset: number): string => {
     const lineStart = lineStartOf(text, offset);
-    return indentations.get(lineStart) ?? text.slice(lineStart).match(leadingIndentation)?.[0] ?? '';
+    return indentations.get(lineStart) ?? indentationOf(text.slice(lineStart));
   };
 
   for (const lineStart of findLineStartsWithin(text, block.range)) {
-    const contentStart = lineStart + (text.slice(lineStart).match(leadingIndentation)?.[0].length ?? 0);
+    const contentStart = contentStartOf(text, lineStart);
     if (isBlankFrom(text, contentStart) || isInsideString(lineStart, strings)) continue;
 
     const line: LineContext = { text, block, unitText, lineStart, contentStart, indentationOfLineAt, chainHeads };

@@ -1,13 +1,12 @@
 import type { Rule } from 'eslint';
-import { readTwigServices } from 'twig-eslint-parser';
+import { elementNodeTypes, readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
-import { skippedElements } from '../../shared/html-elements.js';
+import { hardSkippedElements } from '../../shared/html-elements.js';
 import { createIgnoredInsideCheck } from '../../shared/ignored-inside.js';
 import { reportProblems } from '../../shared/report-problems.js';
 import { findUnsoundTagStarts } from '../../shared/unsound-open-tags.js';
 import { createAttributesOf } from '../../shared/tag-attributes.js';
 import { tagListeners } from '../../shared/tag-listeners.js';
-import { tagNodeTypes } from '../../shared/tag-node.js';
 import { findTagProblems } from './find-tag-problems.js';
 import { findTwigStringProblems } from './find-twig-string-problems.js';
 import { messages } from './messages.js';
@@ -33,13 +32,13 @@ export const quotes: Rule.RuleModule = {
     const { blocks, strings, omittedAttributes, diagnostics } = readTwigServices(sourceCode, context.id);
     const source = { text: sourceCode.text, blocks, unsoundTagStarts: findUnsoundTagStarts(diagnostics), ...quotesFor(options) };
     const attributesOf = createAttributesOf(omittedAttributes);
-    const isSkipped = createIgnoredInsideCheck(sourceCode, skippedElements);
+    const isSkipped = createIgnoredInsideCheck(sourceCode, hardSkippedElements);
 
     const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, attributesOf, source, isSkipped));
 
     return {
       Program: () => reportProblems(context, findTwigStringProblems(strings, source)),
-      ...tagListeners(checkTag, tagNodeTypes),
+      ...tagListeners(checkTag, elementNodeTypes),
     };
   },
 };

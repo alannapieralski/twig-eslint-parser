@@ -1,8 +1,7 @@
 import type { Rule } from 'eslint';
-import { readTwigServices } from 'twig-eslint-parser';
+import { elementNodeTypes, readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
-import { tagNodeTypes } from '../../shared/tag-node.js';
 import { findInterpolatedAttributeProblems, findInterpolatedStringProblems, findOmittedAttributeProblems } from './find-twig-interpolation-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
@@ -24,7 +23,7 @@ export const noTwigInterpolation: Rule.RuleModule = {
     const { omittedAttributes, strings } = readTwigServices(context.sourceCode, context.id);
 
     const checkTag = (tag: TagWithAttributes) => reportProblems(context, findInterpolatedAttributeProblems(tag, options));
-    const checkTagByNodeType = Object.fromEntries(tagNodeTypes.map((nodeType) => [nodeType, checkTag]));
+    const checkTagByNodeType = Object.fromEntries(elementNodeTypes.map((nodeType) => [nodeType, checkTag]));
 
     return {
       Program: () => reportProblems(context, [...findOmittedAttributeProblems(omittedAttributes, options), ...findInterpolatedStringProblems(strings)]),

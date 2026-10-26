@@ -1,7 +1,6 @@
+import { elementNodeTypes } from 'twig-eslint-parser';
 import type { Range } from '../../../shared/range.js';
 import type { Element, MarkupNode } from './types.js';
-
-const elementNodeTypes: ReadonlySet<string> = new Set(['Tag', 'ScriptTag', 'StyleTag']);
 
 export function flattenMarkup(nodes: readonly MarkupNode[]): MarkupNode[] {
   const flattened: MarkupNode[] = [];
@@ -16,7 +15,7 @@ export function flattenMarkup(nodes: readonly MarkupNode[]): MarkupNode[] {
 }
 
 export function isElement(node: MarkupNode): node is Element {
-  return elementNodeTypes.has(node.type) && node.openStart !== undefined;
+  return elementNodeTypes.includes(node.type) && node.openStart !== undefined;
 }
 
 export function interiorOf(range: Range): Range {
@@ -38,6 +37,3 @@ export function openTagOf(element: Element): Range {
   return [element.openStart.range[0], openTagEnd];
 }
 
-export function nameOf(element: Element): string {
-  return (element.name ?? '').toLowerCase();
-}

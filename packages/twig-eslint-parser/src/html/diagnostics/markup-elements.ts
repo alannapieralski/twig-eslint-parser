@@ -1,4 +1,5 @@
 import type { AttributeNode } from '../../attributes.js';
+import { elementNodeTypes } from '../syntax.js';
 
 type Range = readonly [number, number];
 type MarkupToken = { readonly range: Range; readonly value: string };
@@ -17,10 +18,8 @@ export type MarkupElement = MarkupNode & {
 
 export type SourceToken = { readonly type: string; readonly range: Range; readonly value: string };
 
-const elementNodeTypes: ReadonlySet<string> = new Set(['Tag', 'ScriptTag', 'StyleTag']);
-
 function isMarkupElement(node: MarkupNode): node is MarkupElement {
-  return elementNodeTypes.has(node.type) && 'openStart' in node;
+  return elementNodeTypes.includes(node.type) && 'openStart' in node;
 }
 
 export function findMarkupElements(document: MarkupNode): MarkupElement[] {

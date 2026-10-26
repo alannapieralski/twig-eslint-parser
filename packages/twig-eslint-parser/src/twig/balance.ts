@@ -1,8 +1,7 @@
 import type { TwigBlockSummary } from './blocks.js';
+import { middleTags } from './syntax.js';
 
 type Range = readonly [number, number];
-
-const branchContinuations: ReadonlySet<string> = new Set(['else', 'elseif']);
 
 function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]): number {
   let low = 0;
@@ -39,8 +38,8 @@ export function isTwigBalancedWithin(range: Range, blocks: readonly TwigBlockSum
   let depth = 0;
 
   for (const block of findBlocksWithin(range, blocks)) {
-    const isBranchContinuationAtTopLevel = depth === 0 && branchContinuations.has(block.tagName ?? '');
-    if (isBranchContinuationAtTopLevel) return false;
+    const isMiddleTagAtTopLevel = depth === 0 && middleTags.has(block.tagName ?? '');
+    if (isMiddleTagAtTopLevel) return false;
 
     depth += block.depthChange;
     if (depth < 0) return false;

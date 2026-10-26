@@ -1,4 +1,4 @@
-import { inlineNonVoidElements, skippedElements, whitespaceSensitiveElements } from '../../shared/html-elements.js';
+import { inlineNonVoidElements, whitespaceSensitiveElements } from '../../shared/html-elements.js';
 
 export type Options = { ignores?: string[]; ignoreInlineElements?: boolean; ignoreWhenEmpty?: boolean; allowEmptyLines?: boolean };
 
@@ -26,5 +26,5 @@ export function resolveOptions(rawOptions: unknown): Required<Options> {
 
 export function resolveSkippedElements(options: Required<Options>): string[] {
   const inlineElements = options.ignoreInlineElements ? inlineNonVoidElements : [];
-  return [...skippedElements, ...whitespaceSensitiveElements, ...inlineElements, ...options.ignores];
+  return [...whitespaceSensitiveElements, ...inlineElements, ...options.ignores];
 }

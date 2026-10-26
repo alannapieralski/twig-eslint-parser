@@ -1,4 +1,4 @@
-import { lineIndentationAt } from '../../shared/line-indentation.js';
+import { lineIndentationAt } from '../../shared/line-text.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
 import type { CloseStyle } from './options.js';

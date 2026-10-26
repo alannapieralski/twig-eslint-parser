@@ -1,6 +1,6 @@
 import { isTwigBalancedWithin } from 'twig-eslint-parser';
 import { elementsWithUnrenderedEdgeWhitespace } from '../../shared/html-elements.js';
-import { lineIndentationAt } from '../../shared/line-indentation.js';
+import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import { isOpenTagUnsound } from '../../shared/unsound-open-tags.js';
@@ -38,7 +38,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
 
   const { text, blocks, isIgnored, unsoundTagStarts } = source;
   const contentRange: Range = [tag.openEnd.range[1], close.range[0]];
-  const isSingleLine = text.lastIndexOf('\n', close.range[0] - 1) < tag.openStart.range[0];
+  const isSingleLine = lineStartOf(text, close.range[0]) <= tag.openStart.range[0];
   if (isSingleLine) return [];
 
   const isEmpty = contentRange[0] === contentRange[1];

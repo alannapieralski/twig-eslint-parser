@@ -1,9 +1,11 @@
+import { rawTextElementNames, singleTokenNodeTypes } from 'twig-eslint-parser';
 import { whitespaceSensitiveElements } from '../../../shared/html-elements.js';
-import { lineIndentationAt } from '../../../shared/line-indentation.js';
+import { lineIndentationAt } from '../../../shared/line-text.js';
 import type { Range } from '../../../shared/range.js';
 import { isOpenTagUnsound } from '../../../shared/unsound-open-tags.js';
 import type { AttributesOf } from '../../../shared/tag-attributes.js';
-import { bodyOf, flattenMarkup, interiorOf, isElement, nameOf } from './html-elements.js';
+import { elementNameOf } from '../../../shared/tag-node.js';
+import { bodyOf, flattenMarkup, interiorOf, isElement } from './html-elements.js';
 import type { Element, MarkupNode, OpenTag } from './types.js';
 
 type HtmlSource = {
@@ -21,9 +23,6 @@ export type HtmlRegions = {
   readonly unclosedContent: readonly Range[];
   readonly closeTags: readonly Range[];
 };
-
-const rawTextNodeTypes: ReadonlySet<string> = new Set(['ScriptTag', 'StyleTag']);
-const singleTokenNodeTypes: ReadonlySet<string> = new Set(['Comment', 'Doctype']);
 
 function isDefined<Value>(value: Value | undefined): value is Value {
   return value !== undefined;
@@ -46,9 +45,9 @@ function findSkippedInElement(
 
   if (!close) return attributeInteriors;
 
-  if (whitespaceSensitiveNames.has(nameOf(element))) return [...attributeInteriors, [openEnd.range[1], close.range[1]]];
+  if (whitespaceSensitiveNames.has(elementNameOf(element))) return [...attributeInteriors, [openEnd.range[1], close.range[1]]];
 
-  const isContentLeftAlone = rawTextNodeTypes.has(element.type) || ignoredNames.has(nameOf(element));
+  const isContentLeftAlone = Object.hasOwn(rawTextElementNames, element.type) || ignoredNames.has(elementNameOf(element));
   if (isContentLeftAlone) return [...attributeInteriors, [openEnd.range[1], close.range[0]]];
 
   return attributeInteriors;
@@ -67,7 +66,7 @@ export function findHtmlRegions(document: MarkupNode, source: HtmlSource): HtmlR
   const markupNodes = flattenMarkup(document.children ?? []);
   const elements = markupNodes.filter(isElement);
 
-  const tokenInteriors = markupNodes.filter((node) => singleTokenNodeTypes.has(node.type)).map((node) => interiorOf(node.range));
+  const tokenInteriors = markupNodes.filter((node) => singleTokenNodeTypes.includes(node.type)).map((node) => interiorOf(node.range));
   const elementSkips = elements.flatMap((element) => findSkippedInElement(element, unsoundTagStarts, attributesOf(element), ignoredNames, whitespaceSensitiveNames));
 
   return {

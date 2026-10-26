@@ -1,4 +1,6 @@
-export const skippedElements: readonly string[] = ['script', 'style'];
+import { rawTextElementNames } from 'twig-eslint-parser';
+
+export const hardSkippedElements: readonly string[] = Object.values(rawTextElementNames);
 
 export const whitespaceSensitiveElements: readonly string[] = ['pre', 'textarea'];
 
@@ -8,10 +10,8 @@ export const inlineNonVoidElements: readonly string[] = [
   'var', 'video',
 ];
 
-const rawTextElementsWithTrimmedEdges: readonly string[] = ['title'];
-
 export const elementsWithUnrenderedEdgeWhitespace: ReadonlySet<string> = new Set([
-  ...rawTextElementsWithTrimmedEdges,
+  'title',
   'address', 'article', 'aside', 'blockquote', 'body', 'button', 'center', 'details', 'dialog', 'div', 'dl', 'dd', 'dt', 'fieldset', 'figcaption', 'figure',
   'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'html', 'legend', 'li', 'main', 'menu', 'nav', 'ol', 'p',
   'search', 'section', 'summary', 'select', 'option', 'optgroup', 'datalist', 'ul', 'table', 'caption', 'colgroup', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',

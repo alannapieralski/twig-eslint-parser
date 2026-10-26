@@ -16,6 +16,7 @@ export { containsTwig, isAttributeNode } from './attributes.js';
 export type { AttributeNode, AttributeOwner, OmittedAttribute } from './attributes.js';
 export type { TwigBlockSummary } from './twig/blocks.js';
 export { middleTags } from './twig/syntax.js';
+export { elementNodeTypes, rawTextElementNames, singleTokenNodeTypes } from './html/syntax.js';
 export { depthChangeWithin, isTwigBalancedWithin } from './twig/balance.js';
 export { HtmlSyntaxError } from './html/syntax-error.js';
 export { TwigSyntaxError } from './twig/tokens.js';
