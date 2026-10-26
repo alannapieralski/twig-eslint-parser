@@ -57,7 +57,6 @@ below, kept identical, and nothing else may be copied between plugins. Ask the u
 an item to this list.
 
 - The `Range` type (`readonly [number, number]`) and the other small types that cross files.
-- The tag node types a rule listens to (`Tag`, `ScriptTag`, `StyleTag`).
 - The function that builds an ESLint location from a range.
 - The `Problem` type and `reportProblems`.
 - The docs URL builder for a rule id.

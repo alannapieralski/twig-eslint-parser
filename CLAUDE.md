@@ -19,3 +19,8 @@ commands and the corpus run.
 - A rule that handles both keeps its markup logic in `html/` and its Twig logic in `twig/`, and
   names each case it handles in one list. `.claude/rules/rule-folders.md` has the rules and the
   `eslint-create` skill has the layout.
+
+## Mistakes seen in review
+
+- Duplicated constants, types and helpers, wording that reviewers rejected, and silent option changes
+  are listed in `.claude/rules/common-mistakes.md`. Read it before adding a helper or renaming.
