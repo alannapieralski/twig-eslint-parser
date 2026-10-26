@@ -26,9 +26,9 @@ const fixtures: Fixture[] = readdirSync(fixturesDirectory)
     return { name, code: readFileSync(new URL(name, fixturesDirectory), 'utf8'), twig: golden.twig, tokens: golden.tokens ?? [] };
   });
 
-const statementStarts = new Set(['begin of print statement', 'begin of statement block', 'begin of string interpolation']);
-const openers = new Set(['(', '[', '{']);
-const prefixContexts = new Set(['(', '[', '{', ',', ':', '?', '=>', '=']);
+const STATEMENT_STARTS = new Set(['begin of print statement', 'begin of statement block', 'begin of string interpolation']);
+const OPENERS = new Set(['(', '[', '{']);
+const PREFIX_CONTEXTS = new Set(['(', '[', '{', ',', ':', '?', '=>', '=']);
 
 const syntaxForms: Record<string, (fixture: Fixture, significant: readonly GoldenToken[]) => boolean> = {
   'single-quoted string': ({ code }, tokens) => tokens.some((token) => token.type === 'string' && code[token.offset] === "'"),
@@ -69,8 +69,8 @@ function numberSources(code: string, tokens: readonly GoldenToken[]): string[] {
 function innermostOpener(tokens: readonly GoldenToken[], index: number): string | undefined {
   const stack: string[] = [];
   for (const token of tokens.slice(0, index)) {
-    if (statementStarts.has(token.type)) stack.length = 0;
-    if (openers.has(String(token.value))) stack.push(String(token.value));
+    if (STATEMENT_STARTS.has(token.type)) stack.length = 0;
+    if (OPENERS.has(String(token.value))) stack.push(String(token.value));
     if ([')', ']', '}'].includes(String(token.value))) stack.pop();
   }
   return stack.at(-1);
@@ -86,7 +86,7 @@ function hashKeyFollows(tokens: readonly GoldenToken[], isKey: (token: GoldenTok
 
 function isPrefixPosition(tokens: readonly GoldenToken[], index: number): boolean {
   const previous = tokens[index - 1];
-  return !previous || statementStarts.has(previous.type) || (previous.type === 'operator' && !['(', '[', '.', '|', '?.'].includes(String(previous.value))) || prefixContexts.has(String(previous.value));
+  return !previous || STATEMENT_STARTS.has(previous.type) || (previous.type === 'operator' && !['(', '[', '.', '|', '?.'].includes(String(previous.value))) || PREFIX_CONTEXTS.has(String(previous.value));
 }
 
 function significantTokens(fixture: Fixture): GoldenToken[] {

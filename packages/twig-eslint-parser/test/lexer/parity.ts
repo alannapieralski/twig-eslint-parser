@@ -54,15 +54,15 @@ const ourTypeByTwigOperator: Record<string, TokenType> = {
   'is not': 'TEST_OPERATOR',
 };
 
-const beginDelimiterTwigTypes = new Set(['begin of print statement', 'begin of statement block']);
-const endDelimiterTwigTypes = new Set(['end of print statement', 'end of statement block']);
-const modifierTypes = new Set<TokenType>(['TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER']);
-const typesTwigSkips = new Set<TokenType>(['WHITESPACE', 'INLINE_COMMENT']);
-const tagNamesConsumedByTwigLexer = new Set(['verbatim', 'endverbatim', 'line']);
+const BEGIN_DELIMITER_TWIG_TYPES = new Set(['begin of print statement', 'begin of statement block']);
+const END_DELIMITER_TWIG_TYPES = new Set(['end of print statement', 'end of statement block']);
+const MODIFIER_TYPES = new Set<TokenType>(['TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER']);
+const TYPES_TWIG_SKIPS = new Set<TokenType>(['WHITESPACE', 'INLINE_COMMENT']);
+const TAG_NAMES_CONSUMED_BY_TWIG_LEXER = new Set(['verbatim', 'endverbatim', 'line']);
 const escapedCharacterByLetter: Record<string, string> = { f: '\f', n: '\n', r: '\r', t: '\t', v: '\v' };
-const pcreWhitespace = /[ \t\n\v\f\r]+/g;
-const whitespaceTwigTrims = /^[ \t\n\v\f\r\0]+$/;
-const lineBreak = /\r\n|\r|\n/g;
+const PCRE_WHITESPACE = /[ \t\n\v\f\r]+/g;
+const WHITESPACE_TWIG_TRIMS = /^[ \t\n\v\f\r\0]+$/;
+const LINE_BREAK = /\r\n|\r|\n/g;
 
 function utf16IndexByByteOffset(source: string): Map<number, number> {
   const indexByByteOffset = new Map<number, number>();
@@ -97,7 +97,7 @@ function positionTokens(tokens: Token[]): PositionedToken[] {
 }
 
 function findLineStarts(source: string): number[] {
-  return [0, ...[...source.matchAll(lineBreak)].map((match) => match.index + match[0].length)];
+  return [0, ...[...source.matchAll(LINE_BREAK)].map((match) => match.index + match[0].length)];
 }
 
 function lastIndexAtOrBefore(sortedValues: readonly number[], target: number): number {
@@ -139,7 +139,7 @@ function findTagsConsumedByTwigLexer(ours: PositionedToken[]): PositionedToken[]
   return ours
     .filter((token) => token.type === 'TAG_START')
     .map((tagStart) => tagTokensFrom(ours, tagStart))
-    .filter((tagTokens) => tagNamesConsumedByTwigLexer.has(tagTokens.find((token) => token.type === 'NAME')?.value ?? ''));
+    .filter((tagTokens) => TAG_NAMES_CONSUMED_BY_TWIG_LEXER.has(tagTokens.find((token) => token.type === 'NAME')?.value ?? ''));
 }
 
 function findColumnsResetByLineTag(tags: PositionedToken[][], lineStarts: number[], sourceLength: number): Range[] {
@@ -153,7 +153,7 @@ function findColumnsResetByLineTag(tags: PositionedToken[][], lineStarts: number
 }
 
 function normaliseNewlines(text: string): string {
-  return text.replace(lineBreak, '\n');
+  return text.replace(LINE_BREAK, '\n');
 }
 
 function readEscapeSequence(text: string, position: number): { bytes: Buffer; next: number } {
@@ -220,8 +220,8 @@ function quotedStringSpan(ours: PositionedToken[], openingQuote: PositionedToken
 
 function spanOf(twigToken: GoldenToken, first: PositionedToken, ours: PositionedToken[]): PositionedToken[] {
   const next = ours[first.index + 1];
-  if (beginDelimiterTwigTypes.has(twigToken.type) && next && modifierTypes.has(next.type)) return [first, next];
-  if (endDelimiterTwigTypes.has(twigToken.type) && next && modifierTypes.has(first.type)) return [first, next];
+  if (BEGIN_DELIMITER_TWIG_TYPES.has(twigToken.type) && next && MODIFIER_TYPES.has(next.type)) return [first, next];
+  if (END_DELIMITER_TWIG_TYPES.has(twigToken.type) && next && MODIFIER_TYPES.has(first.type)) return [first, next];
   if (twigToken.type === 'string' && first.type === 'OPENING_QUOTE') return quotedStringSpan(ours, first);
   return [first];
 }
@@ -244,7 +244,7 @@ function typeMismatch(twigToken: GoldenToken, span: PositionedToken[]): string |
   if (twigToken.type === 'string') return stringShapeMismatch(span);
 
   const expectedType = expectedTypeOf(twigToken);
-  const main = endDelimiterTwigTypes.has(twigToken.type) ? span.at(-1) : span[0];
+  const main = END_DELIMITER_TWIG_TYPES.has(twigToken.type) ? span.at(-1) : span[0];
   return main?.type === expectedType ? undefined : `our token is ${describeSpan(span)}, expected ${expectedType}`;
 }
 
@@ -256,7 +256,7 @@ function ourValueAsTwigSees(twigToken: GoldenToken, span: PositionedToken[]): un
     case 'punctuation':
       return first.value;
     case 'operator':
-      return first.value.replace(pcreWhitespace, ' ');
+      return first.value.replace(PCRE_WHITESPACE, ' ');
     case 'number':
       return Number(first.value.replaceAll('_', ''));
     case 'string':
@@ -294,7 +294,7 @@ function describeMismatch(twigToken: GoldenToken, reason: string): string {
 }
 
 function lineOfOffset(token: PositionedToken, offset: number, source: string): number {
-  return token.line + (source.slice(token.start, offset).match(lineBreak)?.length ?? 0);
+  return token.line + (source.slice(token.start, offset).match(LINE_BREAK)?.length ?? 0);
 }
 
 function endOfTwigsEndverbatimMatch(source: string, tagTokens: PositionedToken[]): number {
@@ -381,7 +381,7 @@ function findTokensWithoutTwigToken(template: Template, claimed: Set<number>): s
     ...findQuotesOfStringsTwigLexesInParts(template.ours, claimed),
   ].map((token) => token.index));
   return template.ours
-    .filter((token) => !claimed.has(token.index) && !silent.has(token.index) && !token.insideComment && token.type !== 'TEXT' && !typesTwigSkips.has(token.type))
+    .filter((token) => !claimed.has(token.index) && !silent.has(token.index) && !token.insideComment && token.type !== 'TEXT' && !TYPES_TWIG_SKIPS.has(token.type))
     .map((token) => `our ${token.type} ${JSON.stringify(token.value)} at offset ${token.start} has no Twig token`);
 }
 
@@ -399,17 +399,17 @@ function uncoveredRuns(token: PositionedToken, covered: Uint8Array): Range[] {
 function isTrimmedFromLeft(ours: PositionedToken[], text: PositionedToken): boolean {
   const endDelimiter = ours[text.index - 1];
   const modifier = ours[text.index - 2];
-  return Boolean(endDelimiter && modifier && ['VARIABLE_END', 'TAG_END', 'COMMENT_END'].includes(endDelimiter.type) && modifierTypes.has(modifier.type));
+  return Boolean(endDelimiter && modifier && ['VARIABLE_END', 'TAG_END', 'COMMENT_END'].includes(endDelimiter.type) && MODIFIER_TYPES.has(modifier.type));
 }
 
 function isTrimmedFromRight(ours: PositionedToken[], text: PositionedToken): boolean {
   const beginDelimiter = ours[text.index + 1];
   const modifier = ours[text.index + 2];
-  return Boolean(beginDelimiter && modifier && ['VARIABLE_START', 'TAG_START', 'COMMENT_START'].includes(beginDelimiter.type) && modifierTypes.has(modifier.type));
+  return Boolean(beginDelimiter && modifier && ['VARIABLE_START', 'TAG_START', 'COMMENT_START'].includes(beginDelimiter.type) && MODIFIER_TYPES.has(modifier.type));
 }
 
 function isWhitespaceTwigTrims(template: Template, text: PositionedToken, run: Range): boolean {
-  if (!whitespaceTwigTrims.test(template.source.slice(run.start, run.end))) return false;
+  if (!WHITESPACE_TWIG_TRIMS.test(template.source.slice(run.start, run.end))) return false;
   return (run.start === text.start && isTrimmedFromLeft(template.ours, text)) || (run.end === text.end && isTrimmedFromRight(template.ours, text));
 }
 

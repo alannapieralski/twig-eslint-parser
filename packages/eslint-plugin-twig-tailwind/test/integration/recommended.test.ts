@@ -219,7 +219,7 @@ describe('twig-tailwind/no-twig-interpolation', () => {
   });
 
   it('reports a Twig string that interpolates with #{ }, but not one that does not', async () => {
-    const code = `{% set classes = ['flex', "card--#{variant}"] %}\n{% set other = ['flex', 'p-4'] %}`;
+    const code = '{% set classes = [\'flex\', "card--#{variant}"] %}\n{% set other = [\'flex\', \'p-4\'] %}';
     const result = await lint(code);
     expect(describeMessages(result.messages)).toEqual([
       `1:${columnOf(code, '"card')} twig-tailwind/no-twig-interpolation Avoid #{ } inside a Twig string: linters cannot see what it produces.`,

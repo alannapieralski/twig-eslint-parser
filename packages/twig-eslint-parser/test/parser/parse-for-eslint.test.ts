@@ -139,18 +139,18 @@ describe('strings and numbers', () => {
   });
 
   it('finds the range of every interpolated string, including ones nested inside another interpolation', () => {
-    const code = `<p class="a #{b}">{% set c = ['x', "y #{z}", "p #{q ~ "r #{s}"}"] %}{{ 'plain #{no}' }}</p>`;
+    const code = '<p class="a #{b}">{% set c = [\'x\', "y #{z}", "p #{q ~ "r #{s}"}"] %}{{ \'plain #{no}\' }}</p>';
     expect(findInterpolatedStrings(code).map((range) => code.slice(...range))).toEqual(['"y #{z}"', '"r #{s}"', '"p #{q ~ "r #{s}"}"']);
   });
 
   it('lists every Twig string with its quote, including ones in tags that never become JavaScript', () => {
-    const code = `{% extends "base.twig" %}<p title="{{ 'x' }}">{{ "a #{ 'b' }" ~ "c" }}</p>{# "d" #}{% verbatim %}{{ "e" }}{% endverbatim %}`;
+    const code = '{% extends "base.twig" %}<p title="{{ \'x\' }}">{{ "a #{ \'b\' }" ~ "c" }}</p>{# "d" #}{% verbatim %}{{ "e" }}{% endverbatim %}';
     const { services } = parse(code);
     expect(services.strings.map((string) => [code.slice(...string.range), string.quote, string.isInterpolated])).toEqual([
       ['"base.twig"', '"', false],
       ["'x'", "'", false],
       ["'b'", "'", false],
-      [`"a #{ 'b' }"`, '"', true],
+      ['"a #{ \'b\' }"', '"', true],
       ['"c"', '"', false],
     ]);
   });
@@ -324,8 +324,8 @@ describe('tags', () => {
   });
 
   it.each([
-    ['an end tag with no tag open', '<div>\n{% endif %}\n</div>', 2, "{% endif %} has no tag to belong to"],
-    ['an else with no tag open', '<div>\n{% else %}\n</div>', 2, "{% else %} has no tag to belong to"],
+    ['an end tag with no tag open', '<div>\n{% endif %}\n</div>', 2, '{% endif %} has no tag to belong to'],
+    ['an else with no tag open', '<div>\n{% else %}\n</div>', 2, '{% else %} has no tag to belong to'],
     ['a bare end tag', '{% if a %}\n{% end %}', 2, '{% end %} cannot close {% if %}, which needs {% endif %}'],
     ['an end tag closing the wrong tag', '{% if a %}\n{% endfor %}', 2, '{% endfor %} cannot close {% if %}, which needs {% endif %}'],
     ['an extra end tag', '{% for a in b %}{% endfor %}\n{% endfor %}', 2, '{% endfor %} has no tag to belong to'],

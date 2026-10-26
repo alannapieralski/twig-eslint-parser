@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseForESLint } from '../../src/index.js';
-import { checkParserOutput, templateDefectChecks } from './output-checks.js';
+import { TEMPLATE_DEFECT_CHECKS, checkParserOutput } from './output-checks.js';
 import type { ParseForOutputChecks } from './output-checks.js';
 
 type Mutable = Record<string, unknown>;
@@ -34,7 +34,7 @@ function checksOf(code: string): string[] {
 }
 
 function parserFailuresOf(code: string): string[] {
-  return checksOf(code).filter((check) => !templateDefectChecks.has(check));
+  return checksOf(code).filter((check) => !TEMPLATE_DEFECT_CHECKS.has(check));
 }
 
 describe('checkParserOutput', () => {

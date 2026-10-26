@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { markupForMutation, mutators, runMutations, seedFrom } from './mutations.js';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import { MUTATORS, markupForMutation, runMutations, seedFrom } from './mutations.js';
 
 const template = [
   '<section class="a">',
@@ -49,6 +49,6 @@ describe('runMutations', () => {
   });
 
   it('has a mutator for every kind it reports', () => {
-    expect(new Set(mutators.map((mutator) => mutator.kind))).toEqual(new Set(['defect', 'harmless']));
+    expect(new Set(MUTATORS.map((mutator) => mutator.kind))).toEqual(new Set(['defect', 'harmless']));
   });
 });

@@ -239,8 +239,8 @@ function indentationOfLineAt(code: string, offset: number): string {
 
 function lineStartsWithin(code: string, start: number, end: number): number[] {
   const lineStarts: number[] = [];
-  for (let LINE_BREAK = code.indexOf('\n', start); LINE_BREAK !== -1 && LINE_BREAK < end; LINE_BREAK = code.indexOf('\n', LINE_BREAK + 1)) {
-    lineStarts.push(LINE_BREAK + 1);
+  for (let lineBreak = code.indexOf('\n', start); lineBreak !== -1 && lineBreak < end; lineBreak = code.indexOf('\n', lineBreak + 1)) {
+    lineStarts.push(lineBreak + 1);
   }
   return lineStarts;
 }

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findParityMismatches, type Golden } from './parity.js';
+import { findParityMismatches  } from './parity.js';
+import type {Golden} from './parity.js';
 
 const fixturesDirectory = new URL('../fixtures/twig/', import.meta.url);
 
@@ -29,7 +30,7 @@ describe('lexer parity with Twig (golden files from tools/twig-oracle)', () => {
 });
 
 const expression = {
-  source: `{{ "\\x41\\101" ~ 'it\\'s' is null }}\n`,
+  source: '{{ "\\x41\\101" ~ \'it\\\'s\' is null }}\n',
   golden: {
     twig: '3.28.0',
     tokens: [

@@ -1,4 +1,4 @@
-import { betterTailwindcss } from './better-tailwindcss.js';
+import type { betterTailwindcss } from './better-tailwindcss.js';
 
 type DefaultSelector = ReturnType<typeof betterTailwindcss.getDefaultSelectors>[number];
 

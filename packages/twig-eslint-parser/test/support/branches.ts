@@ -8,7 +8,7 @@ type MaybeClosedTag = { readonly name: string; readonly openStart: number; reado
 type Role = 'start' | 'continue' | 'end' | 'blockOpen' | 'blockClose';
 type Frame = { readonly kind: 'if'; readonly groupId: number; branchIndex: number; segmentStart: number } | { readonly kind: 'block' };
 
-const tagsThatScopeBranches: ReadonlySet<string> = new Set(['for', 'block', 'macro', 'embed', 'autoescape', 'sandbox', 'with']);
+const TAGS_THAT_SCOPE_BRANCHES: ReadonlySet<string> = new Set(['for', 'block', 'macro', 'embed', 'autoescape', 'sandbox', 'with']);
 
 function roleOf(block: TwigBlockSummary): Role | undefined {
   const { tagName } = block;
@@ -16,8 +16,8 @@ function roleOf(block: TwigBlockSummary): Role | undefined {
   if (tagName === 'if') return 'start';
   if (tagName === 'elseif' || tagName === 'else') return 'continue';
   if (tagName === 'endif') return 'end';
-  if (tagName.startsWith('end') && tagsThatScopeBranches.has(tagName.slice('end'.length))) return 'blockClose';
-  if (tagsThatScopeBranches.has(tagName) && block.depthChange === 1) return 'blockOpen';
+  if (tagName.startsWith('end') && TAGS_THAT_SCOPE_BRANCHES.has(tagName.slice('end'.length))) return 'blockClose';
+  if (TAGS_THAT_SCOPE_BRANCHES.has(tagName) && block.depthChange === 1) return 'blockOpen';
   return undefined;
 }
 

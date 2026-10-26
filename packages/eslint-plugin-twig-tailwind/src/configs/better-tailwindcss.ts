@@ -1,11 +1,10 @@
 import { createRequire } from 'node:module';
-
-type PluginModule = typeof import('eslint-plugin-better-tailwindcss');
-type DefaultsModule = typeof import('eslint-plugin-better-tailwindcss/defaults');
+import type * as PluginModule from 'eslint-plugin-better-tailwindcss';
+import type * as DefaultsModule from 'eslint-plugin-better-tailwindcss/defaults';
 
 type BetterTailwindcss = {
-  readonly plugin: PluginModule['default'];
-  readonly getDefaultSelectors: DefaultsModule['getDefaultSelectors'];
+  readonly plugin: (typeof PluginModule)['default'];
+  readonly getDefaultSelectors: (typeof DefaultsModule)['getDefaultSelectors'];
 };
 
 const { peerDependencies } = createRequire(import.meta.url)('../../package.json') as { peerDependencies: Record<string, string> };

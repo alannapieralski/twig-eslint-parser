@@ -1,7 +1,7 @@
-import { DRUPAL_VOID_ELEMENTS } from '../../src/drupal.js';
-import { branchSegmentsOf, isClosedInAnotherBranch } from './branches.js';
 import { TokenizerMode } from 'parse5';
 import { SAXParser } from 'parse5-sax-parser';
+import { DRUPAL_VOID_ELEMENTS } from '../../src/drupal.js';
+import { branchSegmentsOf, isClosedInAnotherBranch } from './branches.js';
 import type { Token } from 'parse5';
 import type { EndTag, StartTag } from 'parse5-sax-parser';
 import type { Golden } from '../lexer/parity.js';
@@ -53,21 +53,21 @@ type Report = (check: string, range: Range, message: string) => void;
 type OpenElement = { readonly pairingName: string; readonly start: number };
 type SaxLocation = { readonly startOffset: number; readonly endOffset: number; readonly attrs?: Record<string, { readonly startOffset: number }> };
 
-const tagModes = new Set<Mode>(['tag-name', 'before-attribute-name', 'attribute-name', 'after-attribute-name', 'before-attribute-value', 'attribute-value-unquoted', 'after-attribute-value', 'self-closing']);
+const TAG_MODES = new Set<Mode>(['tag-name', 'before-attribute-name', 'attribute-name', 'after-attribute-name', 'before-attribute-value', 'attribute-value-unquoted', 'after-attribute-value', 'self-closing']);
 const endDelimiterByKind = { print: '}}', tag: '%}' } as const;
-const rawTagInGap = /^\{%[-~]?\s*(?:verbatim|endverbatim|raw|endraw|line\s+\d+)\s*[-~]?%\}/;
-const rawTextElements = new Set(['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext']);
-const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'image', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr', ...DRUPAL_VOID_ELEMENTS]);
-const specialElements = new Set(`address applet area article aside base basefont bgsound blockquote body br button caption center col colgroup dd
+const RAW_TAG_IN_GAP = /^\{%[-~]?\s*(?:verbatim|endverbatim|raw|endraw|line\s+\d+)\s*[-~]?%\}/;
+const RAW_TEXT_ELEMENTS = new Set(['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext']);
+const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'image', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr', ...DRUPAL_VOID_ELEMENTS]);
+const SPECIAL_ELEMENTS = new Set(`address applet area article aside base basefont bgsound blockquote body br button caption center col colgroup dd
   details dir div dl dt embed fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html iframe img input
   keygen li link listing main marquee menu meta nav noembed noframes noscript object ol p param plaintext pre script search section select source
   style summary table tbody td template textarea tfoot th thead title tr track ul wbr xmp`.split(/\s+/));
 const endTagChecks: Record<EndTagKind, string> = { 'closes-current': 'end tags', 'closes-after-implied-ends': 'implied end tags', 'unmatched': 'unmatched end tags' };
-export const branchPairedEndTagCheck = 'html-oracle: element opened and closed in different Twig branches';
-const foreignRoots = new Set(['svg', 'math']);
-const htmlWhitespace = /[\t\n\f\r ]/;
-const maxIssuesPerTemplate = 20;
-const maxExcerptLength = 60;
+export const BRANCH_PAIRED_END_TAG_CHECK = 'html-oracle: element opened and closed in different Twig branches';
+const FOREIGN_ROOTS = new Set(['svg', 'math']);
+const HTML_WHITESPACE = /[\t\n\f\r ]/;
+const MAX_ISSUES_PER_TEMPLATE = 20;
+const MAX_EXCERPT_LENGTH = 60;
 
 function utf16IndexByByteOffset(source: string): Map<number, number> {
   const indexByByteOffset = new Map<number, number>();
@@ -110,7 +110,7 @@ function rangesInGap(source: string, gapStart: number, gapEnd: number): TwigRang
   const ranges: TwigRange[] = [];
   let index = gapStart;
   while (index < gapEnd) {
-    if (htmlWhitespace.test(source[index] ?? '')) {
+    if (HTML_WHITESPACE.test(source[index] ?? '')) {
       index += 1;
       continue;
     }
@@ -122,7 +122,7 @@ function rangesInGap(source: string, gapStart: number, gapEnd: number): TwigRang
       index += close + 2;
       continue;
     }
-    const rawTag = rawTagInGap.exec(rest);
+    const rawTag = RAW_TAG_IN_GAP.exec(rest);
     if (!rawTag) throw new Error(`Twig emitted no token for ${JSON.stringify(rest.slice(0, 40))} at offset ${index}.`);
     ranges.push({ start: index, end: index + rawTag[0].length, kind: 'tag' });
     index += rawTag[0].length;
@@ -198,7 +198,7 @@ function blankTwigRanges(source: string, twigRanges: readonly TwigRange[]): stri
 }
 
 function startsAttributeName(character: string | undefined): boolean {
-  return character !== undefined && !htmlWhitespace.test(character) && character !== '/' && character !== '>' && character !== '{';
+  return character !== undefined && !HTML_WHITESPACE.test(character) && character !== '/' && character !== '>' && character !== '{';
 }
 
 function fillerFor(state: ScanState, range: TwigRange, source: string): Filler {
@@ -227,7 +227,7 @@ function startTagState(state: ScanState, character: string): ScanState {
 }
 
 function nextState(state: ScanState, character: string): ScanState {
-  const isWhitespace = htmlWhitespace.test(character);
+  const isWhitespace = HTML_WHITESPACE.test(character);
   const isLetter = /[A-Za-z]/.test(character);
   switch (state.mode) {
     case 'data':
@@ -296,13 +296,13 @@ function endOfRawText(blanked: string, index: number, tagName: string): number {
 }
 
 function stateAfterTagEnds(previous: ScanState, emitted: ScanState): ScanState {
-  if (!foreignRoots.has(previous.tagName)) return emitted;
+  if (!FOREIGN_ROOTS.has(previous.tagName)) return emitted;
   if (previous.isEndTag) return { ...emitted, foreignDepth: Math.max(0, emitted.foreignDepth - 1) };
   return previous.mode === 'self-closing' ? emitted : { ...emitted, foreignDepth: emitted.foreignDepth + 1 };
 }
 
 function isRawTextStart(previous: ScanState, emitted: ScanState): boolean {
-  return !previous.isEndTag && emitted.foreignDepth === 0 && previous.mode !== 'self-closing' && rawTextElements.has(previous.tagName);
+  return !previous.isEndTag && emitted.foreignDepth === 0 && previous.mode !== 'self-closing' && RAW_TEXT_ELEMENTS.has(previous.tagName);
 }
 
 function maskTwig(source: string, twigRanges: readonly TwigRange[]): string {
@@ -326,7 +326,7 @@ function maskTwig(source: string, twigRanges: readonly TwigRange[]): string {
     const previous = state;
     state = nextState(state, character);
     index += 1;
-    if (character !== '>' || state.mode !== 'data' || !tagModes.has(previous.mode)) continue;
+    if (character !== '>' || state.mode !== 'data' || !TAG_MODES.has(previous.mode)) continue;
 
     const emitted = stateAfterTagEnds(previous, state);
     state = emitted;
@@ -354,7 +354,7 @@ function locationOf(token: StartTag | EndTag): SaxLocation {
 
 function skipWhitespace(text: string, index: number): number {
   let cursor = index;
-  while (htmlWhitespace.test(text[cursor] ?? '')) cursor += 1;
+  while (HTML_WHITESPACE.test(text[cursor] ?? '')) cursor += 1;
   return cursor;
 }
 
@@ -368,7 +368,7 @@ function valueRangeAfterName(masked: string, nameEnd: number): Range | undefined
     return [valueStart + 1, close === -1 ? masked.length : close];
   }
   let valueEnd = valueStart;
-  while (valueEnd < masked.length && !htmlWhitespace.test(masked[valueEnd] ?? '') && masked[valueEnd] !== '>') valueEnd += 1;
+  while (valueEnd < masked.length && !HTML_WHITESPACE.test(masked[valueEnd] ?? '') && masked[valueEnd] !== '>') valueEnd += 1;
   return [valueStart, valueEnd];
 }
 
@@ -418,7 +418,7 @@ function collectOracleEvents(source: string, masked: string): OracleEvent[] {
 
 function findRawTextRegions(events: readonly OracleEvent[], sourceLength: number): Range[] {
   return events.flatMap((event, index): Range[] => {
-    if (event.kind !== 'start' || event.selfClosing || !rawTextElements.has(event.tag.name)) return [];
+    if (event.kind !== 'start' || event.selfClosing || !RAW_TEXT_ELEMENTS.has(event.tag.name)) return [];
     const following = events.slice(index + 1).find((candidate) => candidate.kind !== 'text');
     if (following?.kind === 'start') return [];
     return [[event.tag.range[1], following?.kind === 'end' ? following.tag.range[0] : sourceLength]];
@@ -429,7 +429,7 @@ function indexOfOpenElement(openElements: readonly OpenElement[], pairingName: s
   for (let index = openElements.length - 1; index >= 0; index -= 1) {
     const name = openElements[index]?.pairingName ?? '';
     if (name === pairingName) return index;
-    if (specialElements.has(name)) return -1;
+    if (SPECIAL_ELEMENTS.has(name)) return -1;
   }
   return -1;
 }
@@ -442,7 +442,7 @@ function walkOpenElements(events: readonly OracleEvent[]): { readonly endTagKind
   for (const event of events) {
     if (event.kind === 'start') {
       parentStarts.set(event.tag.range[0], openElements.at(-1)?.start);
-      if (!event.selfClosing && !voidElements.has(event.tag.name)) openElements.push({ pairingName: event.tag.pairingName, start: event.tag.range[0] });
+      if (!event.selfClosing && !VOID_ELEMENTS.has(event.tag.name)) openElements.push({ pairingName: event.tag.pairingName, start: event.tag.range[0] });
     }
     if (event.kind !== 'end') continue;
     const openIndex = indexOfOpenElement(openElements, event.tag.pairingName);
@@ -558,8 +558,8 @@ function createLineLocator(source: string): (offset: number) => number {
 }
 
 function excerpt(source: string, [start, end]: Range): string {
-  const text = source.slice(start, Math.min(end, start + maxExcerptLength * 2)).replace(/\s+/g, ' ').trim();
-  return text.length > maxExcerptLength ? `${text.slice(0, maxExcerptLength - 3)}...` : text;
+  const text = source.slice(start, Math.min(end, start + MAX_EXCERPT_LENGTH * 2)).replace(/\s+/g, ' ').trim();
+  return text.length > MAX_EXCERPT_LENGTH ? `${text.slice(0, MAX_EXCERPT_LENGTH - 3)}...` : text;
 }
 
 function describeRange(range: Range | undefined): string {
@@ -605,7 +605,7 @@ function compareAttributes(
   }
 }
 
-export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigRange[], ast: unknown, issueLimit: number = maxIssuesPerTemplate): OutputIssue[] {
+export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigRange[], ast: unknown, issueLimit: number = MAX_ISSUES_PER_TEMPLATE): OutputIssue[] {
   assertSortedAndDisjoint(source, twigRanges);
   const masked = maskTwig(source, twigRanges);
   const oracle = readOracleDocument(source, masked);
@@ -649,7 +649,7 @@ export function compareWithHtmlOracle(source: string, twigRanges: readonly TwigR
     if (ourCloseStarts.has(endTag.range[0])) continue;
     const branchTags = ours.map((tag) => ({ name: tag.name, openStart: tag.openStart[0], isClosed: tag.close !== undefined }));
     const isBranchPaired = isClosedInAnotherBranch(branchSegments, endTag.range[0], endTag.name, branchTags);
-    const check = isBranchPaired ? branchPairedEndTagCheck.replace('html-oracle: ', '') : endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
+    const check = isBranchPaired ? BRANCH_PAIRED_END_TAG_CHECK.replace('html-oracle: ', '') : endTagChecks[oracle.endTagKinds.get(endTag.range[0]) ?? 'unmatched'];
     report(check, endTag.range, 'end tag is not the close of any element');
   }
 

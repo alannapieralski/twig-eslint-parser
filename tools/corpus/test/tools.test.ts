@@ -331,7 +331,8 @@ describe('createProgressReporter', () => {
     const progress = reporter.track('x', 100);
     advance(300);
     progress(2);
-    expect(written[0]).toMatch(/^\r\x1b\[2K\[corpus\] x {2}2\/100/);
+    expect(written[0]).toMatch(/^\r/);
+    expect(written[0]).toContain('\x1b[2K[corpus] x  2/100');
     expect(written[0]).not.toContain('\n');
   });
 });

@@ -32,7 +32,7 @@ describe('twig-html/quotes', () => {
     });
 
     it('leaves a value containing the wanted quote alone, since it would need an escape', async () => {
-      const code = `<a title='say "hi"' onclick='go("{{ id }}")'>x</a>`;
+      const code = '<a title=\'say "hi"\' onclick=\'go("{{ id }}")\'>x</a>';
       expect((await lint(code)).messages).toEqual([]);
     });
 
@@ -41,13 +41,13 @@ describe('twig-html/quotes', () => {
     });
 
     it('ignores quotes inside Twig blocks, which HTML never reads', async () => {
-      expect(await fixed(`<a class='{% if x == "a" %}b{% endif %}'>x</a>`, { html: 'double', twig: 'double' })).toBe('<a class="{% if x == "a" %}b{% endif %}">x</a>');
-      expect(await fixed(`<a class="{% if x == 'a' %}b{% endif %}">x</a>`, { html: 'single', twig: 'single' })).toBe(`<a class='{% if x == 'a' %}b{% endif %}'>x</a>`);
+      expect(await fixed('<a class=\'{% if x == "a" %}b{% endif %}\'>x</a>', { html: 'double', twig: 'double' })).toBe('<a class="{% if x == "a" %}b{% endif %}">x</a>');
+      expect(await fixed('<a class="{% if x == \'a\' %}b{% endif %}">x</a>', { html: 'single', twig: 'single' })).toBe('<a class=\'{% if x == \'a\' %}b{% endif %}\'>x</a>');
     });
 
     it.each([
-      ['double', 'single', `<a class="{{ 'a' }}">x</a>`],
-      ['single', 'double', `<a class='{{ "a" }}'>x</a>`],
+      ['double', 'single', '<a class="{{ \'a\' }}">x</a>'],
+      ['single', 'double', '<a class=\'{{ "a" }}\'>x</a>'],
     ])('keeps html: %s and twig: %s apart', async (html, twig, code) => {
       expect((await lint(code, { html, twig })).messages).toEqual([]);
     });
@@ -64,7 +64,7 @@ describe('twig-html/quotes', () => {
     });
 
     it('reports an unquoted value holding quotes without fixing it', async () => {
-      const code = `<p class={% if a %}"a"{% else %}'b'{% endif %}>x</p>`;
+      const code = '<p class={% if a %}"a"{% else %}\'b\'{% endif %}>x</p>';
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
       expect(messages.map((message) => message.messageId)).toEqual(['missingHtmlQuote']);
@@ -96,21 +96,21 @@ describe('twig-html/quotes', () => {
     });
 
     it('reports but does not fix a value that opens a Twig block another attribute closes', async () => {
-      const code = `<p class='a{% if x %}' data-x='{% endif %}'>x</p>`;
+      const code = '<p class=\'a{% if x %}\' data-x=\'{% endif %}\'>x</p>';
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
       expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'wrongHtmlQuote']);
     });
 
     it('reports but does not swap the quotes of a value printing Twig, which may be markup that is never escaped', async () => {
-      const code = `<p data-config='{{ config|json_encode|raw }}' alt='{{ 'The "best" view'|t }}' title='{{ x }}' class='{% include 'a.twig' %}'>x</p>`;
+      const code = '<p data-config=\'{{ config|json_encode|raw }}\' alt=\'{{ \'The "best" view\'|t }}\' title=\'{{ x }}\' class=\'{% include \'a.twig\' %}\'>x</p>';
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
       expect(messages.map((message) => message.messageId)).toEqual(['wrongHtmlQuote', 'wrongHtmlQuote', 'wrongHtmlQuote', 'wrongHtmlQuote']);
     });
 
     it('fixes a value that holds a whole Twig block', async () => {
-      expect(await fixed(`<p class='a {% if x %}b{% endif %}'>x</p>`)).toBe('<p class="a {% if x %}b{% endif %}">x</p>');
+      expect(await fixed('<p class=\'a {% if x %}b{% endif %}\'>x</p>')).toBe('<p class="a {% if x %}b{% endif %}">x</p>');
     });
 
     it('leaves attributes without a value, and Drupal attribute prints, alone', async () => {
@@ -123,7 +123,7 @@ describe('twig-html/quotes', () => {
     });
 
     it('leaves quotes in text, comments, scripts, styles and raw text alone', async () => {
-      const code = `<p>it's "quoted"</p><!-- 'x' --><script>var a = "b";</script><style>a::after { content: "x"; }</style><textarea>a='b'</textarea>`;
+      const code = '<p>it\'s "quoted"</p><!-- \'x\' --><script>var a = "b";</script><style>a::after { content: "x"; }</style><textarea>a=\'b\'</textarea>';
       expect((await lint(code)).messages).toEqual([]);
     });
 
@@ -159,17 +159,17 @@ describe('twig-html/quotes', () => {
     });
 
     it('drops escapes the new quote no longer needs', async () => {
-      expect(await fixed(`{{ 'it\\'s' }}`, { twig: 'double' })).toBe(`{{ "it's" }}`);
-      expect(await fixed(`{{ "say \\"hi\\"" }}`)).toBe(`{{ 'say "hi"' }}`);
+      expect(await fixed('{{ \'it\\\'s\' }}', { twig: 'double' })).toBe('{{ "it\'s" }}');
+      expect(await fixed('{{ "say \\"hi\\"" }}')).toBe('{{ \'say "hi"\' }}');
     });
 
     it('keeps other escapes as they are', async () => {
-      expect(await fixed(`{{ "tab\\there \\\\ \\x41" }}`)).toBe(`{{ 'tab\\there \\\\ \\x41' }}`);
+      expect(await fixed('{{ "tab\\there \\\\ \\x41" }}')).toBe('{{ \'tab\\there \\\\ \\x41\' }}');
     });
 
     it('leaves strings that would need a new escape alone', async () => {
-      expect((await lint(`{{ "it's" }}`)).messages).toEqual([]);
-      expect((await lint(`{{ 'say "hi"' }}`, { twig: 'double' })).messages).toEqual([]);
+      expect((await lint('{{ "it\'s" }}')).messages).toEqual([]);
+      expect((await lint('{{ \'say "hi"\' }}', { twig: 'double' })).messages).toEqual([]);
     });
 
     it('never moves interpolation in or out of a string', async () => {
@@ -179,13 +179,13 @@ describe('twig-html/quotes', () => {
     });
 
     it('checks strings inside an interpolation on their own', async () => {
-      expect(await fixed('{{ "a #{ b ~ "c" }" }}')).toBe(`{{ "a #{ b ~ 'c' }" }}`);
+      expect(await fixed('{{ "a #{ b ~ "c" }" }}')).toBe('{{ "a #{ b ~ \'c\' }" }}');
     });
 
     it('checks Twig inside script, style and HTML comments, but not Twig comments or verbatim', async () => {
       const code = '<script>var a = {{ "x"|json_encode }};</script><!-- {{ "y" }} -->{# "z" #}{% verbatim %}{{ "v" }}{% endverbatim %}';
       expect(await reportedLines(code)).toEqual([1, 1]);
-      expect(await fixed(code)).toBe(`<script>var a = {{ 'x'|json_encode }};</script><!-- {{ 'y' }} -->{# "z" #}{% verbatim %}{{ "v" }}{% endverbatim %}`);
+      expect(await fixed(code)).toBe('<script>var a = {{ \'x\'|json_encode }};</script><!-- {{ \'y\' }} -->{# "z" #}{% verbatim %}{{ "v" }}{% endverbatim %}');
     });
 
     it('checks strings that span lines', async () => {

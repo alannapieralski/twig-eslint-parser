@@ -35,7 +35,7 @@ describe('unexpected-character-in-attribute-name', () => {
   });
 
   it('stays quiet for quotes inside a quoted value and inside Twig strings that hold }}', () => {
-    expect(codesOf(`<p title='say "hi"' data-a="it's" data-b="{{ '}}' }}" data-c='{{ "}}" }}'>x</p>`)).toEqual([]);
+    expect(codesOf('<p title=\'say "hi"\' data-a="it\'s" data-b="{{ \'}}\' }}" data-c=\'{{ "}}" }}\'>x</p>')).toEqual([]);
   });
 });
 

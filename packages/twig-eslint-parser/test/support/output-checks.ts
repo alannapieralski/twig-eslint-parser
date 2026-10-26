@@ -9,7 +9,7 @@ import type { BranchSegment } from './branches.js';
 
 export type OutputIssue = { readonly check: string; readonly detail: string; readonly line?: number; readonly range?: readonly [number, number] };
 
-export const templateDefectChecks: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: element left open in a Twig branch', 'html: stray close tag', 'html: element opened and closed in different Twig branches']);
+export const TEMPLATE_DEFECT_CHECKS: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: element left open in a Twig branch', 'html: stray close tag', 'html: element opened and closed in different Twig branches']);
 
 type Node = {
   readonly type: string;
@@ -21,7 +21,7 @@ type Token = { readonly value: string; readonly range: [number, number] };
 type Range = readonly [number, number];
 type ReportIssue = (check: string, detail: string, where?: number | Range) => void;
 
-const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 function isNode(value: unknown): value is Node {
   return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string';
@@ -60,9 +60,9 @@ type ParsedTag = Node & {
   readonly children?: readonly Node[];
 };
 
-const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
-const closeTagPattern = /<\/\s*((?:\{\{.*?\}\}|[^\s>{])+)\s*>?/g;
-const twigTagOrComment = /\{%|\{#/;
+const KEYS_OUTSIDE_THE_HTML_TREE = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
+const CLOSE_TAG_PATTERN = /<\/\s*((?:\{\{.*?\}\}|[^\s>{])+)\s*>?/g;
+const TWIG_TAG_OR_COMMENT = /\{%|\{#/;
 
 function collectHtmlLeaves(value: unknown, leaves: Node[] = [], seen = new Set<object>()): Node[] {
   if (typeof value !== 'object' || value === null || seen.has(value)) return leaves;
@@ -73,7 +73,7 @@ function collectHtmlLeaves(value: unknown, leaves: Node[] = [], seen = new Set<o
   }
   if (isNode(value) && typeof value['value'] === 'string') leaves.push(value);
   for (const [key, child] of Object.entries(value)) {
-    if (!keysOutsideTheHtmlTree.has(key)) collectHtmlLeaves(child, leaves, seen);
+    if (!KEYS_OUTSIDE_THE_HTML_TREE.has(key)) collectHtmlLeaves(child, leaves, seen);
   }
   return leaves;
 }
@@ -129,7 +129,7 @@ function hasUnclosedElementNamed(name: string, openedBefore: number, tags: reado
 }
 
 function isLeftOpen(tag: TagNode): boolean {
-  return !tag.close && !tag.selfClosing && !voidElements.has(tag.name.toLowerCase());
+  return !tag.close && !tag.selfClosing && !VOID_ELEMENTS.has(tag.name.toLowerCase());
 }
 
 function containsUnclosedElement(tag: TagNode): boolean {
@@ -141,7 +141,7 @@ function containsUnclosedElement(tag: TagNode): boolean {
 }
 
 function isTwigGluedToName(name: string): boolean {
-  return twigTagOrComment.test(name) && /[\w-](?=\{[%#])|[%#]\}[\w-]/.test(name);
+  return TWIG_TAG_OR_COMMENT.test(name) && /[\w-](?=\{[%#])|[%#]\}[\w-]/.test(name);
 }
 
 function checkTreeShape(tags: readonly TagNode[], report: ReportIssue): void {
@@ -173,7 +173,7 @@ function describeUncoveredSource(code: string, [start, end]: Range, tags: readon
   const text = code.slice(start, end);
   const issues: OutputIssue[] = [];
   let remainder = text;
-  for (const match of text.matchAll(closeTagPattern)) {
+  for (const match of text.matchAll(CLOSE_TAG_PATTERN)) {
     const [closeTag, name = ''] = match;
     const closeStart = start + match.index;
     const isDroppedClose = hasUnclosedElementNamed(name, closeStart, tags);
@@ -209,7 +209,7 @@ function describeParseFailure(error: unknown): OutputIssue {
   return { check: 'parses', detail: error instanceof Error ? error.message.split('\n')[0] ?? '' : String(error) };
 }
 
-const rawTextElements: ReadonlySet<string> = new Set(['script', 'style', 'textarea', 'title']);
+const RAW_TEXT_ELEMENTS: ReadonlySet<string> = new Set(['script', 'style', 'textarea', 'title']);
 
 function blankOut(text: string, start: number, end: number): string {
   return text.slice(0, start) + ' '.repeat(end - start) + text.slice(end);
@@ -229,7 +229,7 @@ function maskCommentsAndRawText(markup: string): string {
       commentOrTag.lastIndex = end;
       continue;
     }
-    if (!rawTextElements.has(tagName.toLowerCase())) continue;
+    if (!RAW_TEXT_ELEMENTS.has(tagName.toLowerCase())) continue;
     const closeTag = masked.toLowerCase().indexOf(`</${tagName.toLowerCase()}`, contentStart);
     const end = closeTag === -1 ? masked.length : closeTag;
     masked = blankOut(masked, contentStart, end);
