@@ -46,7 +46,7 @@ describe('class attributes left out of the tree by ignoreInterpolatedAttributes'
   });
 
   describe('twig-html/multiline-html-element-content-newline', () => {
-    it('does not fix content after an open tag whose left-out class swallowed markup', async () => {
+    it('does not fix content after an open tag whose left-out class ran into markup', async () => {
       const code = '<div class=a{{ b }}<p\n  id="c">x</div>';
       const { output } = await lint(code, 'twig-html/multiline-html-element-content-newline');
       expect(output).toBe(code);

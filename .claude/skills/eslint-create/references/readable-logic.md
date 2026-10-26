@@ -24,7 +24,7 @@ Review speed is the goal. Code here is longer than it could be so it reads in on
 - One level of abstraction per function. The top function reads as a list of steps, each a call
   to a named function. The detail is one level down.
 - Name intermediate values instead of nesting expressions. Prefer
-  `const isFixable = allGapsAreWhitespace && !isOpenTagSwallowingMarkup(tag, text);` on its own
+  `const isFixable = allGapsAreWhitespace && !isOpenTagUnreadable(tag, text);` on its own
   line to the same condition inside a spread.
 - No nested ternaries, no chained `&&` and `||` that mix meanings, no comma operators, no loops
   whose header does the work.
@@ -84,14 +84,14 @@ A `create` doing the work itself:
 ```ts
 create(context) {
   const locOf = (range) => ({ start: sourceCode.getLocFromIndex(range[0]), end: sourceCode.getLocFromIndex(range[1]) });
-  const checkAttribute = (attribute, isInSoundTag) => {
+  const checkAttribute = (attribute, isInReadableTag) => {
     const { value, startWrapper, endWrapper } = attribute;
     if (startWrapper && endWrapper) return checkWrappedAttribute(attribute, startWrapper, endWrapper);
     if (startWrapper || endWrapper || !value) return;
     checkUnquotedAttribute(attribute, value);
   };
   const checkTag = (node) => {
-    for (const attribute of node.attributes) checkAttribute(attribute, !isOpenTagSwallowingMarkup(node, text));
+    for (const attribute of node.attributes) checkAttribute(attribute, !isOpenTagUnreadable(node, text));
   };
   return { Tag: checkTag, ScriptTag: checkTag, StyleTag: checkTag };
 }

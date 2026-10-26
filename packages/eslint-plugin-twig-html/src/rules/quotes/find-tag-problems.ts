@@ -1,5 +1,5 @@
 import type { Problem } from '../../shared/problem.js';
-import { isOpenTagUnsound } from '../../shared/unsound-open-tags.js';
+import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
 import type { AttributesOf } from '../../shared/tag-attributes.js';
 import type { ParsedTag } from '../../shared/tag-node.js';
 import { findAttributeProblems } from './find-attribute-problems.js';
@@ -9,7 +9,7 @@ export function findTagProblems(tag: TagWithAttributes, attributesOf: Attributes
   if (isSkipped(tag)) return [];
 
   const attributes = attributesOf(tag);
-  const isInSoundTag = !isOpenTagUnsound(tag, source.unsoundTagStarts);
+  const isInReadableTag = !isOpenTagUnreadable(tag, source.unreadableTagStarts);
 
-  return attributes.flatMap((attribute) => findAttributeProblems(attribute, isInSoundTag, source));
+  return attributes.flatMap((attribute) => findAttributeProblems(attribute, isInReadableTag, source));
 }

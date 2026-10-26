@@ -151,9 +151,9 @@ export const messages = {
   plugin's shared `Problem` type and `reportProblems(context, problems)` are the only code that
   touches `context.report` and `getLocFromIndex`.
 - One function per step of the check, named for what it finds or decides: `findAttributeGroups`,
-  `describeGapsBetween`, `isOpenTagSwallowingMarkup`.
+  `describeGapsBetween`, `isOpenTagUnreadable`.
 - Anything about Twig structure that two rules need (blocks balanced within a range, a tag
-  swallowing markup) is shared code. Look for it first (see `shared-code.md`).
+  the parser could not read cleanly) is shared code. Look for it first (see `shared-code.md`).
 
 ## Fixes
 
@@ -162,7 +162,7 @@ export const messages = {
   Report without a fix otherwise.
 - Never fix across Twig branches. A range that opens a `{% if %}` without closing it, or that
   continues an `else`, is not fixable. Use the existing balance helpers.
-- Never fix an open tag the parser read as swallowing the markup after it.
+- Never fix an open tag the parser could not read cleanly.
 - One fix per report, as small as possible. Do not match the author's other style choices: ESLint
   runs the other rules afterwards, and runs up to ten passes.
 - A fix must be idempotent: applying it to its own output reports nothing. The corpus fails a fix

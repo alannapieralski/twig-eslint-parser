@@ -49,7 +49,7 @@ Each check is a question. The reference holds the requirement.
   comment on code that could be simpler?
 - **Fixes and reports** (`rule-anatomy.md`): Is a fix offered only when provably safe, with a named
   `isFixable`? Is it idempotent, minimal, line-ending safe, and skipped across Twig branches and for
-  open tags that swallow markup? Do `meta.fixable` and the corpus `fixKeeps` match what it changes?
+  open tags the parser could not read cleanly? Do `meta.fixable` and the corpus `fixKeeps` match what it changes?
   Are reports on the smallest range with a `messageId` and complete `data`?
 - **Parser assumptions** (parser README "Known limitations"): Does the rule depend on JavaScript
   semantics of Twig expressions, or on an AST shape the parser documents as not guaranteed?

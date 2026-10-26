@@ -1,4 +1,4 @@
-import { isOpenTagUnsound } from '../../shared/unsound-open-tags.js';
+import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
@@ -29,7 +29,7 @@ function findReportedEnd(separator: AttributeSeparator, tag: TagNode, groups: re
 }
 
 export function findAttributeProblems(tag: TagNode, source: TagSource, options: Required<Options>): Problem[] {
-  const { text, lineBreak, blocks, attributesOf, isIgnored, unsoundTagStarts } = source;
+  const { text, lineBreak, blocks, attributesOf, isIgnored, unreadableTagStarts } = source;
   const attributes = attributesOf(tag);
   const groups = groupAttributes(tag, attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
@@ -40,7 +40,7 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   if (!firstWrongSeparator) return [];
 
   const areAllSeparatorsWhitespace = separators.every((separator) => whitespaceOnly.test(text.slice(...separator.range)));
-  const isFixable = areAllSeparatorsWhitespace && !isOpenTagUnsound(tag, unsoundTagStarts);
+  const isFixable = areAllSeparatorsWhitespace && !isOpenTagUnreadable(tag, unreadableTagStarts);
 
   return [{
     range: [firstWrongSeparator.range[1], findReportedEnd(firstWrongSeparator, tag, groups)],

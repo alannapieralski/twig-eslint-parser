@@ -113,7 +113,7 @@ position in the markup says:
 - Close tags pair with their open tag ignoring whitespace, so `</{{element}}>` closes
   `<{{ element }}>`. A close tag that matches an element further up closes the elements in between,
   as a browser does, so one element that is never closed stays open on its own instead of
-  swallowing the rest of the document.
+  taking in the rest of the document.
 - Drupal: `<head-placeholder>`, `<css-placeholder>`, `<js-placeholder>` and
   `<js-bottom-placeholder>` are always void elements, whatever the project, because Drupal swaps the exact opening tag and the
   templates leave them unclosed. The list is `drupalVoidElements` in `src/drupal.ts`, next to the

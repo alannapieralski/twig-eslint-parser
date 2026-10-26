@@ -32,7 +32,7 @@ duplicate. Fix it by moving the first one to where both can import it.
 
 Move code on its second use, in the same change that adds the second use. Do not copy it first.
 
-A helper that only one rule uses but is clearly nameable (`isOpenTagSwallowingMarkup`) is allowed
+A helper that only one rule uses but is clearly nameable (`isOpenTagUnreadable`) is allowed
 to start in that rule's folder. Anything that reads Twig structure, HTML whitespace or ESLint
 reporting is shared from the start, because the next rule will want it.
 

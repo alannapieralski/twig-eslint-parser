@@ -16,7 +16,7 @@ const strayCharacterInName: StrayCharacterDiagnostic = {
 
 const strayCharacterInValue: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-unquoted-attribute-value',
-  message: 'An unquoted attribute value contains a quote or "<", so the tag swallows the markup after it. Quote the value or close the tag.',
+  message: 'An unquoted attribute value contains a quote or "<", so the tag takes in the markup after it. Quote the value or close the tag.',
 };
 
 function textWithoutTwig(text: string, range: Range, blocks: readonly TwigBlockSummary[]): string {

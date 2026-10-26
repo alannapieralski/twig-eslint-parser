@@ -3,7 +3,7 @@ import { elementsWithUnrenderedEdgeWhitespace } from '../../shared/html-elements
 import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
-import { isOpenTagUnsound } from '../../shared/unsound-open-tags.js';
+import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
 import type { TagNode } from '../../shared/tag-node.js';
 import { findContentEdges } from './find-content-edges.js';
 import { countLineBreaks, indentationAfterLastLineBreak } from './line-breaks.js';
@@ -36,7 +36,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const { close, name } = tag;
   if (!close || name === undefined || !plainElementName.test(name)) return [];
 
-  const { text, blocks, isIgnored, unsoundTagStarts } = source;
+  const { text, blocks, isIgnored, unreadableTagStarts } = source;
   const contentRange: Range = [tag.openEnd.range[1], close.range[0]];
   const isSingleLine = lineStartOf(text, close.range[0]) <= tag.openStart.range[0];
   if (isSingleLine) return [];
@@ -44,7 +44,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isEmpty = contentRange[0] === contentRange[1];
   if (options.ignoreWhenEmpty && isEmpty) return [];
 
-  const isUnsafeToCheck = isOpenTagUnsound(tag, unsoundTagStarts) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
+  const isUnsafeToCheck = isOpenTagUnreadable(tag, unreadableTagStarts) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
   if (isUnsafeToCheck) return [];
 
   const isFixable = elementsWithUnrenderedEdgeWhitespace.has(name.toLowerCase());

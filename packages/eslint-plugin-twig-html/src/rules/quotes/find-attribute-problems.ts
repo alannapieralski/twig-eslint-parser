@@ -51,9 +51,9 @@ function findUnquotedProblems(attribute: AttributeNode, value: AttributeValue, i
   }];
 }
 
-export function findAttributeProblems(attribute: AttributeNode, isInSoundTag: boolean, source: QuoteSource): Problem[] {
+export function findAttributeProblems(attribute: AttributeNode, isInReadableTag: boolean, source: QuoteSource): Problem[] {
   const { value, startWrapper, endWrapper } = attribute;
-  const isFixable = isInSoundTag && (value === undefined || depthChangeWithin(value.range, source.blocks) === 0);
+  const isFixable = isInReadableTag && (value === undefined || depthChangeWithin(value.range, source.blocks) === 0);
 
   if (startWrapper && endWrapper) return findWrappedProblems(attribute, startWrapper, endWrapper, isFixable, source);
   if (startWrapper || endWrapper || !value || value.value === '') return [];

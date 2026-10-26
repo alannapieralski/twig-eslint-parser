@@ -144,8 +144,8 @@ describe('twig-html/attrs-newline', () => {
   it.each([
     ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
-    ['an open tag whose unquoted value swallowed the next tag', '<li class="a" id=b<span>x</span></li>'],
-  ])('reports but does not fix %s, so the markup it swallowed is never split', async (_name, code) => {
+    ['an open tag whose unquoted value ran into the next tag', '<li class="a" id=b<span>x</span></li>'],
+  ])('reports but does not fix %s, so the markup it ran into is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);
     expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);

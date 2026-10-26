@@ -55,6 +55,10 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(await fixedAlone('  <div\n    class="a"\n  >\n\n  </div>', off)).toBe('  <div\n    class="a"\n  >\n  </div>');
   });
 
+  it('accepts whitespace-only content with blank lines by default', async () => {
+    expect((await lint('<div\n  class="a"\n  id="b"\n>\n\n</div>')).messages).toEqual([]);
+  });
+
   it('breaks an empty tag when ignoreWhenEmpty is off', async () => {
     expect(await fixed('<div\n  class="a"\n></div>', { ignoreWhenEmpty: false })).toBe('<div\n  class="a"\n>\n</div>');
   });
@@ -224,9 +228,9 @@ describe('twig-html/multiline-html-element-content-newline', () => {
   it.each([
     ['an open tag missing its >', '<li\n  class="a"\n  id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li\n  class="a"\n  id="b"text</li>'],
-    ['an open tag whose unquoted value swallowed the next tag', '<li\n  class="a"\n  id=b<span>x</span></li>'],
+    ['an open tag whose unquoted value ran into the next tag', '<li\n  class="a"\n  id=b<span>x</span></li>'],
     ['an open tag with no > before the end of the file', '<li\n  class="a"\n  id="b"\n'],
-  ])('does not report %s, so the markup it swallowed is never split', async (_name, code) => {
+  ])('does not report %s, so the markup it ran into is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);
     expect(result.messages.filter((message) => message.ruleId === 'twig-html/multiline-html-element-content-newline')).toEqual([]);

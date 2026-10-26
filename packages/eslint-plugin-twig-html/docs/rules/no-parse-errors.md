@@ -57,7 +57,7 @@ Codes without a prefix are the names the HTML specification gives the error. Cod
 |---|---|---|
 | `eof-in-tag` | An open tag has no `>` before the end of the file. | `<div class="a"` |
 | `unexpected-character-in-attribute-name` | An attribute name holds a quote or `<`, usually because an earlier value was quoted wrongly. | `<li class="a' data-x="y">` |
-| `unexpected-character-in-unquoted-attribute-value` | An unquoted value holds a quote or `<`, so the tag swallows the markup after it. | `<li id=b<span>x</span></li>` |
+| `unexpected-character-in-unquoted-attribute-value` | An unquoted value holds a quote or `<`, so the tag takes in the markup after it. | `<li id=b<span>x</span></li>` |
 | `x-invalid-end-tag` | A closing tag matches no open element. | `<p>a</p></div>` |
 | `x-unclosed-element` | An element that needs a closing tag never gets one. | `<div><p>a</p>` |
 | `x-misplaced-twig-tag` | `{% else %}`, `{% elseif %}` or `{% plural %}` sits where Twig rejects it: `else` outside `if`, `for` and `guard`, `elseif` outside `if`, `plural` outside `trans`, or `else` and `elseif` after an `else`. | `{% if a %}{% else %}{% elseif b %}{% endif %}` |
@@ -114,7 +114,7 @@ and no rule runs:
 - `<<li` loses the attributes of the `li`, and nothing is reported.
 - A quote closed much later by another value's quote is only reported when it leaves a stray quote
   in an attribute name or an unquoted value.
-- A tag that swallows the markup after it leaves that markup's closing tags unmatched, so
+- A tag that takes in the markup after it leaves that markup's closing tags unmatched, so
   `x-invalid-end-tag` follows the first report.
 
 ## Options

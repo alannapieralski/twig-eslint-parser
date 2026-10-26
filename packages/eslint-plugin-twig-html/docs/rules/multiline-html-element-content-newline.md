@@ -9,8 +9,8 @@ Enabled as a warning in `configs.recommended`. Fixable.
 ### Overview
 
 An element is multi-line when its closing tag starts on a later line than its opening tag. Its
-content then goes on lines of its own, with exactly one line break after the `>` of the opening tag
-and one before the closing tag. This is the layout `twig-html/attrs-newline` produces for a tag with
+content then goes on lines of its own, with a line break after the `>` of the opening tag and one
+before the closing tag. This is the layout `twig-html/attrs-newline` produces for a tag with
 several attributes, so the two rules finish each other's job.
 
 Examples of **incorrect** code:
@@ -28,18 +28,6 @@ Examples of **incorrect** code:
 
 <p>Some
   text</p>
-
-<div class="a">
-
-  text
-
-</div>
-
-<div
-  class="swiper-pagination"
->
-
-</div>
 ```
 
 Examples of **correct** code:
@@ -73,10 +61,11 @@ Examples of **correct** code:
 
 ### What the fix does
 
-- **Exactly one line break at each edge.** More than one is reduced to one, none is added. With
-  `allowEmptyLines`, blank lines are allowed and only a missing line break is reported.
-- **Whitespace-only content is not empty.** It is reduced to one line break, so `>\n\n</div>` becomes
-  `>\n</div>`. Content with no characters at all is the empty case: see `ignoreWhenEmpty`.
+- **At least one line break at each edge.** A missing one is added. Blank lines are allowed by
+  default; with `allowEmptyLines: false`, more than one line break is reduced to exactly one.
+- **Whitespace-only content is not empty.** With `allowEmptyLines: false` it is reduced to one line
+  break, so `>\n\n</div>` becomes `>\n</div>`. Content with no characters at all is the empty case: see
+  `ignoreWhenEmpty`.
 - **Only HTML whitespace is changed** (space, tab, line feed, carriage return and form feed), so a
   non-breaking space at the edge of the content is kept.
 - **Indentation:** a line it creates starts at the indentation of the tag's line, and when it removes
@@ -134,10 +123,10 @@ that is never closed, moved content stays at the tag's indentation.
 | `ignores` | `[]` | Leave these elements, and everything inside them, alone. `pre` and `textarea` are always left alone. |
 | `ignoreInlineElements` | `true` | Leave inline elements (`a`, `span`, `strong`, `label`, `svg` and the like), and everything inside them, alone. When `false`, they are checked, and reported but not fixed. |
 | `ignoreWhenEmpty` | `true` | Leave elements with no content at all alone. When `false`, `></div>` becomes `>\n</div>`. |
-| `allowEmptyLines` | `false` | Allow blank lines around the content. Only a missing line break is reported. |
+| `allowEmptyLines` | `true` | Allow blank lines around the content. Only a missing line break is reported. When `false`, more than one line break is reduced to one. |
 
 ```js
-'twig-html/multiline-html-element-content-newline': ['warn', { allowEmptyLines: true }],
+'twig-html/multiline-html-element-content-newline': ['warn', { allowEmptyLines: false }],
 ```
 
 ## Compared with `vue/multiline-html-element-content-newline`
@@ -148,6 +137,7 @@ The rule follows `vue/multiline-html-element-content-newline`. Checked against t
 | | `vue` | `twig-html/multiline-html-element-content-newline` |
 |---|---|---|
 | Options | `ignores`, `ignoreWhenEmpty`, `allowEmptyLines` | Same, plus `ignoreInlineElements`. Vue lists the inline elements in the `ignores` default; here they sit behind `ignoreInlineElements`, and `ignores` starts empty |
+| `allowEmptyLines` default | `false` | `true` |
 | Multi-line element | Closing tag starts on a later line than the opening tag | Same |
 | Message | ``Expected 1 line break after opening tag (`<div>`), but no line breaks found.`` | Same |
 | Elements fixed | Every element | Only elements whose edge whitespace browsers do not render; others are reported |

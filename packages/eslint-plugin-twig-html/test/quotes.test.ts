@@ -76,7 +76,7 @@ describe('twig-html/quotes', () => {
       expect(messages.map((message) => message.messageId)).toEqual(['missingHtmlQuote', 'missingHtmlQuote', 'missingHtmlQuote']);
     });
 
-    it('reports but does not fix an open tag that swallowed the markup after it', async () => {
+    it('reports but does not fix an open tag that ran into the markup after it', async () => {
       const code = "<li class='a' id=b<span>x</span></li>";
       const { output, messages } = await lint(code);
       expect(output).toBe(code);
@@ -134,7 +134,7 @@ describe('twig-html/quotes', () => {
         expect(output).toBe('<p class="a {% if b %}c{% endif %}">x</p>');
       });
 
-      it('does not fix them in an open tag that swallowed the markup after it', async () => {
+      it('does not fix them in an open tag that ran into the markup after it', async () => {
         const code = "<li class='a {% if b %}c{% endif %}' id=b<span>x</span></li>";
         const { output, messages } = await lint(code, undefined, { extraConfig: [ignoreClass] });
         expect(output).toBe(code);
