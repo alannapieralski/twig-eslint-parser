@@ -1,3 +1,5 @@
+import { ignoresSchema } from '../../shared/ignores.js';
+
 export type IndentSize = number | 'tab';
 
 export type CloseBracketOffsets = { startTag?: number; endTag?: number; selfClosingTag?: number };
@@ -40,7 +42,7 @@ export const optionsSchema = {
         },
       ],
     },
-    ignores: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
+    ignores: ignoresSchema,
   },
   additionalProperties: false,
 } as const;

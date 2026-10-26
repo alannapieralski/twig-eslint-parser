@@ -1,4 +1,5 @@
 import { inlineNonVoidElements, whitespaceSensitiveElements } from '../../shared/html-elements.js';
+import { ignoresSchema } from '../../shared/ignores.js';
 
 export type Options = { ignores?: string[]; ignoreInlineElements?: boolean; ignoreWhenEmpty?: boolean; allowEmptyLines?: boolean };
 
@@ -15,7 +16,7 @@ export const optionsSchema = {
     allowEmptyLines: { type: 'boolean' },
     ignoreInlineElements: { type: 'boolean' },
     ignoreWhenEmpty: { type: 'boolean' },
-    ignores: { type: 'array', items: { type: 'string' }, uniqueItems: true },
+    ignores: ignoresSchema,
   },
   additionalProperties: false,
 } as const;

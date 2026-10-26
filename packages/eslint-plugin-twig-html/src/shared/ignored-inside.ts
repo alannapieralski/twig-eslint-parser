@@ -1,10 +1,11 @@
 import type { SourceCode } from 'eslint';
+import { elementNameSet } from './ignores.js';
 import { elementNameOf, type ParsedTag } from './tag-node.js';
 
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 
 export function createIgnoredInsideCheck(sourceCode: SourceCode, ignores: readonly string[]): (tag: ParsedTag) => boolean {
-  const ignoredElementNames = new Set(ignores.map((name) => name.toLowerCase()));
+  const ignoredElementNames = elementNameSet(ignores);
 
   return (tag) => {
     const tagAsEslintNode = tag as unknown as EslintNode;

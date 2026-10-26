@@ -1,5 +1,6 @@
 import { rawTextElementNames, singleTokenNodeTypes } from 'twig-eslint-parser';
 import { whitespaceSensitiveElements } from '../../../shared/html-elements.js';
+import { elementNameSet } from '../../../shared/ignores.js';
 import { lineIndentationAt } from '../../../shared/line-text.js';
 import type { Range } from '../../../shared/range.js';
 import { isOpenTagUnreadable } from '../../../shared/unreadable-open-tags.js';
@@ -61,8 +62,8 @@ function findUnclosedContent(element: Element): Range | undefined {
 
 export function findHtmlRegions(document: MarkupNode, source: HtmlSource): HtmlRegions {
   const { attributesOf, unreadableTagStarts } = source;
-  const ignoredNames = new Set(source.ignores.map((name) => name.toLowerCase()));
-  const whitespaceSensitiveNames = new Set([...whitespaceSensitiveElements, ...source.rawContentTags].map((name) => name.toLowerCase()));
+  const ignoredNames = elementNameSet(source.ignores);
+  const whitespaceSensitiveNames = elementNameSet([...whitespaceSensitiveElements, ...source.rawContentTags]);
   const markupNodes = flattenMarkup(document.children ?? []);
   const elements = markupNodes.filter(isElement);
 
