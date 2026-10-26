@@ -136,6 +136,18 @@ backtick or `${`, which a template literal would read differently.
 `findInterpolatedStrings(code)` returns the range of every Twig string containing `#{ }`, using only
 the lexer. `eslint-plugin-twig-tailwind`'s processor uses it.
 
+## Helpers for rules
+
+Rules import these instead of keeping their own copies.
+
+| Export | Use |
+|---|---|
+| `elementNodeTypes` | The node types that are elements: `Tag`, `ScriptTag` and `StyleTag`. |
+| `rawTextElementNames` | The element name of each raw-text node type (`ScriptTag` is `script`, `StyleTag` is `style`). |
+| `singleTokenNodeTypes` | The node types that are one token, `Comment` and `Doctype`. |
+| `isOpeningTag(block)`, `isClosingTag(block)`, `isMiddleTag(block)` | Tell what a Twig block does to nesting: `{% if %}`, `{% endif %}`, `{% else %}`, `{% elseif %}` or `{% plural %}`. |
+| `depthChangeWithin(range, blocks)`, `isTwigBalancedWithin(range, blocks)` | Measure the Twig nesting inside a range. |
+
 ## Known limitations
 
 - **Twig tags that do not pair up** are a parsing error ("Twig tags don't pair up: ..."), reported at
