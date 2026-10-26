@@ -9,7 +9,7 @@ const endTagOptionalElements: ReadonlySet<string> = new Set([
 
 function isMissingItsEndTag(element: MarkupElement): boolean {
   const isOpenTagComplete = element.openEnd !== undefined;
-  const isEndTagRequired = !endTagOptionalElements.has((element.name ?? '').toLowerCase());
+  const isEndTagRequired = !endTagOptionalElements.has(element.name ?? '');
 
   return isOpenTagComplete && !element.selfClosing && !element.close && isEndTagRequired;
 }

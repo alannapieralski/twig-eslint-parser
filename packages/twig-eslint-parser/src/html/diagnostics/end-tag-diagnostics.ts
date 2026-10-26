@@ -10,7 +10,7 @@ function nameOfEndTag(token: SourceToken): string {
 }
 
 function findVoidElementNames(elements: readonly MarkupElement[]): ReadonlySet<string> {
-  return new Set(elements.filter((element) => element.selfClosing).map((element) => (element.name ?? '').toLowerCase()));
+  return new Set(elements.filter((element) => element.selfClosing).map((element) => element.name ?? ''));
 }
 
 export function findEndTagDiagnostics(tokens: readonly SourceToken[], elements: readonly MarkupElement[], blocks: readonly TwigBlockSummary[]): TwigDiagnostic[] {

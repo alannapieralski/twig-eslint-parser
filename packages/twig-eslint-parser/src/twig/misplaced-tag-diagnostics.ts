@@ -1,6 +1,7 @@
 import type { TwigDiagnostic } from '../diagnostics.js';
 import type { TwigBlockSummary } from './blocks.js';
-import { middleTags } from './syntax.js';
+import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
+import { tagText } from './tag-text.js';
 
 type OpenFrame = { readonly name: string; hasElse: boolean };
 
@@ -13,10 +14,6 @@ const parentsOfMiddleTag: Readonly<Record<string, ReadonlySet<string>>> = {
 const orList = new Intl.ListFormat('en', { type: 'disjunction' });
 
 const tagsThatCannotFollowElse: ReadonlySet<string> = new Set(['else', 'elseif']);
-
-function tagText(tagName: string): string {
-  return `{% ${tagName} %}`;
-}
 
 function describeMisplacedTag(tagName: string, frame: OpenFrame): string | undefined {
   const allowedParents = parentsOfMiddleTag[tagName];
@@ -31,14 +28,13 @@ export function findMisplacedTwigTagDiagnostics(blocks: readonly TwigBlockSummar
   const diagnostics: TwigDiagnostic[] = [];
 
   for (const block of blocks) {
-    if (block.kind !== 'tag') continue;
+    if (isOpeningTag(block)) frames.push({ name: block.tagName ?? '', hasElse: false });
+    if (isClosingTag(block)) frames.pop();
 
-    if (block.depthChange === 1) frames.push({ name: block.tagName ?? '', hasElse: false });
-    if (block.depthChange === -1) frames.pop();
+    const frame = frames.at(-1);
+    if (!frame || !isMiddleTag(block)) continue;
 
     const tagName = block.tagName ?? '';
-    const frame = frames.at(-1);
-    if (!frame || !middleTags.has(tagName)) continue;
 
     const message = describeMisplacedTag(tagName, frame);
     if (message) diagnostics.push({ code: 'x-misplaced-twig-tag', message, range: block.range });

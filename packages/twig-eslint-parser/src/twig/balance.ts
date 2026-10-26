@@ -1,5 +1,5 @@
 import type { TwigBlockSummary } from './blocks.js';
-import { middleTags } from './syntax.js';
+import { isMiddleTag } from './block-roles.js';
 
 type Range = readonly [number, number];
 
@@ -38,7 +38,7 @@ export function isTwigBalancedWithin(range: Range, blocks: readonly TwigBlockSum
   let depth = 0;
 
   for (const block of findBlocksWithin(range, blocks)) {
-    const isMiddleTagAtTopLevel = depth === 0 && middleTags.has(block.tagName ?? '');
+    const isMiddleTagAtTopLevel = depth === 0 && isMiddleTag(block);
     if (isMiddleTagAtTopLevel) return false;
 
     depth += block.depthChange;

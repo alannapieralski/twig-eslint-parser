@@ -15,7 +15,7 @@ export type { DiagnosticCode, TwigDiagnostic } from './diagnostics.js';
 export { containsTwig, isAttributeNode } from './attributes.js';
 export type { AttributeNode, AttributeOwner, OmittedAttribute } from './attributes.js';
 export type { TwigBlockSummary } from './twig/blocks.js';
-export { middleTags } from './twig/syntax.js';
+export { isClosingTag, isMiddleTag, isOpeningTag } from './twig/block-roles.js';
 export { elementNodeTypes, rawTextElementNames, singleTokenNodeTypes } from './html/syntax.js';
 export { depthChangeWithin, isTwigBalancedWithin } from './twig/balance.js';
 export { HtmlSyntaxError } from './html/syntax-error.js';

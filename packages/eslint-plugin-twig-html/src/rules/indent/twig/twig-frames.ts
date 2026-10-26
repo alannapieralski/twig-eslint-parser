@@ -1,22 +1,10 @@
-import { middleTags, type TwigBlockSummary } from 'twig-eslint-parser';
+import { isClosingTag, isMiddleTag, isOpeningTag, type TwigBlockSummary } from 'twig-eslint-parser';
 import type { TwigSegment } from './types.js';
 
 type OpenFrame = { readonly name: string; readonly frameStart: number; readonly segmentStart: number; readonly boundaryStart: number };
 
 export function twigBlockEnd(block: TwigBlockSummary, text: string): number {
   return text.lastIndexOf('}', block.range[1] - 1) + 1;
-}
-
-function isOpener(block: TwigBlockSummary): boolean {
-  return block.kind === 'tag' && block.depthChange === 1;
-}
-
-function isCloser(block: TwigBlockSummary): boolean {
-  return block.kind === 'tag' && block.depthChange === -1;
-}
-
-function isMiddle(block: TwigBlockSummary): boolean {
-  return block.kind === 'tag' && middleTags.has(block.tagName ?? '');
 }
 
 function closesFrame(block: TwigBlockSummary, frame: OpenFrame): boolean {
@@ -28,17 +16,17 @@ export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: stri
   const segments: TwigSegment[] = [];
 
   for (const block of blocks) {
-    if (isOpener(block)) {
+    if (isOpeningTag(block)) {
       openFrames.push({ name: block.tagName ?? '', frameStart: block.range[0], segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
       continue;
     }
 
-    const isFrameBoundary = isMiddle(block) || isCloser(block);
+    const isFrameBoundary = isMiddleTag(block) || isClosingTag(block);
     if (!isFrameBoundary) continue;
 
     const frame = openFrames.pop();
     if (!frame) return undefined;
-    if (isCloser(block) && !closesFrame(block, frame)) return undefined;
+    if (isClosingTag(block) && !closesFrame(block, frame)) return undefined;
 
     segments.push({
       range: [frame.segmentStart, block.range[0]],
@@ -47,7 +35,7 @@ export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: stri
       frameName: frame.name,
     });
 
-    if (isMiddle(block)) openFrames.push({ ...frame, segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
+    if (isMiddleTag(block)) openFrames.push({ ...frame, segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
   }
 
   const isEveryFrameClosed = openFrames.length === 0;

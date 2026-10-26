@@ -1,25 +1,20 @@
 import type { TwigBlockSummary } from './blocks.js';
-import { middleTags } from './syntax.js';
+import { isClosingTag, isMiddleTag, isOpeningTag } from './block-roles.js';
+import { tagText } from './tag-text.js';
 
 export type UnpairedTwigTag = { readonly block: TwigBlockSummary; readonly message: string };
-
-function tagText(tagName: string | undefined): string {
-  return `{% ${tagName ?? ''} %}`;
-}
 
 export function findUnpairedTwigTag(blocks: readonly TwigBlockSummary[]): UnpairedTwigTag | undefined {
   const openTags: TwigBlockSummary[] = [];
 
   for (const block of blocks) {
-    if (block.kind !== 'tag') continue;
-
-    if (block.depthChange === 1) {
+    if (isOpeningTag(block)) {
       openTags.push(block);
       continue;
     }
 
-    const isMiddle = middleTags.has(block.tagName ?? '');
-    if (!isMiddle && block.depthChange !== -1) continue;
+    const isMiddle = isMiddleTag(block);
+    if (!isMiddle && !isClosingTag(block)) continue;
 
     const openTag = isMiddle ? openTags.at(-1) : openTags.pop();
     if (!openTag) return { block, message: `Twig tags don't pair up: ${tagText(block.tagName)} has no tag to belong to.` };
