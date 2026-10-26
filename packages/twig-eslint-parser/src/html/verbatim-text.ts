@@ -1,7 +1,6 @@
 import type { TwigBlock } from '../twig/blocks.js';
 import { twigDelimiters } from '../twig/syntax.js';
-
-type Range = readonly [number, number];
+import type { Range } from '../range.js';
 
 export type VerbatimMaskedText = { readonly text: string; readonly maskedRanges: readonly Range[] };
 

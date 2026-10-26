@@ -2,7 +2,7 @@
 
 Disallow Twig interpolation in attributes and strings.
 
-Enabled as an error by `createConfig()`.
+Enabled as a warning by `createConfig()`.
 
 ## Rule details
 
@@ -45,7 +45,7 @@ once by this rule.
 | `attributes` | `['class']` | Attribute names (case-insensitive) to check. Strings with `#{ }` are always checked. |
 
 ```js
-'twig-tailwind/no-twig-interpolation': ['error', { attributes: ['class', 'style'] }],
+'twig-tailwind/no-twig-interpolation': ['warn', { attributes: ['class', 'style'] }],
 ```
 
 ## Testing

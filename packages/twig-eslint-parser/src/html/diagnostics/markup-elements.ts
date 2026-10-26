@@ -1,7 +1,7 @@
 import type { AttributeNode } from '../../attributes.js';
+import type { Range } from '../../range.js';
 import { elementNodeTypes } from '../syntax.js';
 
-type Range = readonly [number, number];
 type MarkupToken = { readonly range: Range; readonly value: string };
 
 export type MarkupNode = { readonly type: string; readonly children?: readonly MarkupNode[] };

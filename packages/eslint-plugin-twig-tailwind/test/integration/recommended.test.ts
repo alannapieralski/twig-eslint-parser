@@ -202,7 +202,7 @@ describe('twig-tailwind/no-twig-interpolation', () => {
     const code = '<p class="region--{{ region }}__inner flex {{ extra }}">x</p>';
     const result = await lint(code);
     expect(describeMessages(result.messages)).toEqual([
-      `1:${columnOf(code, 'class=')} twig-tailwind/no-twig-interpolation Avoid Twig inside class="": linters cannot see what it produces. Build the value with {% set classes = [...] %} and attributes.addClass(), or pass it to an include as { classes: [...] }.`,
+      `1:${columnOf(code, 'class=')} twig-tailwind/no-twig-interpolation Avoid Twig inside class="": linters cannot see what it produces.`,
     ]);
   });
 
@@ -220,7 +220,7 @@ describe('twig-tailwind/no-twig-interpolation', () => {
     const code = `{% set classes = ['flex', "card--#{variant}"] %}\n{% set other = ['flex', 'p-4'] %}`;
     const result = await lint(code);
     expect(describeMessages(result.messages)).toEqual([
-      `1:${columnOf(code, '"card')} twig-tailwind/no-twig-interpolation Avoid #{ } inside a Twig string: linters cannot see what it produces, so the classes in it are not checked. Build the value with an array such as ['flex', modifier] instead.`,
+      `1:${columnOf(code, '"card')} twig-tailwind/no-twig-interpolation Avoid #{ } inside a Twig string: linters cannot see what it produces.`,
     ]);
   });
 

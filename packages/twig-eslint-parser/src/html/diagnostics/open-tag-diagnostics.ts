@@ -1,10 +1,10 @@
 import type { AttributeNode } from '../../attributes.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
+import type { Range } from '../../range.js';
 import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { MarkupElement } from './markup-elements.js';
 
 type StrayCharacterDiagnostic = Pick<TwigDiagnostic, 'code' | 'message'>;
-type Range = readonly [number, number];
 
 const quotedValue = /"[^"]*"|'[^']*'/g;
 const characterThatBreaksAnAttribute = /["'<]/;

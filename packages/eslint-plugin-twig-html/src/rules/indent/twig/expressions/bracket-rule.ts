@@ -1,7 +1,5 @@
 import { findClosedPair, findEnclosingPair } from './bracket-pairs.js';
-import type { LineContext, LineRule } from './types.js';
-
-type BracketPair = LineContext['block']['bracketPairs'][number];
+import type { BracketPair, LineContext, LineRule } from './types.js';
 
 function isOneArgumentAmongSeveral(pair: BracketPair, line: LineContext): boolean {
   const { text, block } = line;

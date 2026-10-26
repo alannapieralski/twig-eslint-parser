@@ -70,7 +70,7 @@ The config applies to `**/*.twig` and sets:
   attributes such as `class=""`. Wrapping a string inside a Twig array or call splits it over
   lines within its quotes, which reads badly, so a long list of classes there is better split
   into more array items by hand;
-- [`twig-tailwind/no-twig-interpolation`](docs/rules/no-twig-interpolation.md) as an error.
+- [`twig-tailwind/no-twig-interpolation`](docs/rules/no-twig-interpolation.md) as a warning.
 
 ESLint merges `settings`, so your `entryPoint` sits next to the selectors instead of replacing
 them. Override any rule in your own config object as usual.
@@ -125,7 +125,7 @@ anyone who still wants to build the whole list by hand.
 
 | Rule | Description | Recommended |
 |---|---|---|
-| [`no-twig-interpolation`](docs/rules/no-twig-interpolation.md) | Disallow Twig interpolation in attributes and strings | error |
+| [`no-twig-interpolation`](docs/rules/no-twig-interpolation.md) | Disallow Twig interpolation in attributes and strings | warn |
 
 ## Interpolated strings
 

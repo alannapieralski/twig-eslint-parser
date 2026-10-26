@@ -1,6 +1,4 @@
-import type { LineContext } from './types.js';
-
-type BracketPair = LineContext['block']['bracketPairs'][number];
+import type { BracketPair, LineContext } from './types.js';
 
 export const outsideAnyBracket = -1;
 
