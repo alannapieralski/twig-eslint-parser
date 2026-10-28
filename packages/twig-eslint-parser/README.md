@@ -167,6 +167,10 @@ Rules import these instead of keeping their own copies.
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes. The problems
   it hides are listed under Known gaps on the
   [`no-parse-errors`](../eslint-plugin-twig-html/docs/rules/no-parse-errors.md) page.
+- **Twig printed straight after Twig among attributes** is read as one attribute: in
+  `<div {{ attributes }}{{ title_attributes }}>` and `<div {{ attributes }}class="a">` the parser cannot
+  tell two attribute lists from one attribute name built from Twig, such as `{{ prefix }}{{ name }}="a"`.
+  A space between them keeps them apart.
 - **Very deep nesting.** ESLint itself overflows the call stack at roughly 4,000 nested elements (for example
   thousands of `<li>` without their close tags), and the run fails with "Maximum call stack size exceeded". Above
   roughly 7,000 levels the parser stops first with a "nested too deeply" error, which ESLint reports as a
