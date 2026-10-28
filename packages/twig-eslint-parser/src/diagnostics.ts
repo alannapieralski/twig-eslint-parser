@@ -1,9 +1,12 @@
 import type { Range } from './range.js';
 
 export const DIAGNOSTIC_CODES = [
+  'eof-in-comment',
   'eof-in-tag',
+  'non-void-html-element-start-tag-with-trailing-solidus',
   'unexpected-character-in-attribute-name',
   'unexpected-character-in-unquoted-attribute-value',
+  'unexpected-solidus-in-tag',
   'x-invalid-end-tag',
   'x-misplaced-twig-tag',
   'x-unclosed-element',

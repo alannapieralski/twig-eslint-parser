@@ -41,6 +41,8 @@ export const PARENTS_OF_MIDDLE_TAG: Readonly<Record<string, ReadonlySet<string>>
 
 export const TAGS_THAT_CANNOT_FOLLOW_ELSE: ReadonlySet<string> = new Set(['else', 'elseif']);
 
+export const TAGS_WITH_VARYING_MARKUP: ReadonlySet<string> = new Set(['if', 'for', 'guard', 'trans', 'verbatim']);
+
 export const INCLUDE_TAGS: ReadonlySet<string> = new Set(['include', 'embed']);
 
 export const INCLUDE_KEYWORDS_TO_BLANK: ReadonlySet<string> = new Set(['only', 'ignore', 'missing']);

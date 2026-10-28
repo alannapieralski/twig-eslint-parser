@@ -151,6 +151,7 @@ describe('twig-html/attrs-newline', () => {
     ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
     ['an open tag whose unquoted value ran into the next tag', '<li class="a" id=b<span>x</span></li>'],
+    ['an open tag with a / that does not end it', '<img src="a.png" alt="b" title="c" / >'],
   ])('reports but does not fix %s, so the markup it ran into is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);

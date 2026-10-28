@@ -173,6 +173,14 @@ describe('twig-html/indent', () => {
       await expectUntouched('<div>\n  <li\n  class="a"\n      id="b"\n');
     });
 
+    it.each([
+      '<div>\n  <script src="a.js"></scirpt>\n  <pre>\n  code\n    more\n  </pre>\n</div>\n',
+      '<div>\n  <!-- note\n      <p>x</p>\n</div>\n',
+      '<div>\n  <p>x</p>\n    </div\n',
+    ])('leaves the text the parser could not read alone: %j', async (code) => {
+      await expectUntouched(code);
+    });
+
     it('reports a parsing error, and nothing else, when Twig tags do not pair up', async () => {
       const { messages } = await lint('<div>\n<p>a</p>\n{% endif %}\n</div>', [], false);
       expect(messages).toMatchObject([{ ruleId: null, fatal: true, line: 3, column: 1, message: expect.stringContaining("Twig tags don't pair up") }]);

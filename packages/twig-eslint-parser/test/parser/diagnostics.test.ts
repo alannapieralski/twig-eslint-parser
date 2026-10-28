@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { VOID_ELEMENT_NAMES } from '../../src/html/syntax.js';
 import { parseForESLint } from '../../src/index.js';
 import type { DiagnosticCode } from '../../src/index.js';
 
@@ -22,6 +23,36 @@ describe('eof-in-tag', () => {
 
   it('stays quiet for a tag that ends with > or />', () => {
     expect(codesOf('<div class="a"><br/><img src="a"></div>')).toEqual([]);
+  });
+
+  it.each([
+    ['<p>a</p>\n<div', [9, 13]],
+    ['<div{{ attributes }}', [0, 20]],
+    ['<div>x</div', [6, 11]],
+  ])('reports a tag cut off by the end of the file, and not the elements it leaves open: %j', (code, range) => {
+    expect(diagnosticsOf(code)).toEqual([expect.objectContaining({ code: 'eof-in-tag', range })]);
+  });
+});
+
+describe('eof-in-comment', () => {
+  it('reports a comment that never ends, at its <!--', () => {
+    expect(diagnosticsOf('<div>\n<!-- note\n<p>b</p>')).toEqual([expect.objectContaining({ code: 'eof-in-comment', range: [6, 10] })]);
+  });
+});
+
+describe('unexpected-solidus-in-tag', () => {
+  it.each(['<div/ class="x"\n  id="y">z</div>', '<img src="a" / >'])('reports a / that does not end the tag: %j', (code) => {
+    expect(codesOf(code)).toEqual(['unexpected-solidus-in-tag']);
+  });
+});
+
+describe('non-void-html-element-start-tag-with-trailing-solidus', () => {
+  it.each(['<span/>', '<div class="a" />\n<p>b</p>'])('reports an HTML element that is not void written as self-closing: %j', (code) => {
+    expect(diagnosticsOf(code)[0]).toMatchObject({ code: 'non-void-html-element-start-tag-with-trailing-solidus', range: [0, code.indexOf('>') + 1] });
+  });
+
+  it.each(['<svg><path d="a"/><g><rect/></g></svg>', '<math><mi/></math>', '<br/><img src="a"/>', '<outline text="a"/>', '<drupal-render/>', '<table><colgroup span="2" /><tr><td>a</td></tr></table>'])('stays quiet for SVG, MathML, void, end-tag-optional and unknown elements: %j', (code) => {
+    expect(codesOf(code)).toEqual([]);
   });
 });
 
@@ -59,6 +90,11 @@ describe('x-invalid-end-tag', () => {
     expect(codesOf(code)).toEqual(['x-invalid-end-tag']);
   });
 
+  it('names the element that is open where the closing tag stands', () => {
+    expect(diagnosticsOf('<div>\n  </span>\n</div>')[0]?.message).toBe('</span> does not match the open <div>. Remove it or correct its name.');
+    expect(diagnosticsOf('<p>x</p></div>')[0]?.message).toBe('</div> closes nothing, because no element is open. Remove it or add the opening tag.');
+  });
+
   it('reports the closing tag only', () => {
     expect(diagnosticsOf('<p>x</p></div>')[0]?.range).toEqual([8, 14]);
   });
@@ -71,11 +107,23 @@ describe('x-invalid-end-tag', () => {
     expect(codesOf(code)).toEqual([]);
   });
 
-  it('stays quiet for the closing tag of a void element, as in an RSS template', () => {
-    expect(codesOf('<link>{{ url }}</link>')).toEqual([]);
+  it.each(['<link>{{ url }}</link>', '<p>a</br>b</p>', '<p>x</input></p>'])('stays quiet for the closing tag of a void element, as in an RSS template: %s', (code) => {
+    expect(codesOf(code)).toEqual([]);
   });
 
-  it('stays quiet for every closing tag when markup pairs across Twig branches', () => {
+  it('reports the closing tag of an element written as self-closing, which HTML does not close', () => {
+    expect(codesOf('<div />\n<section><p>x</p></div></section>')).toEqual(['non-void-html-element-start-tag-with-trailing-solidus', 'x-invalid-end-tag']);
+  });
+
+  it('reports a closing tag outside Twig branches although another stands inside one', () => {
+    expect(diagnosticsOf('{% if a %}</div>{% endif %}<p>x</p></span>').map((diagnostic) => diagnostic.range)).toEqual([[35, 42]]);
+  });
+
+  it('reports a closing tag inside a Twig block whose markup renders once', () => {
+    expect(codesOf('{% block content %}<p>x</p></div>{% endblock %}')).toEqual(['x-invalid-end-tag']);
+  });
+
+  it('stays quiet for a closing tag whose element a Twig branch already closed', () => {
     const code = '<div>{% for a in b %}{% if c %}<div><ul>{% endif %}<li>{{ a }}</li>{% if d %}</ul></div>{% endif %}{% endfor %}{% if e %}</ul></div>{% endif %}</div>';
     expect(codesOf(code)).toEqual([]);
   });
@@ -97,6 +145,14 @@ describe('x-unclosed-element', () => {
 
   it('reports an unclosed script', () => {
     expect(codesOf('<div><script src="a">')).toEqual(expect.arrayContaining(['x-unclosed-element']));
+  });
+
+  it('reports a raw-text element that takes in the rest of the file, and not the elements around it', () => {
+    expect(diagnosticsOf('<div><style>a{}</stlye>\n<p>x</p></div>')).toEqual([expect.objectContaining({ code: 'x-unclosed-element', range: [5, 12] })]);
+  });
+
+  it('reports an element left open inside a Twig block whose markup renders once', () => {
+    expect(codesOf('{% block content %}<div><p>x</p>{% endblock %}')).toEqual(['x-unclosed-element']);
   });
 
   it.each([
@@ -174,5 +230,12 @@ describe('diagnostics', () => {
 
   it('is empty for a sound template', () => {
     expect(diagnosticsOf('<div class="a">{% if b %}<p>{{ c }}</p>{% endif %}</div>')).toEqual([]);
+  });
+});
+
+describe('void elements', () => {
+  it.each(VOID_ELEMENT_NAMES)('matches the elements the markup parser closes at their open tag: %s', (name) => {
+    const document = parseForESLint(`<${name}><p>x</p>`).ast.body[0] as unknown as { children: { name: string; selfClosing: boolean }[] };
+    expect(document.children[0]).toMatchObject({ name, selfClosing: true });
   });
 });

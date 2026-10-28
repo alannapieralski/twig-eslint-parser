@@ -95,7 +95,7 @@ export function parseForESLint(code: string, options: ParserOptions = {}): TwigP
   }
 
   const markup = parseMarkupWithinStack(code, blocks, rawContentTags);
-  const markupDiagnostics = findMarkupDiagnostics({ document: markup.ast.body[0] as MarkupTreeNode, tokens: markup.ast.tokens as SourceToken[], text: code, blocks: blockSummaries });
+  const markupDiagnostics = findMarkupDiagnostics({ document: markup.ast.body[0] as MarkupTreeNode, tokens: markup.ast.tokens as SourceToken[], text: code, blocks: blockSummaries, rawContentTags });
   const omittedAttributes = omitInterpolatedAttributes(markup.ast, ignoreInterpolatedAttributes);
   const { statements, unparsedBlockDiagnostics, ...blockCounts } = convertTwigBlocks(blocks, createOffsetLocator(code));
   const diagnostics = [...markupDiagnostics, ...findMisplacedTwigTagDiagnostics(blockSummaries), ...unparsedBlockDiagnostics].sort(compareDiagnostics);

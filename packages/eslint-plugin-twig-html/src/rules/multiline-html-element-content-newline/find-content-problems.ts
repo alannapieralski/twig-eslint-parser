@@ -4,6 +4,7 @@ import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
 import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
 import { findContentEdges } from './find-content-edges.js';
 import { countLineBreaks, indentationAfterLastLineBreak } from './line-breaks.js';
+import { describeWrittenTag } from './written-tag.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
@@ -17,7 +18,12 @@ function isLineBreakCountInvalid(lineBreaks: number, allowEmptyLines: boolean): 
   return allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
 }
 
-function describeEdgeProblem(edge: ContentEdge, name: string, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
+function writtenTagAt(edge: ContentEdge, tag: TagNode, source: TagSource): string {
+  if (edge.messageId === 'unexpectedBeforeOpeningBracket' && tag.close) return describeWrittenTag(tag.close.range, source.text, source.blocks);
+  return `${describeWrittenTag(tag.openStart.range, source.text, source.blocks)}>`;
+}
+
+function describeEdgeProblem(edge: ContentEdge, tag: TagNode, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
   const whitespace = source.text.slice(...edge.range);
   const lineBreaks = countLineBreaks(whitespace);
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
@@ -27,7 +33,7 @@ function describeEdgeProblem(edge: ContentEdge, name: string, tagIndentation: st
   return {
     range: edge.range,
     messageId: edge.messageId,
-    data: { name, actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
+    data: { tag: writtenTagAt(edge, tag, source), actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
     ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${keptIndentation}` }] }),
   };
 }
@@ -50,7 +56,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isFixable = ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE.has(name);
   const tagIndentation = lineIndentationAt(text, tag.openStart.range[0]);
   const edges = findContentEdges(tag, close, text);
-  const problems = edges.map((edge) => describeEdgeProblem(edge, name, tagIndentation, source, options, isFixable));
+  const problems = edges.map((edge) => describeEdgeProblem(edge, tag, tagIndentation, source, options, isFixable));
 
   return problems.filter((problem) => problem !== undefined);
 }

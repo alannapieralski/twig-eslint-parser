@@ -166,6 +166,15 @@ describe('twig-html/multiline-html-element-content-newline', () => {
     expect(result.messages.map((message) => message.messageId)).toEqual(['unexpectedAfterClosingBracket', 'unexpectedBeforeOpeningBracket']);
   });
 
+  it('names a tag as written, with the Twig glued to its name shortened', async () => {
+    const { messages } = await lint('<h{{ level }}\n  class="a"\n>new</h{{ level }}>\n<my-card{{ attributes\n  .addClass("a") }}>new\n</my-card>');
+    expect(messages.map((message) => message.message)).toEqual([
+      'Expected 1 line break after opening tag (`<h{{ … }}>`), but no line breaks found.',
+      'Expected 1 line break before closing tag (`</h{{ … }}>`), but no line breaks found.',
+      'Expected 1 line break after opening tag (`<my-card{{ … }}>`), but no line breaks found.',
+    ]);
+  });
+
   it('lays out <button>, which drops whitespace at the edges of its content', async () => {
     expect(await fixed('<button\n  type="button"\n>Go</button>')).toBe('<button\n  type="button"\n>\n  Go\n</button>');
   });

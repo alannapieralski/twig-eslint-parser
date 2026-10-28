@@ -104,7 +104,7 @@ that is never closed, moved content stays at the tag's indentation.
 
 - **Elements not known to ignore edge whitespace**, such as custom elements and unknown tags. A line
   break inside an inline element can render as a space. A tag name ends where Twig starts, so
-  `<h{{ level }}>` is checked as the unknown tag `h`.
+  `<h{{ level }}>` is checked as the unknown tag `h`, and the report names it as written, with the Twig shortened to `{{ … }}`.
 
 ### Not checked at all
 
@@ -112,9 +112,9 @@ that is never closed, moved content stays at the tag's indentation.
   wrapper opened in `{% if wrap %}<div>{% endif %}` and closed in `{% if wrap %}</div>{% endif %}`.
   Moving the edges would move the Twig tags with them. Twig blocks that open and close inside the
   content are fine.
-- **An open tag the parser could not read cleanly**: no `>` before the end of the file, or a quote or
-  `<` left in an attribute name or an unquoted value. The parser reads the markup after it as
-  attributes. [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
+- **An open tag the parser could not read cleanly**: no `>` before the end of the file, a quote or
+  `<` left in an attribute name or an unquoted value, or a `/` that does not end the tag. The parser
+  misreads where the tag ends. [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
 
 ## Options
 
