@@ -67,12 +67,12 @@ Examples of **correct** code:
   in line with the opening tag.
 - **Short forms:** an inline `set` and the short `{% block title page_title %}` have no body, so they
   add no level.
-- **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** a line is one step in from
-  the line that opened the innermost bracket, and a line that starts with the closing bracket lines up
-  with the line that opened it. The opening line keeps whatever indentation it has, so `.addClass([`
-  on a continuation line works. A closing bracket is left alone when it ends one argument of a call
-  that has more arguments after it. This covers the parameters of
-  `{% include 'x' with { ... } %}`, hashes and arrays:
+- **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** a line that starts an element,
+  after a `,` or the opening bracket, is one step in from the line that opened the innermost bracket,
+  and a line that starts with the closing bracket lines up with the line that opened it. The opening
+  line keeps whatever indentation it has, so `.addClass([` on a continuation line works. A closing
+  bracket is left alone when it ends one argument of a call that has more arguments after it. This
+  covers the parameters of `{% include 'x' with { ... } %}`, hashes and arrays:
 
   ```twig
   {% include 'card.twig' with {
@@ -91,8 +91,9 @@ Examples of **correct** code:
   %}
   ```
 - **Method chains in `{{ }}` and `{% %}`:** a line starting with `.name` is one step in from the line
-  that starts the chain, inside brackets or not. A closing bracket does not start a new chain, so
-  `.setAttribute()` after `])` stays level with `.addClass([`:
+  that starts its element, inside brackets or not. A closing bracket or a continuation line such as
+  `|filter` does not start a new chain, so `.setAttribute()` after `])` stays level with
+  `.addClass([`:
 
   ```twig
   {% include 'icon.twig' with {
@@ -133,7 +134,7 @@ These lines keep whatever indentation the author wrote:
 | Inner lines of a multi-line attribute value | `eslint-plugin-twig-tailwind` wraps `class` values and owns their layout | Built in |
 | Inner lines of a multi-line Twig or HTML comment | A comment is free text | Built in |
 | Lines that start inside a multi-line Twig string | The whitespace is part of the string | Built in |
-| Lines of a multi-line `{{ }}` or `{% %}` that are not inside brackets and not a method chain, such as a `?` continuation, a long condition or the closing `%}` | How to wrap the rest of an expression is left to the author | Built in |
+| Lines of a multi-line `{{ }}` or `{% %}` that continue the line before them, inside brackets or not, such as a `?`, `:` or `\|filter` line, the second line of a long condition or the closing `%}`, and lines outside any bracket that are not a method chain | How to wrap the rest of an expression is left to the author | Built in |
 | Inner lines of Twig that starts inside a skipped region, such as a multi-line attribute value | The region owns its layout | Built in |
 | The bodies of `{% verbatim %}` and `{% raw %}` | Twig prints them as written | Built in |
 | YAML front matter between `---` lines at the top of the file, as in Drupal help topics | It is not markup | Built in |
@@ -183,9 +184,9 @@ attributes and `>` are placed from the `<i` line:
 
 ### Known gaps
 
-- **Operators and continuation lines are not laid out.** A line outside any bracket that is not a
-  method chain, such as `? 'a'`, `|filter` or the second line of a long `and` condition, keeps the
-  author's indentation.
+- **Operators and continuation lines are not laid out.** A line that continues the line before it,
+  such as `? 'a'`, `|filter` or the second line of a long `and` condition, keeps the author's
+  indentation, inside brackets or not.
 
 ## Options
 
@@ -216,7 +217,7 @@ preset of eslint-plugin-vue 10:
 | Ignoring elements | `ignores`: AST selectors, so an element can be ignored by attribute or position | `ignores`: element names only |
 | `baseIndent` | `1`: children of `<template>` are indented | Not needed: Twig templates have no root wrapper, so top-level content is at column 0 |
 | Twig and Vue blocks | `v-if` lives on the element, so blocks add no level | Every Twig block body adds a level |
-| Expressions inside `{{ }}` | Indented like JavaScript | Lines inside `{ }`, `[ ]` and `( )` are indented one step from the line that opened them, and `.method()` chains one step from the line that starts them; other lines are left alone (see Known gaps) |
+| Expressions inside `{{ }}` | Indented like JavaScript | Lines that start an element inside `{ }`, `[ ]` and `( )` are indented one step from the line that opened them, and `.method()` chains one step from the line that starts their element; other lines are left alone (see Known gaps) |
 | Comments before a closing tag | May line up with the line above or the closing tag | Indented like the content around them |
 | Message | `Expected indentation of 2 spaces but found 0 spaces.` | Same |
 

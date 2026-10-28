@@ -3,6 +3,7 @@ import { isBlankFrom } from '../../line-starts.js';
 import { OUTSIDE_ANY_BRACKET, bracketLevelOf, findClosedPair } from './bracket-pairs.js';
 import { bracketRule } from './bracket-rule.js';
 import { chainRule, isChainLine } from './chain-rule.js';
+import { continuesPreviousLine } from './line-continuation.js';
 import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
 import type { Range } from '../../../../shared/range.js';
 import type { ExpressionLine } from '../../types.js';
@@ -58,7 +59,7 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
     const contentStart = contentStartOf(text, lineStart);
     if (isBlankFrom(text, contentStart) || isInsideString(lineStart, strings)) continue;
 
-    const line: LineContext = { text, block, unitText, lineStart, contentStart, indentationOfLineAt, chainHeads };
+    const line: LineContext = { text, block, unitText, lineStart, contentStart, continuesPreviousLine: continuesPreviousLine(text, block, lineStart), indentationOfLineAt, chainHeads };
     const indentation = findFirstIndentation(LINE_RULES, line);
 
     if (indentation !== undefined) {
@@ -66,8 +67,8 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
       expressionLines.push({ lineStart, contentStart, indentation });
     }
 
-    const startsStatement = !isChainLine(text, contentStart) && !findClosedPair(line);
-    if (startsStatement) chainHeads.set(bracketLevelOf(line), lineStart);
+    const startsElement = !line.continuesPreviousLine && !isChainLine(text, contentStart) && !findClosedPair(line);
+    if (startsElement) chainHeads.set(bracketLevelOf(line), lineStart);
   }
 
   return expressionLines;

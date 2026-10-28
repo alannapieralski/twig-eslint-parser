@@ -9,6 +9,7 @@ export type LineContext = {
   readonly unitText: string;
   readonly lineStart: number;
   readonly contentStart: number;
+  readonly continuesPreviousLine: boolean;
   readonly indentationOfLineAt: (offset: number) => string;
   readonly chainHeads: ReadonlyMap<number, number>;
 };
