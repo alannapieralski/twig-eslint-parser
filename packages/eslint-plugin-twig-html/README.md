@@ -18,7 +18,7 @@ and understand Twig blocks, so their fixes keep Twig nesting and Twig inside tag
 npm install --save-dev eslint-plugin-twig-html eslint
 ```
 
-Requires Node.js 20.19 or later and ESLint 8.57 or later, using flat config. The package is ESM only. `twig-eslint-parser` is
+Requires Node.js 20.19, 22.13 or 24 and later, and ESLint 8.57 or later, using flat config. The package is ESM only. `twig-eslint-parser` is
 installed with it.
 
 ## Usage
