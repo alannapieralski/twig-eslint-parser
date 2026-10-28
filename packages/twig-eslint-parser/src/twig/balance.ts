@@ -18,7 +18,7 @@ function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]
   return low;
 }
 
-function* findBlocksWithin(range: Range, blocks: readonly TwigBlockSummary[]): Generator<TwigBlockSummary> {
+export function* findBlocksWithin(range: Range, blocks: readonly TwigBlockSummary[]): Generator<TwigBlockSummary> {
   for (let index = firstBlockIndexFrom(range[0], blocks); index < blocks.length; index += 1) {
     const block = blocks[index];
     if (!block || block.range[1] > range[1]) return;

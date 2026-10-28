@@ -1,3 +1,4 @@
+import { findBlocksWithin } from '../../twig/balance.js';
 import type { AttributeNode } from '../../attributes.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { Range } from '../../range.js';
@@ -20,11 +21,10 @@ const STRAY_CHARACTER_IN_VALUE: StrayCharacterDiagnostic = {
 };
 
 function textWithoutTwig(text: string, range: Range, blocks: readonly TwigBlockSummary[]): string {
-  const blocksWithin = blocks.filter((block) => block.range[0] >= range[0] && block.range[1] <= range[1]);
   let remaining = '';
   let position = range[0];
 
-  for (const block of blocksWithin) {
+  for (const block of findBlocksWithin(range, blocks)) {
     remaining += text.slice(position, block.range[0]);
     position = block.range[1];
   }
