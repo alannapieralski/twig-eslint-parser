@@ -18,8 +18,6 @@ export function findIndentProblems(program: MarkupProgram, source: IndentSource,
   if (!document) return [];
 
   const segments = findTwigSegments(blocks, text);
-  if (!segments) return [];
-
   const layout = buildIndentLayout(document, segments, { text, blocks, attributesOf, ignores: options.ignores, rawContentTags, unreadableTagStarts });
 
   return [...findNestingProblems(layout, text, options), ...findExpressionProblems(blocks, layout, text, options, strings)];

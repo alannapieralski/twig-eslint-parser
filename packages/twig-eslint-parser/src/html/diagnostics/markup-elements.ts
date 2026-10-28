@@ -1,5 +1,6 @@
 import { ELEMENT_NODE_TYPES } from '../syntax.js';
 import type { AttributeNode } from '../../attributes.js';
+import type { TokenTypes } from '../../es-html-parser/constants/token-types.js';
 import type { Range } from '../../range.js';
 
 type MarkupToken = { readonly range: Range; readonly value: string };
@@ -16,7 +17,7 @@ export type MarkupElement = MarkupTreeNode & {
   readonly attributes: readonly AttributeNode[];
 };
 
-export type SourceToken = { readonly type: string; readonly range: Range; readonly value: string };
+export type SourceToken = { readonly type: string; readonly range: Range; readonly value: string; readonly parts?: { type: TokenTypes; value: string }[] };
 
 function isMarkupElement(node: MarkupTreeNode): node is MarkupElement {
   return ELEMENT_NODE_TYPES.includes(node.type) && 'openStart' in node;

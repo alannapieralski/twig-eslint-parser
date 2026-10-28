@@ -6,15 +6,12 @@ import { isOpenTagUnreadable } from '../../../shared/unreadable-open-tags.js';
 import { elementNameOf } from '../../../shared/tag-node.js';
 import { bodyOf, flattenMarkup, interiorOf, isElement } from './html-elements.js';
 import type { Range } from '../../../shared/range.js';
-import type { AttributesOf } from '../../../shared/tag-attributes.js';
+import type { TagSource } from '../../../shared/tag-source.js';
 import type { Element, MarkupNode, OpenTag } from './types.js';
 
-export type HtmlSource = {
-  readonly text: string;
-  readonly attributesOf: AttributesOf;
+export type HtmlSource = Pick<TagSource, 'text' | 'attributesOf' | 'unreadableTagStarts'> & {
   readonly ignores: readonly string[];
   readonly rawContentTags: readonly string[];
-  readonly unreadableTagStarts: ReadonlySet<number>;
 };
 
 export type HtmlRegions = {

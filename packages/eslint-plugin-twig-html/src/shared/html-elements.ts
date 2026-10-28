@@ -1,7 +1,3 @@
-import { RAW_TEXT_ELEMENT_NAMES } from 'twig-eslint-parser';
-
-export const HARD_SKIPPED_ELEMENTS: readonly string[] = Object.values(RAW_TEXT_ELEMENT_NAMES);
-
 export const WHITESPACE_SENSITIVE_ELEMENTS: readonly string[] = ['pre', 'textarea'];
 
 export const INLINE_NON_VOID_ELEMENTS: readonly string[] = [

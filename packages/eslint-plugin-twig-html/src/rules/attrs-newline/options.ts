@@ -1,18 +1,17 @@
-import { layoutOptionDefaults, layoutOptionProperties } from '../../shared/layout-options.js';
-import type { LayoutOptions } from '../../shared/layout-options.js';
+import { ignoresSchema } from '../../shared/ignores.js';
 
 export type CloseStyle = 'newline' | 'sameline';
 
-export type Options = LayoutOptions & { ifAttrsMoreThan?: number; closeStyle?: CloseStyle };
+export type Options = { ifAttrsMoreThan?: number; closeStyle?: CloseStyle; ignores?: string[] };
 
-const defaultOptions: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', ...layoutOptionDefaults };
+const defaultOptions: Required<Options> = { ifAttrsMoreThan: 1, closeStyle: 'newline', ignores: ['svg'] };
 
 export const optionsSchema = {
   type: 'object',
   properties: {
     closeStyle: { enum: ['newline', 'sameline'] },
     ifAttrsMoreThan: { type: 'integer', minimum: 0 },
-    ...layoutOptionProperties,
+    ignores: ignoresSchema,
   },
   additionalProperties: false,
 } as const;

@@ -16,7 +16,7 @@ export type TagSource = {
   readonly unreadableTagStarts: ReadonlySet<number>;
 };
 
-export function createTagSource(sourceCode: SourceCode, services: TwigParserServices, ignores: readonly string[]): TagSource {
+export function createTagSource(sourceCode: SourceCode, services: TwigParserServices, ignores: readonly string[] = []): TagSource {
   const { text } = sourceCode;
 
   return {

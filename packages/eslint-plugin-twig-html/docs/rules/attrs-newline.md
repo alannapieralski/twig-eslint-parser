@@ -77,7 +77,7 @@ at the tag's own indentation.
 
 | Skipped | Why | Setting |
 |---|---|---|
-| Tags at or under the threshold, however they are written | The rule does not normalise them | `ifAttrsMoreThan` |
+| Tags at or under the threshold, however they are written | The rule does not normalise them | `ifAttrsMoreThan`, default `1` |
 | Elements in `ignores`, and every tag inside them | Inline SVG puts many short tags on one line, and one attribute per line would make it much longer for no gain | `ignores`, default `['svg']` |
 | `<script>` and `<style>` elements | The whole element is left as written | Built in |
 | `textarea` and `title` content | It is text, so the rule never reads markup there | Built in |
@@ -86,15 +86,17 @@ at the tag's own indentation.
 
 - **A tag with anything other than whitespace between two attributes**, such as a Twig comment. A fix
   would have to move or drop it.
-- **An open tag the parser could not read cleanly**: no `>` before the end of the file, or a quote or
-  `<` left in an attribute name or an unquoted value (`<li id=b<span>`). The parser reads the markup
-  after it as attributes, and splitting those "attributes" onto separate lines would break the next
-  tag. [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
+- **An open tag the parser could not read cleanly**: a quote or `<` left in an attribute name or an
+  unquoted value (`<li id=b<span>`). The parser reads the markup after it as attributes, and splitting
+  those "attributes" onto separate lines would break the next tag.
+  [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
 
 ### Not checked at all
 
 - **A tag where a Twig block opens or branches without closing inside the tag.** The tag has a
   different shape on each branch.
+- **An open tag with no `>` before the end of the file.** There is no `>` to lay out.
+  [`no-parse-errors`](no-parse-errors.md) reports it as `eof-in-tag`.
 
 ## Options
 

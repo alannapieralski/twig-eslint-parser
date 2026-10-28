@@ -104,6 +104,6 @@ create(context) {
 
   const checkTag = (tag: TagNode) => reportProblems(context, findQuoteProblems(tag, services, options));
 
-  return tagListeners(checkTag, tagNodeTypes, services.blocks);
+  return balancedTagListeners(checkTag, ['Tag'], services.blocks);
 }
 ```

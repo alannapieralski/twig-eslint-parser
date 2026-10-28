@@ -1,5 +1,6 @@
 import { BLOCK_TAGS } from './syntax.js';
 import { isSignificant } from './tokens.js';
+import type { Range } from '../range.js';
 import type { TwigToken, TwigTokenType } from './tokens.js';
 
 export type TwigBlockKind = 'print' | 'tag' | 'comment';
@@ -15,16 +16,16 @@ export type TwigBlock = {
 export type TwigBlockSummary = {
   readonly kind: TwigBlockKind;
   readonly tagName: string | undefined;
-  readonly range: readonly [number, number];
+  readonly range: Range;
   readonly depthChange: -1 | 0 | 1;
-  readonly bracketPairs: readonly (readonly [number, number])[];
+  readonly bracketPairs: readonly Range[];
 };
 
 const OPENING_BRACKETS: ReadonlySet<string> = new Set(['{', '[', '(']);
 const CLOSING_BRACKETS: ReadonlySet<string> = new Set(['}', ']', ')']);
 
-function findBracketPairs(block: TwigBlock): (readonly [number, number])[] {
-  const pairs: (readonly [number, number])[] = [];
+function findBracketPairs(block: TwigBlock): Range[] {
+  const pairs: Range[] = [];
   const openOffsets: number[] = [];
 
   for (const token of block.tokens) {

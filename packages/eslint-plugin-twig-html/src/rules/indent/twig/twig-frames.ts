@@ -8,11 +8,7 @@ export function twigBlockEnd(block: TwigBlockSummary, text: string): number {
   return text.lastIndexOf('}', block.range[1] - 1) + 1;
 }
 
-function closesFrame(block: TwigBlockSummary, frame: OpenFrame): boolean {
-  return block.tagName === `end${frame.name}`;
-}
-
-export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: string): TwigSegment[] | undefined {
+export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: string): TwigSegment[] {
   const openFrames: OpenFrame[] = [];
   const segments: TwigSegment[] = [];
 
@@ -26,8 +22,7 @@ export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: stri
     if (!isFrameBoundary) continue;
 
     const frame = openFrames.pop();
-    if (!frame) return undefined;
-    if (isClosingTag(block) && !closesFrame(block, frame)) return undefined;
+    if (!frame) throw new Error(`The Twig tag at offset ${block.range[0]} closes nothing. The parser rejects unpaired Twig tags, so this is a bug.`);
 
     segments.push({
       range: [frame.segmentStart, block.range[0]],
@@ -39,6 +34,5 @@ export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: stri
     if (isMiddleTag(block)) openFrames.push({ ...frame, segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
   }
 
-  const isEveryFrameClosed = openFrames.length === 0;
-  return isEveryFrameClosed ? segments : undefined;
+  return segments;
 }

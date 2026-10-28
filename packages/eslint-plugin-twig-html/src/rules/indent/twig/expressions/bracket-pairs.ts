@@ -1,6 +1,6 @@
 import type { BracketPair, LineContext } from './types.js';
 
-export const outsideAnyBracket = -1;
+export const OUTSIDE_ANY_BRACKET = -1;
 
 export function findClosedPair(line: LineContext): BracketPair | undefined {
   return line.block.bracketPairs.find(([open, close]) => close === line.contentStart && open < line.lineStart);
@@ -12,5 +12,5 @@ export function findEnclosingPair(line: LineContext): BracketPair | undefined {
 }
 
 export function bracketLevelOf(line: LineContext): number {
-  return findEnclosingPair(line)?.[0] ?? outsideAnyBracket;
+  return findEnclosingPair(line)?.[0] ?? OUTSIDE_ANY_BRACKET;
 }

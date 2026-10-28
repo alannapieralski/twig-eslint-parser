@@ -61,15 +61,15 @@ packages/<plugin>/src/rules/indent/
 plugin's shared code for the real helper before inventing one.
 
 ```ts
-import type { Rule } from 'eslint';
 import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
 import { reportProblems } from '../../shared/report-problems.js';
-import { tagListeners } from '../../shared/tag-listeners.js';
-import { tagNodeTypes, type TagNode } from '../../shared/tag-node.js';
+import { balancedTagListeners } from '../../shared/tag-listeners.js';
 import { findAttributeProblems } from './find-attribute-problems.js';
 import { messages } from './messages.js';
 import { optionsSchema, resolveOptions } from './options.js';
+import type { Rule } from 'eslint';
+import type { TagNode } from '../../shared/tag-node.js';
 
 export const attrsNewline: Rule.RuleModule = {
   meta: {
@@ -91,7 +91,7 @@ export const attrsNewline: Rule.RuleModule = {
       reportProblems(context, findAttributeProblems(tag, context.sourceCode.text, blocks, options));
     };
 
-    return tagListeners(checkTag, tagNodeTypes, blocks);
+    return balancedTagListeners(checkTag, ['Tag'], blocks);
   },
 };
 ```
@@ -122,10 +122,10 @@ export function resolveOptions(rawOptions: unknown): Required<Options> {
 ```
 
 - Schema keys are alphabetical. `additionalProperties: false` always, so a typo fails loudly.
-- Options shared by several rules (such as layout options) are defined once in `shared/`, and each
-  rule's schema spreads them in.
+- Options shared by several rules (such as `ignoresSchema`) are defined once in `shared/`, and each
+  rule's schema uses them.
 - Merge defaults in `resolveOptions`. ESLint's `meta.defaultOptions` needs ESLint 9.15, and the
-  plugins' peer range starts at 9.0, so it is not used until that range is raised.
+  plugins' peer range starts at 8.57, so it is not used until that range is raised.
 - Read options only through `context.options`, once, in `create`.
 
 ## messages.ts

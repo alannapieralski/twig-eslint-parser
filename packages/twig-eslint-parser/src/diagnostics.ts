@@ -1,3 +1,5 @@
+import type { Range } from './range.js';
+
 export const DIAGNOSTIC_CODES = [
   'eof-in-tag',
   'unexpected-character-in-attribute-name',
@@ -13,7 +15,7 @@ export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[number];
 export type TwigDiagnostic = {
   readonly code: DiagnosticCode;
   readonly message: string;
-  readonly range: readonly [number, number];
+  readonly range: Range;
 };
 
 export function compareDiagnostics(first: TwigDiagnostic, second: TwigDiagnostic): number {

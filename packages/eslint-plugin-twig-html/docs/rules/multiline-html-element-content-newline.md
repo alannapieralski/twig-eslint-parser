@@ -121,7 +121,7 @@ that is never closed, moved content stays at the tag's indentation.
 | Option | Default | Description |
 |---|---|---|
 | `ignores` | `[]` | Leave these elements, and everything inside them, alone. `pre` and `textarea` are always left alone. |
-| `ignoreInlineElements` | `true` | Leave inline elements (`a`, `span`, `strong`, `label`, `svg` and the like), and everything inside them, alone. When `false`, they are checked, and reported but not fixed. |
+| `ignoreInlineElements` | `true` | Leave inline elements (`a`, `span`, `strong`, `label`, `svg` and the like), and everything inside them, alone. When `false`, they are checked: `svg` is fixed, and the others are reported but not fixed. |
 | `ignoreWhenEmpty` | `true` | Leave elements with no content at all alone. When `false`, `></div>` becomes `>\n</div>`. |
 | `allowEmptyLines` | `true` | Allow blank lines around the content. Only a missing line break is reported. When `false`, more than one line break is reduced to one. |
 

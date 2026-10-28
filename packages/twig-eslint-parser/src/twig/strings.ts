@@ -1,11 +1,12 @@
 import { tokenizeTwig } from './tokens.js';
+import type { Range } from '../range.js';
 import type { TwigToken } from './tokens.js';
 
 export type TwigQuote = "'" | '"';
 
 export type TwigStringSummary = {
   readonly quote: TwigQuote;
-  readonly range: readonly [number, number];
+  readonly range: Range;
   readonly isInterpolated: boolean;
 };
 
@@ -33,6 +34,6 @@ export function summariseTwigStrings(tokens: readonly TwigToken[]): TwigStringSu
   return strings;
 }
 
-export function findInterpolatedStrings(code: string): readonly (readonly [number, number])[] {
+export function findInterpolatedStrings(code: string): readonly Range[] {
   return summariseTwigStrings(tokenizeTwig(code)).filter((string) => string.isInterpolated).map((string) => string.range);
 }

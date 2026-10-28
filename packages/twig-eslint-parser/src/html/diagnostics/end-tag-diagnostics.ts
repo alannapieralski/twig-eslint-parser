@@ -1,12 +1,11 @@
+import { closeTagNameOf, tagNameKey } from '../../es-html-parser/utils/tag-name.js';
 import { isTwigBalancedWithin } from '../../twig/balance.js';
 import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { MarkupElement, SourceToken } from './markup-elements.js';
 
-const END_TAG_NAME = /^<\/\s*([^\s>]+)/;
-
 function nameOfEndTag(token: SourceToken): string {
-  return (END_TAG_NAME.exec(token.value)?.[1] ?? '').toLowerCase();
+  return tagNameKey(closeTagNameOf(token));
 }
 
 function findVoidElementNames(elements: readonly MarkupElement[]): ReadonlySet<string> {

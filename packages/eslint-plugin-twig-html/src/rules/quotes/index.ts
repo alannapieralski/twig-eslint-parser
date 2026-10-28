@@ -1,11 +1,8 @@
-import { ELEMENT_NODE_TYPES, readTwigServices } from 'twig-eslint-parser';
+import { readTwigServices } from 'twig-eslint-parser';
 import { docsUrlFor } from '../../shared/docs-url.js';
-import { HARD_SKIPPED_ELEMENTS } from '../../shared/html-elements.js';
-import { createIgnoredInsideCheck } from '../../shared/ignored-inside.js';
 import { reportProblems } from '../../shared/report-problems.js';
-import { findUnreadableTagStarts } from '../../shared/unreadable-open-tags.js';
-import { createAttributesOf } from '../../shared/tag-attributes.js';
 import { tagListeners } from '../../shared/tag-listeners.js';
+import { createTagSource } from '../../shared/tag-source.js';
 import { findTagProblems } from './find-tag-problems.js';
 import { findTwigStringProblems } from './find-twig-string-problems.js';
 import { messages } from './messages.js';
@@ -28,17 +25,14 @@ export const quotes: Rule.RuleModule = {
 
   create(context) {
     const options = resolveOptions(context.options[0]);
-    const { sourceCode } = context;
-    const { blocks, strings, omittedAttributes, diagnostics } = readTwigServices(sourceCode, context.id);
-    const source = { text: sourceCode.text, blocks, unreadableTagStarts: findUnreadableTagStarts(diagnostics), ...quotesFor(options) };
-    const attributesOf = createAttributesOf(omittedAttributes);
-    const isSkipped = createIgnoredInsideCheck(sourceCode, HARD_SKIPPED_ELEMENTS);
+    const services = readTwigServices(context.sourceCode, context.id);
+    const source = { ...createTagSource(context.sourceCode, services), ...quotesFor(options) };
 
-    const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, attributesOf, source, isSkipped));
+    const checkTag = (tag: TagWithAttributes) => reportProblems(context, findTagProblems(tag, source));
 
     return {
-      Program: () => reportProblems(context, findTwigStringProblems(strings, source)),
-      ...tagListeners(checkTag, ELEMENT_NODE_TYPES),
+      Program: () => reportProblems(context, findTwigStringProblems(services.strings, source)),
+      ...tagListeners(checkTag, ['Tag']),
     };
   },
 };

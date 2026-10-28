@@ -1,24 +1,29 @@
 import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import { defineConfig } from 'eslint/config';
-import globals from 'globals';
 import importX from 'eslint-plugin-import-x';
 import tseslint from 'typescript-eslint';
 
-const MODULE_LEVEL_CONSTANT_VALUES = [
-  'NewExpression[callee.name=/^(Set|Map)$/][arguments.length>0]',
+const FIXED_VALUES = [
   'Literal',
+  'UnaryExpression[argument.type="Literal"]',
+  'TemplateLiteral[expressions.length=0]',
   'ArrayExpression[elements.length>0]',
-  'TSAsExpression > ArrayExpression[elements.length>0]',
+  'NewExpression[callee.name=/^(Set|Map)$/][arguments.0.type="ArrayExpression"]',
+  'NewExpression[callee.name="RegExp"]',
+];
+
+const MODULE_LEVEL_CONSTANT_VALUES = [
+  ...FIXED_VALUES,
+  ...FIXED_VALUES.map((value) => `TSAsExpression > ${value}`),
+  ...FIXED_VALUES.map((value) => `TSSatisfiesExpression > ${value}`),
 ];
 
 export default defineConfig([
   {
     ignores: [
       '.claude/**',
-      '**/node_modules/**',
       '**/dist/**',
-      'corpus-report/**',
       '**/third_party/**',
       'packages/twig-eslint-parser/src/es-html-parser/**',
       'packages/twig-eslint-parser/src/lexer/**',
@@ -28,7 +33,6 @@ export default defineConfig([
     files: ['**/*.{js,ts}'],
     extends: [js.configs.recommended, tseslint.configs.recommended],
     plugins: { '@stylistic': stylistic, 'import-x': importX },
-    languageOptions: { globals: globals.node },
     rules: {
       '@stylistic/indent': ['warn', 2],
       '@stylistic/quotes': ['warn', 'single', { avoidEscape: true }],

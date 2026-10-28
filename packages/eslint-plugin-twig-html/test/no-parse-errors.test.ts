@@ -25,6 +25,7 @@ describe('twig-html/no-parse-errors', () => {
 
   it.each([
     ['<div class="a"', 'eof-in-tag', 1],
+    ['<li class="a\' data-x="y">x</li>', 'unexpected-character-in-attribute-name', 1],
     ['<li id=b<span>x</span></li>', 'unexpected-character-in-unquoted-attribute-value', 1],
     ['<p>x</p>\n</div>', 'x-invalid-end-tag', 2],
     ['<div>\n<p>x</p>', 'x-unclosed-element', 1],

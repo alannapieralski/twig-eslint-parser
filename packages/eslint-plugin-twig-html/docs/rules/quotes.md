@@ -85,8 +85,8 @@ The rule never changes what a template renders. It does not report:
   `class={% if a %}"a"{% else %}'b'{% endif %}`, since that Twig may print spaces, attributes or quotes
   of its own.
 - **An attribute in an open tag the parser could not read cleanly**, such as `<li id=b<span>`, where
-  the `li` open tag has no `>` of its own, or a tag with a quote left in an attribute name, since the
-  parser has misread where that tag ends. [`no-parse-errors`](no-parse-errors.md) reports the tag
+  the `li` open tag has no `>` of its own, a tag with a quote left in an attribute name, or a tag with
+  no `>` before the end of the file, since the parser has misread where that tag ends. [`no-parse-errors`](no-parse-errors.md) reports the tag
   itself.
 
 ## Options

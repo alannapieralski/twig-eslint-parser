@@ -47,7 +47,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isUnsafeToCheck = isOpenTagUnreadable(tag, unreadableTagStarts) || !isTwigBalancedWithin(contentRange, blocks) || isIgnored(tag);
   if (isUnsafeToCheck) return [];
 
-  const isFixable = ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE.has(name.toLowerCase());
+  const isFixable = ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE.has(name);
   const tagIndentation = lineIndentationAt(text, tag.openStart.range[0]);
   const edges = findContentEdges(tag, close, text);
   const problems = edges.map((edge) => describeEdgeProblem(edge, name, tagIndentation, source, options, isFixable));

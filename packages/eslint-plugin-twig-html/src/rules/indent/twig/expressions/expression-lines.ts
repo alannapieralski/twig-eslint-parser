@@ -1,9 +1,10 @@
 import { contentStartOf, indentationOf, lineStartOf } from '../../../../shared/line-text.js';
 import { isBlankFrom } from '../../line-starts.js';
-import { bracketLevelOf, findClosedPair, outsideAnyBracket } from './bracket-pairs.js';
+import { OUTSIDE_ANY_BRACKET, bracketLevelOf, findClosedPair } from './bracket-pairs.js';
 import { bracketRule } from './bracket-rule.js';
 import { chainRule, isChainLine } from './chain-rule.js';
 import type { TwigBlockSummary, TwigStringSummary } from 'twig-eslint-parser';
+import type { Range } from '../../../../shared/range.js';
 import type { ExpressionLine } from '../../types.js';
 import type { LineContext, LineRule } from './types.js';
 
@@ -17,11 +18,13 @@ type ExpressionLayoutInput = {
 
 const LINE_RULES: readonly LineRule[] = [chainRule, bracketRule];
 
-function findLineStartsWithin(text: string, range: readonly [number, number]): number[] {
+function findLineStartsWithin(text: string, range: Range): number[] {
   const lineStarts: number[] = [];
+  let lineBreak = text.indexOf('\n', range[0]);
 
-  for (let lineBreak = text.indexOf('\n', range[0]); lineBreak !== -1 && lineBreak < range[1]; lineBreak = text.indexOf('\n', lineBreak + 1)) {
+  while (lineBreak !== -1 && lineBreak < range[1]) {
     lineStarts.push(lineBreak + 1);
+    lineBreak = text.indexOf('\n', lineBreak + 1);
   }
 
   return lineStarts;
@@ -43,7 +46,7 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
   const { text, block, startLineIndentation, unitText, strings } = input;
   const startLineStart = lineStartOf(text, block.range[0]);
   const indentations = new Map<number, string>([[startLineStart, startLineIndentation]]);
-  const chainHeads = new Map<number, number>([[outsideAnyBracket, startLineStart]]);
+  const chainHeads = new Map<number, number>([[OUTSIDE_ANY_BRACKET, startLineStart]]);
   const expressionLines: ExpressionLine[] = [];
 
   const indentationOfLineAt = (offset: number): string => {

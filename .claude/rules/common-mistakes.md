@@ -24,15 +24,17 @@ caught in review. The placement ladder is in
   | Whether a Twig block opens, closes or continues a tag, and the text of a tag | `twig-eslint-parser` (`src/twig/block-roles.ts`, `tag-text.ts`) |
   | Lines, indentation and line starts in a text | `eslint-plugin-twig-html/src/shared/line-text.ts` |
   | `ignores` option schema, lower-cased element name sets | `eslint-plugin-twig-html/src/shared/ignores.ts` |
-  | Elements every rule leaves alone (`script`, `style`), inline and whitespace-sensitive lists | `eslint-plugin-twig-html/src/shared/html-elements.ts` |
+  | Inline and whitespace-sensitive element lists | `eslint-plugin-twig-html/src/shared/html-elements.ts` |
 
 - **A new Twig tag or HTML element rule goes in the parser's tag tables** (`twig/syntax.ts`,
   `html/syntax.ts`), never as a local `Set` in a rule.
 - **Do not build a second walker over Twig blocks.** Use the block-role predicates, and extend the
   existing walk when a new check needs the open-tag stack.
 - **A type that adds fields to another derives from it** (`Omit`, `&`). Do not retype the fields.
-- **A skip that applies to every rule** (such as `script` and `style`) is added once in `shared/`
-  and consumed by each rule. Adding it to one rule leaves the others behind.
+- **A skip that applies to every rule** (such as an open tag the parser could not read) is added once
+  in `shared/` and consumed by each rule. Adding it to one rule leaves the others behind.
+- **Rules that read tags listen to `Tag` nodes.** The parser gives `script` and `style` their own node
+  types (`ScriptTag`, `StyleTag`), so they are left alone without a list of names.
 
 ## Naming
 

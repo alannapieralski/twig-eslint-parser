@@ -1,6 +1,7 @@
 import type { TwigBlockSummary } from 'twig-eslint-parser';
+import type { Range } from '../../../../shared/range.js';
 
-export type BracketPair = LineContext['block']['bracketPairs'][number];
+export type BracketPair = Range;
 
 export type LineContext = {
   readonly text: string;

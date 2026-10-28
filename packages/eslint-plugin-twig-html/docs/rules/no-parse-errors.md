@@ -65,20 +65,11 @@ Codes without a prefix are the names the HTML specification gives the error. Cod
 
 Each report names its code in brackets, so a code can be switched off by name.
 
-### Which errors stop the parser
-
-These are not reported by this rule. The parser throws, ESLint shows one parsing error for the file,
-and no rule runs:
-
-- **Twig that cannot be tokenised**, such as an unclosed `{{`, `{%`, `{#`, bracket or string.
-- **Twig tags that do not pair up**, such as a stray `{% endif %}` or an `{% if %}` that is never
-  closed.
-- **An open tag whose `>` is missing before the next tag**, such as `<div class="a"<p>`.
-
 ### Working with other rules
 
-- **The other `twig-html` rules skip a tag with one of the first three codes.** They report nothing
-  inside it that they could not fix safely, and never fix it.
+- **The other `twig-html` rules never fix a tag with one of the first three codes.** `quotes` and
+  `attrs-newline` may still report it without a fix, and `indent` and
+  `multiline-html-element-content-newline` leave the element's content alone.
 - **`x-unparsed-twig` is the only report of a Twig block the parser could not read.** Such a block is
   left out of the tree, so `eslint-plugin-twig-tailwind` never sees the classes inside it.
 
@@ -98,16 +89,16 @@ and no rule runs:
 
 - **Unknown Twig tags, filters, functions and tests.** Which ones exist depends on the extensions the
   site loads, such as Drupal's modules, so they cannot be known from the template.
+- **Errors that stop the parser.** The parser throws, ESLint shows one parsing error for the file, and
+  no rule runs: Twig that cannot be tokenised (an unclosed `{{`, `{%`, `{#`, bracket or string), Twig
+  tags that do not pair up (a stray `{% endif %}`), and an open tag whose `>` is missing before the
+  next tag (`<div class="a"<p>`).
 
 ### Known gaps
 
-- **Markup problems inside Twig blocks are mostly not reported.** The parser reads the markup as one
-  document, so it cannot pair an element opened in one `{% if %}` branch with a closing tag in
-  another, and the rule stays quiet rather than guess (see the two Left alone rows about Twig branches). In practice
-  a closing tag is never reported as `x-invalid-end-tag` while any Twig block is open before it,
-  `{% if %}`, `{% for %}` and `{% block %}` included, so a template whose markup sits inside
-  `{% block %}` gets almost no end tag reports. Fixing this needs the parser to read the markup of
-  each Twig branch separately; the `blocks` service's `depthChange` shows where the branches are.
+- **Markup problems inside Twig blocks are mostly not reported**, because the parser reads every Twig
+  branch as one document: a closing tag is never reported while any Twig block, `{% block %}` and
+  `{% for %}` included, is open before it.
 - Duplicate attributes and a missing space between attributes are not reported.
 - An unterminated `<!--` drops the markup after it, so the elements it left open are reported instead
   of the comment.
