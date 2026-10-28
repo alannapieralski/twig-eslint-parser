@@ -13,7 +13,8 @@ passed to an include.
 
 The same goes for a Twig string that interpolates with `#{ }`. better-tailwindcss does not understand
 `#{`, so the `twig-tailwind/twig` processor silences it and the classes in the string are never
-checked. The rule reports every such string, and every string is checked, not only class lists.
+checked. The rule reports every such string, and every string is checked, not only class lists. A
+string inside an attribute the rule already reports is not reported again.
 
 Examples of **incorrect** code:
 
