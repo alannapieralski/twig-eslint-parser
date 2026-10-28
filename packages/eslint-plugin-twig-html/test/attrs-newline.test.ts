@@ -106,6 +106,11 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe('<input\n  {% if checked %}checked disabled{% endif %}\n  type="checkbox"\n  name="a"\n>');
   });
 
+  it('keeps the attributes inside a Twig block together when its tags end their lines', async () => {
+    const code = '<li\n  {% if loop.first %}\n    class="a" id="b"\n  {% endif %}\n>x</li>';
+    expect(await lint(code)).toEqual({ output: code, messages: [] });
+  });
+
   it('does not count a Twig block spanning attributes as more than one', async () => {
     expect((await lint('<input {% if checked %}checked disabled{% endif %}>')).messages).toEqual([]);
   });

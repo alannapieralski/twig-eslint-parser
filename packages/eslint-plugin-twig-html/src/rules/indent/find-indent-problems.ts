@@ -17,7 +17,7 @@ export function findIndentProblems(program: MarkupProgram, source: IndentSource,
   const [document] = program.body;
   if (!document) return [];
 
-  const segments = findTwigSegments(blocks, text);
+  const segments = findTwigSegments(blocks);
   const layout = buildIndentLayout(document, segments, { text, blocks, attributesOf, ignores: options.ignores, rawContentTags, unreadableTagStarts });
 
   return [...findNestingProblems(layout, text, options), ...findExpressionProblems(blocks, layout, text, options, strings)];

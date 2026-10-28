@@ -34,6 +34,10 @@ describe('unexpected-character-in-attribute-name', () => {
     expect(diagnostic).toMatchObject({ code: 'unexpected-character-in-attribute-name', range: [0, code.indexOf('>') + 1] });
   });
 
+  it('stays quiet for a Twig tag on its own line among the attributes', () => {
+    expect(codesOf('<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>x</li>')).toEqual([]);
+  });
+
   it('stays quiet for quotes inside a quoted value and inside Twig strings that hold }}', () => {
     expect(codesOf('<p title=\'say "hi"\' data-a="it\'s" data-b="{{ \'}}\' }}" data-c=\'{{ "}}" }}\'>x</p>')).toEqual([]);
   });

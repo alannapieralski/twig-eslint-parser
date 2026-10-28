@@ -4,17 +4,13 @@ import type { TwigSegment } from './types.js';
 
 type OpenFrame = { readonly name: string; readonly frameStart: number; readonly segmentStart: number; readonly boundaryStart: number };
 
-export function twigBlockEnd(block: TwigBlockSummary, text: string): number {
-  return text.lastIndexOf('}', block.range[1] - 1) + 1;
-}
-
-export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: string): TwigSegment[] {
+export function findTwigSegments(blocks: readonly TwigBlockSummary[]): TwigSegment[] {
   const openFrames: OpenFrame[] = [];
   const segments: TwigSegment[] = [];
 
   for (const block of blocks) {
     if (isOpeningTag(block)) {
-      openFrames.push({ name: block.tagName ?? '', frameStart: block.range[0], segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
+      openFrames.push({ name: block.tagName ?? '', frameStart: block.range[0], segmentStart: block.range[1], boundaryStart: block.range[0] });
       continue;
     }
 
@@ -26,12 +22,12 @@ export function findTwigSegments(blocks: readonly TwigBlockSummary[], text: stri
 
     segments.push({
       range: [frame.segmentStart, block.range[0]],
-      extent: [frame.boundaryStart, twigBlockEnd(block, text)],
+      extent: [frame.boundaryStart, block.range[1]],
       frameStart: frame.frameStart,
       frameName: frame.name,
     });
 
-    if (isMiddleTag(block)) openFrames.push({ ...frame, segmentStart: twigBlockEnd(block, text), boundaryStart: block.range[0] });
+    if (isMiddleTag(block)) openFrames.push({ ...frame, segmentStart: block.range[1], boundaryStart: block.range[0] });
   }
 
   return segments;

@@ -404,6 +404,12 @@ describe('block structure services', () => {
       ['tag', 'endif', '{% endif %}', -1],
     ]);
   });
+
+  it('ends each block at its closing delimiter, before the line break Twig removes after a tag', () => {
+    const code = '{% if a %}\n{# b #}\r\n{{ c }}\n{% endif %}\r<p>d</p>';
+    const { services } = parse(code);
+    expect(services.blocks.map((block) => code.slice(...block.range))).toEqual(['{% if a %}', '{# b #}', '{{ c }}', '{% endif %}']);
+  });
 });
 
 describe('block bracket pairs', () => {

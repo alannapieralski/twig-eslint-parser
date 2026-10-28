@@ -1,4 +1,3 @@
-import { twigBlockEnd } from './twig-frames.js';
 import type { TwigBlockSummary } from 'twig-eslint-parser';
 import type { Range } from '../../../shared/range.js';
 import type { TwigSegment } from './types.js';
@@ -10,15 +9,15 @@ export type TwigRegions = {
 
 const UNINDENTED_TWIG_FRAMES: ReadonlySet<string> = new Set(['verbatim', 'raw']);
 
-function findTwigInteriors(blocks: readonly TwigBlockSummary[], text: string): Range[] {
-  return blocks.map((block): Range => [block.range[0] + 1, twigBlockEnd(block, text)]);
+function findTwigInteriors(blocks: readonly TwigBlockSummary[]): Range[] {
+  return blocks.map((block): Range => [block.range[0] + 1, block.range[1]]);
 }
 
-export function findTwigRegions(segments: readonly TwigSegment[], blocks: readonly TwigBlockSummary[], text: string): TwigRegions {
+export function findTwigRegions(segments: readonly TwigSegment[], blocks: readonly TwigBlockSummary[]): TwigRegions {
   const unindentedSegments = segments.filter((segment) => UNINDENTED_TWIG_FRAMES.has(segment.frameName)).map((segment) => segment.range);
 
   return {
     nestings: segments.map((segment) => segment.range),
-    skipped: [...findTwigInteriors(blocks, text), ...unindentedSegments],
+    skipped: [...findTwigInteriors(blocks), ...unindentedSegments],
   };
 }

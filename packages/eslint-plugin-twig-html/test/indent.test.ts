@@ -140,6 +140,17 @@ describe('twig-html/indent', () => {
       await expectUntouched("{{ f(a, {\n  'b': 1,\n},\n  {\n    c: 2\n  })\n}}");
     });
 
+    it('reads a one-line Twig tag as one line, so the text after it is indented once', async () => {
+      await expectUntouched('<p>\n  {% set x = 1 %}\n  .NET developers\n</p>');
+      expect(await messagesFor('<p>\n  {% if a %}\n.method text\n  {% endif %}\n</p>')).toMatchObject([{ line: 3 }]);
+    });
+
+    it('indents the content of an element whose attributes hold a Twig tag on its own line', async () => {
+      expect(await fixed('<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>\n      {{ item }}\n</li>')).toBe(
+        '<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>\n  {{ item }}\n</li>',
+      );
+    });
+
     it('leaves lines outside any bracket and not part of a method chain alone', async () => {
       await expectUntouched("{% set a = b and\n      c %}\n{{ c\n? 'd'\n   : 'e' }}\n{% set f = g\n|h %}");
     });
