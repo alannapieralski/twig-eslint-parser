@@ -145,6 +145,16 @@ describe('twig-html/indent', () => {
       expect(await fixed('{{ a\n? b\n      .c }}')).toBe('{{ a\n? b\n  .c }}');
     });
 
+    it('reads past an inline # comment to find where an element starts', async () => {
+      expect(await fixed("{% set a = [\n'x', # first\n'y',\n] %}\n{% set b = { # options\ntitle: t,\n} %}")).toBe(
+        "{% set a = [\n  'x', # first\n  'y',\n] %}\n{% set b = { # options\n  title: t,\n} %}",
+      );
+    });
+
+    it('starts a method chain on the first line after a tag name that stands alone', async () => {
+      expect(await fixed('{% set\n  e = f\n.g() %}')).toBe('{% set\n  e = f\n    .g() %}');
+    });
+
     it('lines up a closing bracket that ends the only argument of an inner call with the line that opened it', async () => {
       expect(await fixed('{{ f(g({\n      a: 1\n    }), b) }}')).toBe('{{ f(g({\n  a: 1\n}), b) }}');
     });

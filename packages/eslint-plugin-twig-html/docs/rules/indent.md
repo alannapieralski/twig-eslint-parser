@@ -68,7 +68,8 @@ Examples of **correct** code:
 - **Short forms:** an inline `set` and the short `{% block title page_title %}` have no body, so they
   add no level.
 - **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** a line that starts an element,
-  after a `,` or the opening bracket, is one step in from the line that opened the innermost bracket,
+  after a `,`, the opening bracket or the tag name (an inline `# comment` before the line break does
+  not count), is one step in from the line that opened the innermost bracket,
   and a line that starts with the closing bracket lines up with the line that opened it. The opening
   line keeps whatever indentation it has, so `.addClass([` on a continuation line works. A closing
   bracket is left alone when it ends one argument of a call that has more arguments after it. This

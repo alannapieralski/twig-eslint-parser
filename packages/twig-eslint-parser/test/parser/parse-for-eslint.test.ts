@@ -412,6 +412,14 @@ describe('block structure services', () => {
   });
 });
 
+describe('block inline comments', () => {
+  it('lists the range of each # comment inside a block', () => {
+    const code = "{% set a = [\n  'x', # first\n  '#{y}',\n] %}";
+    const { services } = parse(code);
+    expect(services.blocks[0]?.inlineComments.map((range) => code.slice(...range))).toEqual(['# first']);
+  });
+});
+
 describe('block bracket pairs', () => {
   it('lists the offsets of each bracket pair, ignoring brackets inside strings', () => {
     const code = "{{ f({ a: [1], b: '(' }) }}";

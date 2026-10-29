@@ -8,6 +8,7 @@ const block = (tagName: string, start: number, depthChange: TwigBlockSummary['de
   range: [start, start + 5],
   depthChange,
   bracketPairs: [],
+  inlineComments: [],
 });
 
 const ifBlock = block('if', 0, 1);
