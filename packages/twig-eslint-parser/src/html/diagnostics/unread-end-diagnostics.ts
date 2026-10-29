@@ -21,6 +21,6 @@ export function findUnreadEndDiagnostics(markupEnd: MarkupEnd, text: string, raw
   if (lastNode.type === 'Comment') return [{ code: 'eof-in-comment', message: UNTERMINATED_COMMENT_MESSAGE, range: lastNode.range }];
   if (isRawTextElementLeftOpen(lastNode, rawTextNames)) return [];
 
-  const unreadStart = treeEnd + Math.max(text.slice(treeEnd).search(FIRST_VISIBLE_CHARACTER), 0);
+  const unreadStart = treeEnd + text.slice(treeEnd).search(FIRST_VISIBLE_CHARACTER);
   return [{ code: 'eof-in-tag', message: UNTERMINATED_TAG_MESSAGE, range: [unreadStart, text.length] }];
 }

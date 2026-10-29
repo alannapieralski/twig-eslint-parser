@@ -17,6 +17,10 @@ describe('eof-in-tag', () => {
     expect(diagnostic).toMatchObject({ code: 'eof-in-tag', range: [0, 14] });
   });
 
+  it('reports it once when only a line break follows it', () => {
+    expect(codesOf('<p>a</p>\n<li class="a"\n')).toEqual(['eof-in-tag']);
+  });
+
   it('reports an attribute quote that is never closed', () => {
     expect(codesOf('<div class="a><p>x</p></div>')).toContain('eof-in-tag');
   });
