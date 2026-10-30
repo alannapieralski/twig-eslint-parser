@@ -29,7 +29,9 @@ open a helper to understand a line, fix the line or the helper's name.
   of `filter`, `some` and `includes`, or a condition joined by more than two `&&` or `||`. Name each
   part as a predicate (`isOpenedOnSameLine`) or a collection (`outerPairsOpenedOnTheSameLine`).
 - **Leave simple lines alone.** `items.map((item) => item.name)` and `if (!close) return []` are
-  already clear. Do not name a value used once that says nothing more than the expression does.
+  already clear. So is a short chain of `&&` or `||` over named checks, such as
+  `!isContinuation && !isChainLine(text, contentStart) && !findClosedPair(line)`. Do not name a value
+  used once that says nothing more than the expression does.
 
 ## Returns
 
