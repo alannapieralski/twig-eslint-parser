@@ -31,8 +31,12 @@ function describeStrayEndTag(token: SourceToken, source: EndTagSource): string {
   return `${token.value} does not match the open ${openTagTextOf(openElement, source.text)}. Remove it or correct its name.`;
 }
 
+function mapElementsByCloseStart(elements: readonly MarkupElement[]): Map<number, MarkupElement> {
+  return new Map(elements.flatMap((element) => (element.close ? [[element.close.range[0], element] as const] : [])));
+}
+
 export function findEndTagDiagnostics(source: EndTagSource): TwigDiagnostic[] {
-  const elementByCloseStart = new Map(source.elements.flatMap((element) => (element.close ? [[element.close.range[0], element] as const] : [])));
+  const elementByCloseStart = mapElementsByCloseStart(source.elements);
   const unclosedElements = source.elements.filter((element) => !element.close && !element.selfClosing);
   const branchSpans = findTwigBranchSpans(source.blocks);
   const namesClosedInBranches = new Set<string>();
@@ -43,7 +47,9 @@ export function findEndTagDiagnostics(source: EndTagSource): TwigDiagnostic[] {
 
     const isInBranch = isInsideTwigBranch(token.range[0], branchSpans);
     const closedElement = elementByCloseStart.get(token.range[0]);
-    if (closedElement && isInBranch) findNamesClosedBy(closedElement, unclosedElements).forEach((name) => namesClosedInBranches.add(name));
+    if (closedElement && isInBranch) {
+      for (const name of findNamesClosedBy(closedElement, unclosedElements)) namesClosedInBranches.add(name);
+    }
     if (closedElement || isInBranch) continue;
 
     const name = nameOfEndTag(token);

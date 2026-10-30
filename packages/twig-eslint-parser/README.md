@@ -147,6 +147,7 @@ Rules import these instead of keeping their own copies.
 | `SINGLE_TOKEN_NODE_TYPES` | The node types that are one token, `Comment` and `Doctype`. |
 | `isOpeningTag(block)`, `isClosingTag(block)`, `isMiddleTag(block)` | Tell what a Twig block does to nesting: `{% if %}`, `{% endif %}`, `{% else %}`, `{% elseif %}` or `{% plural %}`. |
 | `depthChangeWithin(range, blocks)`, `isTwigBalancedWithin(range, blocks)` | Measure the Twig nesting inside a range. |
+| `isRangeWithin(inner, outer)` | Tell whether one range lies inside another, ends included. |
 | `isAttributeNode(value)`, `containsTwig(attribute)` | Tell an attribute node from the other nodes in an open tag, and whether its name or value holds Twig. |
 
 ## Known limitations

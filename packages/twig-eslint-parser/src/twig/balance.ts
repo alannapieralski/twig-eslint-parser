@@ -3,13 +3,14 @@ import { TAGS_WITH_VARYING_MARKUP } from './syntax.js';
 import type { Range } from '../range.js';
 import type { TwigBlockSummary } from './blocks.js';
 
-function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]): number {
+function findFirstIndexStartingFrom<Item>(items: readonly Item[], offset: number, startOf: (item: Item) => number): number {
   let low = 0;
-  let high = blocks.length;
+  let high = items.length;
 
   while (low < high) {
     const middle = (low + high) >> 1;
-    const middleStart = blocks[middle]?.range[0] ?? Infinity;
+    const middleItem = items[middle];
+    const middleStart = middleItem === undefined ? Infinity : startOf(middleItem);
 
     if (middleStart < offset) low = middle + 1;
     else high = middle;
@@ -19,7 +20,7 @@ function firstBlockIndexFrom(offset: number, blocks: readonly TwigBlockSummary[]
 }
 
 function* findBlocksWithin(range: Range, blocks: readonly TwigBlockSummary[]): Generator<TwigBlockSummary> {
-  for (let index = firstBlockIndexFrom(range[0], blocks); index < blocks.length; index += 1) {
+  for (let index = findFirstIndexStartingFrom(blocks, range[0], (block) => block.range[0]); index < blocks.length; index += 1) {
     const block = blocks[index];
     if (!block || block.range[1] > range[1]) return;
     yield block;
@@ -94,17 +95,8 @@ export function findTwigBranchSpans(blocks: readonly TwigBlockSummary[]): Range[
 }
 
 export function isInsideTwigBranch(offset: number, branchSpans: readonly Range[]): boolean {
-  let low = 0;
-  let high = branchSpans.length;
+  const firstSpanIndexAtOrAfter = findFirstIndexStartingFrom(branchSpans, offset, (span) => span[0]);
+  const lastSpanStartingBefore = branchSpans[firstSpanIndexAtOrAfter - 1];
 
-  while (low < high) {
-    const middle = (low + high) >> 1;
-    const middleStart = branchSpans[middle]?.[0] ?? Infinity;
-
-    if (middleStart < offset) low = middle + 1;
-    else high = middle;
-  }
-
-  const lastSpanStartingBefore = branchSpans[low - 1];
   return lastSpanStartingBefore !== undefined && offset < lastSpanStartingBefore[1];
 }
