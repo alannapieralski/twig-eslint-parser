@@ -2,6 +2,7 @@ import { isTwigBalancedWithin } from 'twig-eslint-parser';
 import { ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE } from '../../shared/html-elements.js';
 import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
 import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
+import { abbreviateTwigInTag } from './abbreviate-twig-in-tag.js';
 import { findContentEdges } from './find-content-edges.js';
 import { countLineBreaks, indentationAfterLastLineBreak } from './line-breaks.js';
 import type { Problem } from '../../shared/problem.js';
@@ -17,17 +18,23 @@ function isLineBreakCountInvalid(lineBreaks: number, allowEmptyLines: boolean): 
   return allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
 }
 
-function describeEdgeProblem(edge: ContentEdge, name: string, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
+function describeTagInMessage(edge: ContentEdge, tag: TagNode, source: TagSource): string {
+  if (edge.messageId === 'unexpectedBeforeOpeningBracket' && tag.close) return abbreviateTwigInTag(tag.close.range, source.text, source.blocks);
+  return `${abbreviateTwigInTag(tag.openStart.range, source.text, source.blocks)}>`;
+}
+
+function describeEdgeProblem(edge: ContentEdge, tag: TagNode, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
   const whitespace = source.text.slice(...edge.range);
   const lineBreaks = countLineBreaks(whitespace);
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
 
   const keptIndentation = lineBreaks === 0 ? tagIndentation : indentationAfterLastLineBreak(whitespace);
+  const lineBreaksFound = lineBreaks === 0 ? 'no' : String(lineBreaks);
 
   return {
     range: edge.range,
     messageId: edge.messageId,
-    data: { name, actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
+    data: { writtenTag: describeTagInMessage(edge, tag, source), actual: lineBreaksFound },
     ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${keptIndentation}` }] }),
   };
 }
@@ -50,7 +57,7 @@ export function findContentProblems(tag: TagNode, source: TagSource, options: Re
   const isFixable = ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE.has(name);
   const tagIndentation = lineIndentationAt(text, tag.openStart.range[0]);
   const edges = findContentEdges(tag, close, text);
-  const problems = edges.map((edge) => describeEdgeProblem(edge, name, tagIndentation, source, options, isFixable));
+  const problems = edges.map((edge) => describeEdgeProblem(edge, tag, tagIndentation, source, options, isFixable));
 
   return problems.filter((problem) => problem !== undefined);
 }

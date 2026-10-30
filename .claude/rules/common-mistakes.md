@@ -15,7 +15,8 @@ caught in review. The placement ladder is in
 ## Duplication
 
 - **Search before declaring.** `git grep` the constant, regex, type or function name in
-  `packages/*/src` and `tools` first. A second copy, even a slightly different one, is a defect.
+  `packages/*/src` and `tools` first, and use what exists. A value, regex or helper defined in more
+  than two places is extracted to one home (`readability.md`, "Constants and repeats").
 - **These already have one home. Import them.**
 
   | Fact | Home |

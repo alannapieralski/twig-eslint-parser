@@ -12,7 +12,7 @@ export type LayoutSource = HtmlSource & { readonly blocks: readonly TwigBlockSum
 
 export function buildIndentLayout(document: MarkupNode, segments: readonly TwigSegment[], source: LayoutSource): IndentLayout {
   const html = findHtmlRegions(document, source);
-  const twig = findTwigRegions(segments, source.blocks, source.text);
+  const twig = findTwigRegions(segments, source.blocks);
   const seams = findSeams(html.elements, segments);
   const depthUnknown = [...seams.branchSplitContent, ...html.unclosedContent];
 

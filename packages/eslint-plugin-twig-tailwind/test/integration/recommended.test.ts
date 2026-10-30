@@ -192,6 +192,13 @@ describe('interpolated strings ("#{ }")', () => {
     expect(betterTailwindcssMessages(result.messages)).toEqual([]);
   });
 
+  it('silences them in a file that starts with a byte order mark', async () => {
+    const code = `\uFEFF${interpolated}`;
+    const result = await lint(code, { fix: true });
+    expect(result.output ?? code).toBe(code);
+    expect(betterTailwindcssMessages(result.messages)).toEqual([]);
+  });
+
   it('keeps linting and fixing every other string in the same file', async () => {
     const code = `${interpolated}\n<span{{ attributes.addClass('shrink-0 mt-1') }}>y</span>`;
     const result = await lint(code, { fix: true });
@@ -224,6 +231,15 @@ describe('twig-tailwind/no-twig-interpolation', () => {
     expect(describeMessages(result.messages)).toEqual([
       `1:${columnOf(code, '"card')} twig-tailwind/no-twig-interpolation Avoid #{ } inside a Twig string: linters cannot see what it produces.`,
     ]);
+  });
+
+  it.each([
+    ['left out of the tree', {}],
+    ['kept in the tree', { parserOptions: { ignoreInterpolatedAttributes: [] } }],
+  ])('reports a #{ } string inside an interpolated class="" once, with the attribute %s', async (_name, setup) => {
+    const result = await lint('<div class="{{ "card--#{variant}" }}">x</div>', setup);
+    const ruleMessages = result.messages.filter((message) => message.ruleId === 'twig-tailwind/no-twig-interpolation');
+    expect(ruleMessages.map((message) => message.messageId)).toEqual(['twigInAttribute']);
   });
 
   it('leaves other attributes alone by default', async () => {

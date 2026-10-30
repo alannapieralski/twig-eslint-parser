@@ -1,3 +1,5 @@
+import { isRangeWithin } from '../../range.js';
+import { openTagRangeOf } from './markup-elements.js';
 import type { AttributeNode } from '../../attributes.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { Range } from '../../range.js';
@@ -8,6 +10,8 @@ type StrayCharacterDiagnostic = Pick<TwigDiagnostic, 'code' | 'message'>;
 
 const QUOTED_VALUE = /"[^"]*"|'[^']*'/g;
 const CHARACTER_THAT_BREAKS_AN_ATTRIBUTE = /["'<]/;
+
+const OPEN_TAG_ENDINGS: ReadonlySet<string> = new Set(['>', '/>']);
 
 const STRAY_CHARACTER_IN_NAME: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-attribute-name',
@@ -20,7 +24,7 @@ const STRAY_CHARACTER_IN_VALUE: StrayCharacterDiagnostic = {
 };
 
 function textWithoutTwig(text: string, range: Range, blocks: readonly TwigBlockSummary[]): string {
-  const blocksWithin = blocks.filter((block) => block.range[0] >= range[0] && block.range[1] <= range[1]);
+  const blocksWithin = blocks.filter((block) => isRangeWithin(block.range, range));
   let remaining = '';
   let position = range[0];
 
@@ -40,24 +44,17 @@ function describeStrayCharacter(attribute: AttributeNode, text: string, blocks: 
   return CHARACTER_THAT_BREAKS_AN_ATTRIBUTE.test(name) ? STRAY_CHARACTER_IN_NAME : STRAY_CHARACTER_IN_VALUE;
 }
 
-function findUnterminatedOpenTag(element: MarkupElement): TwigDiagnostic {
-  const attributeEnds = element.attributes.map((attribute) => attribute.range[1]);
-  const end = Math.max(element.openStart.range[1], ...attributeEnds);
-
-  return {
-    code: 'eof-in-tag',
-    message: 'This tag never ends with ">", so the markup after it is read as part of the tag. Add the ">".',
-    range: [element.openStart.range[0], end],
-  };
-}
-
 function findOpenTagDiagnostic(element: MarkupElement, text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic | undefined {
-  if (!element.openEnd) return findUnterminatedOpenTag(element);
+  if (!element.openEnd) return undefined;
 
+  const openTagRange = openTagRangeOf(element);
   const strayCharacter = element.attributes.map((attribute) => describeStrayCharacter(attribute, text, blocks)).find((description) => description !== undefined);
-  if (!strayCharacter) return undefined;
+  if (strayCharacter) return { ...strayCharacter, range: openTagRange };
 
-  return { ...strayCharacter, range: [element.openStart.range[0], element.openEnd.range[1]] };
+  const hasStraySolidus = !OPEN_TAG_ENDINGS.has(element.openEnd.value);
+  if (!hasStraySolidus) return undefined;
+
+  return { code: 'unexpected-solidus-in-tag', message: 'A "/" in this tag is not followed by ">", so the attributes after it are not read. Remove the "/", or add ">" after it if the tag ends there.', range: openTagRange };
 }
 
 export function findOpenTagDiagnostics(elements: readonly MarkupElement[], text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic[] {
