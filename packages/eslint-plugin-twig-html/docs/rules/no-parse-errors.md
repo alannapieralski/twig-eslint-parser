@@ -59,13 +59,15 @@ Codes without a prefix are the names the HTML specification gives the error. Cod
 | `eof-in-tag` | An open or closing tag has no `>` before the end of the file. | `<div class="a"`, `<p>a</p` |
 | `unexpected-character-in-attribute-name` | An attribute name holds a quote or `<`, usually because an earlier value was quoted wrongly. | `<li class="a' data-x="y">` |
 | `unexpected-character-in-unquoted-attribute-value` | An unquoted value holds a quote or `<`, so the tag takes in the markup after it. | `<li id=b<span>x</span></li>` |
-| `unexpected-solidus-in-tag` | A `/` in an open tag is not followed by `>`. The browser ignores it, but the parser does not read the attributes after it. | `<img src="a" / >` |
+| `unexpected-solidus-in-tag` | A `/` in an open tag is not followed by `>`, and no attribute before it holds a stray quote or `<`. The browser ignores it, but the parser does not read the attributes after it. | `<img src="a" / >` |
 | `x-invalid-end-tag` | A closing tag matches no open element. The message names the element that is open there, if any. | `<p>a</p></div>` |
 | `x-unclosed-element` | An element that needs a closing tag never gets one, including a `<script>`, `<style>`, `<textarea>` or `<title>` that takes in the rest of the file. | `<div><p>a</p>` |
 | `x-misplaced-twig-tag` | `{% else %}`, `{% elseif %}` or `{% plural %}` sits where Twig rejects it: `else` outside `if`, `for` and `guard`, `elseif` outside `if`, `plural` outside `trans`, or `else` and `elseif` after an `else`. | `{% if a %}{% else %}{% elseif b %}{% endif %}` |
 | `x-unparsed-twig` | A `{{ }}` or `{% %}` block holds an expression that is not valid Twig, or a `{% for %}` has no `in`. No other rule reads inside it. | `{{ title subtitle }}` |
 
-Each report names its code in brackets, so a code can be switched off by name.
+Each open tag gets at most one report, for the first problem in the order the tag is read: a stray
+character in an attribute comes before a `/` that does not end the tag. Each report names its code in
+brackets, so a code can be switched off by name.
 
 ### Working with other rules
 

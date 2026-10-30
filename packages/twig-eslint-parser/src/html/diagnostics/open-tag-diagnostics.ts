@@ -61,13 +61,13 @@ function findOpenTagDiagnostic(element: MarkupElement, text: string, blocks: rea
   if (!element.openEnd) return findUnterminatedOpenTag(element);
 
   const openTagRange = openTagRangeOf(element);
-  const hasStraySolidus = !OPEN_TAG_ENDINGS.has(element.openEnd.value);
-  if (hasStraySolidus) return { code: 'unexpected-solidus-in-tag', message: 'A "/" in this tag is not followed by ">". Browsers ignore it, but the attributes after it are not read. Remove the "/".', range: openTagRange };
-
   const strayCharacter = element.attributes.map((attribute) => describeStrayCharacter(attribute, text, blocks)).find((description) => description !== undefined);
-  if (!strayCharacter) return undefined;
+  if (strayCharacter) return { ...strayCharacter, range: openTagRange };
 
-  return { ...strayCharacter, range: openTagRange };
+  const hasStraySolidus = !OPEN_TAG_ENDINGS.has(element.openEnd.value);
+  if (!hasStraySolidus) return undefined;
+
+  return { code: 'unexpected-solidus-in-tag', message: 'A "/" in this tag is not followed by ">", so the attributes after it are not read. Remove the "/", or add ">" after it if the tag ends there.', range: openTagRange };
 }
 
 export function findOpenTagDiagnostics(elements: readonly MarkupElement[], text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic[] {

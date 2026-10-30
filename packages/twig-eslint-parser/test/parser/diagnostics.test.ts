@@ -65,6 +65,10 @@ describe('unexpected-character-in-attribute-name', () => {
     expect(diagnostic).toMatchObject({ code: 'unexpected-character-in-attribute-name', range: [0, code.indexOf('>') + 1] });
   });
 
+  it('reports the < before a / when a missing > lets the tag take in the next closing tag', () => {
+    expect(codesOf('<ul>\n  <li class="x"{{ item }}</li>\n</ul>')).toEqual(['unexpected-character-in-attribute-name']);
+  });
+
   it('stays quiet for a Twig tag on its own line among the attributes', () => {
     expect(codesOf('<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>x</li>')).toEqual([]);
   });
