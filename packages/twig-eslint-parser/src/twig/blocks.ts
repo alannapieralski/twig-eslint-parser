@@ -84,9 +84,24 @@ export function delimiterEndOf(block: TwigBlock): number {
   return block.end - lineBreakTwigRemoves.length;
 }
 
+export function blockRangeOf(block: TwigBlock): Range {
+  return [block.start, delimiterEndOf(block)];
+}
+
+function summariseTwigBlock(block: TwigBlock, closedTagNames: ReadonlySet<string>): TwigBlockSummary {
+  return {
+    kind: block.kind,
+    tagName: block.tagName,
+    range: blockRangeOf(block),
+    depthChange: nestingDepthChange(block, closedTagNames),
+    bracketPairs: findBracketPairs(block),
+    inlineComments: findInlineComments(block),
+  };
+}
+
 export function summariseTwigBlocks(blocks: readonly TwigBlock[]): TwigBlockSummary[] {
   const closedTagNames = new Set(blocks.flatMap((block) => (block.tagName?.startsWith('end') ? [block.tagName.slice('end'.length)] : [])));
-  return blocks.map((block) => ({ kind: block.kind, tagName: block.tagName, range: [block.start, delimiterEndOf(block)], depthChange: nestingDepthChange(block, closedTagNames), bracketPairs: findBracketPairs(block), inlineComments: findInlineComments(block) }));
+  return blocks.map((block) => summariseTwigBlock(block, closedTagNames));
 }
 
 const BLOCK_KIND_BY_OPENING_TYPE: Partial<Record<TwigTokenType, { kind: TwigBlockKind; closingType: TwigTokenType }>> = {

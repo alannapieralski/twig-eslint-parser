@@ -1,8 +1,9 @@
 import { DRUPAL_VOID_ELEMENTS } from '../../drupal.js';
+import { isRangeWithin } from '../../range.js';
 import { closeTagNameOf, tagNameKey } from '../../es-html-parser/utils/tag-name.js';
 import { findTwigBranchSpans, isInsideTwigBranch } from '../../twig/balance.js';
 import { VOID_ELEMENT_NAMES } from '../syntax.js';
-import { findInnermostOpenElement } from './markup-elements.js';
+import { findInnermostOpenElement, openTagTextOf } from './markup-elements.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { MarkupElement, MarkupTreeNode, SourceToken } from './markup-elements.js';
@@ -22,7 +23,7 @@ function nameOfEndTag(token: SourceToken): string {
 }
 
 function findNamesClosedBy(element: MarkupElement, unclosedElements: readonly MarkupElement[]): string[] {
-  const isInside = (inner: MarkupElement) => element.range[0] < inner.range[0] && inner.range[1] <= element.range[1];
+  const isInside = (inner: MarkupElement) => isRangeWithin(inner.range, element.range);
   return [element, ...unclosedElements.filter(isInside)].map((closed) => closed.name ?? '');
 }
 
@@ -30,7 +31,7 @@ function describeStrayEndTag(token: SourceToken, source: EndTagSource): string {
   const openElement = findInnermostOpenElement(source.document, token.range[0]);
   if (!openElement) return `${token.value} closes nothing, because no element is open. Remove it or add the opening tag.`;
 
-  return `${token.value} does not match the open ${source.text.slice(...openElement.openStart.range)}>. Remove it or correct its name.`;
+  return `${token.value} does not match the open ${openTagTextOf(openElement, source.text)}. Remove it or correct its name.`;
 }
 
 export function findEndTagDiagnostics(source: EndTagSource): TwigDiagnostic[] {

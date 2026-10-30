@@ -1,5 +1,6 @@
 import { isSameOnEveryTwigBranch } from '../../twig/balance.js';
 import { END_TAG_OPTIONAL_ELEMENT_NAMES } from '../syntax.js';
+import { openTagRangeOf, openTagTextOf } from './markup-elements.js';
 import { isCutOffByUnreadText } from './markup-end.js';
 import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
@@ -23,7 +24,7 @@ export function findUnclosedElementDiagnostics(elements: readonly MarkupElement[
     .filter(isClosedByTheMarkupAfterIt)
     .map((element): TwigDiagnostic => ({
       code: 'x-unclosed-element',
-      message: `${text.slice(...element.openStart.range)}> is never closed. Add its closing tag.`,
-      range: [element.openStart.range[0], element.openEnd?.range[1] ?? element.openStart.range[1]],
+      message: `${openTagTextOf(element, text)} is never closed. Add its closing tag.`,
+      range: openTagRangeOf(element),
     }));
 }

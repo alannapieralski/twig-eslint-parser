@@ -29,11 +29,12 @@ function describeEdgeProblem(edge: ContentEdge, tag: TagNode, tagIndentation: st
   if (!isLineBreakCountInvalid(lineBreaks, options.allowEmptyLines)) return undefined;
 
   const keptIndentation = lineBreaks === 0 ? tagIndentation : indentationAfterLastLineBreak(whitespace);
+  const lineBreaksFound = lineBreaks === 0 ? 'no' : String(lineBreaks);
 
   return {
     range: edge.range,
     messageId: edge.messageId,
-    data: { tag: writtenTagAt(edge, tag, source), actual: lineBreaks === 0 ? 'no' : String(lineBreaks) },
+    data: { tag: writtenTagAt(edge, tag, source), actual: lineBreaksFound },
     ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${keptIndentation}` }] }),
   };
 }

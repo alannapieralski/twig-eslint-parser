@@ -1,3 +1,4 @@
+import { isRangeWithin } from 'twig-eslint-parser';
 import { findInterpolatedAttributeProblems, findInterpolatedStringProblems, findOmittedAttributeProblems } from './find-twig-interpolation-problems.js';
 import type { OmittedAttribute, TwigStringSummary } from 'twig-eslint-parser';
 import type { Problem } from '../../shared/problem.js';
@@ -11,10 +12,6 @@ export type InterpolationReport = {
 
 type InterpolationSource = { readonly omittedAttributes: readonly OmittedAttribute[]; readonly strings: readonly TwigStringSummary[] };
 
-function isInside(inner: Problem, outer: Problem): boolean {
-  return outer.range[0] <= inner.range[0] && inner.range[1] <= outer.range[1];
-}
-
 export function createInterpolationReport(source: InterpolationSource, options: ResolvedOptions): InterpolationReport {
   const tagProblems: Problem[] = [];
 
@@ -22,7 +19,7 @@ export function createInterpolationReport(source: InterpolationSource, options: 
     addTag: (tag) => tagProblems.push(...findInterpolatedAttributeProblems(tag, options)),
     findProblems: () => {
       const attributeProblems = [...tagProblems, ...findOmittedAttributeProblems(source.omittedAttributes, options)];
-      const isInReportedAttribute = (problem: Problem) => attributeProblems.some((attributeProblem) => isInside(problem, attributeProblem));
+      const isInReportedAttribute = (problem: Problem) => attributeProblems.some((attributeProblem) => isRangeWithin(problem.range, attributeProblem.range));
       const stringProblems = findInterpolatedStringProblems(source.strings).filter((problem) => !isInReportedAttribute(problem));
 
       return [...attributeProblems, ...stringProblems];

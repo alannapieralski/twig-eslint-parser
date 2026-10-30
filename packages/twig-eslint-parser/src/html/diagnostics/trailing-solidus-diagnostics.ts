@@ -1,5 +1,5 @@
 import { END_TAG_OPTIONAL_ELEMENT_NAMES, FOREIGN_ELEMENT_NAMES, NON_VOID_HTML_ELEMENT_NAMES } from '../syntax.js';
-import { isMarkupElement } from './markup-elements.js';
+import { isMarkupElement, openTagRangeOf, openTagTextOf } from './markup-elements.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { MarkupElement, MarkupTreeNode } from './markup-elements.js';
 
@@ -11,12 +11,12 @@ function isHtmlElementLeftOpenBySolidus(element: MarkupElement): boolean {
 }
 
 function describeTrailingSolidus(element: MarkupElement, text: string): TwigDiagnostic {
-  const openTag = `${text.slice(...element.openStart.range)}>`;
+  const openTag = openTagTextOf(element, text);
 
   return {
     code: 'non-void-html-element-start-tag-with-trailing-solidus',
     message: `HTML ignores the "/" at the end of ${openTag}, so the element stays open and takes in the markup after it. Close it with a closing tag.`,
-    range: [element.openStart.range[0], element.openEnd?.range[1] ?? element.openStart.range[1]],
+    range: openTagRangeOf(element),
   };
 }
 

@@ -1,3 +1,5 @@
+import { isRangeWithin } from '../../range.js';
+import { openTagRangeOf } from './markup-elements.js';
 import type { AttributeNode } from '../../attributes.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { Range } from '../../range.js';
@@ -26,7 +28,7 @@ const STRAY_CHARACTER_IN_VALUE: StrayCharacterDiagnostic = {
 };
 
 function textWithoutTwig(text: string, range: Range, blocks: readonly TwigBlockSummary[]): string {
-  const blocksWithin = blocks.filter((block) => block.range[0] >= range[0] && block.range[1] <= range[1]);
+  const blocksWithin = blocks.filter((block) => isRangeWithin(block.range, range));
   let remaining = '';
   let position = range[0];
 
@@ -60,7 +62,7 @@ function findUnterminatedOpenTag(element: MarkupElement): TwigDiagnostic {
 function findOpenTagDiagnostic(element: MarkupElement, text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic | undefined {
   if (!element.openEnd) return findUnterminatedOpenTag(element);
 
-  const openTagRange: Range = [element.openStart.range[0], element.openEnd.range[1]];
+  const openTagRange = openTagRangeOf(element);
   const hasStraySolidus = !OPEN_TAG_ENDINGS.has(element.openEnd.value);
   if (hasStraySolidus) return { code: 'unexpected-solidus-in-tag', message: STRAY_SOLIDUS_MESSAGE, range: openTagRange };
 

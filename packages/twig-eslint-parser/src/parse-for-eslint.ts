@@ -6,7 +6,7 @@ import { findMarkupDiagnostics } from './html/diagnostics/find-markup-diagnostic
 import { parseMarkup } from './html/parse-markup.js';
 import { parseTwigParserOptions } from './options.js';
 import { createOffsetLocator } from './source-text.js';
-import { delimiterEndOf, groupTwigBlocks, summariseTwigBlocks } from './twig/blocks.js';
+import { blockRangeOf, groupTwigBlocks, summariseTwigBlocks } from './twig/blocks.js';
 import { findMisplacedTwigTagDiagnostics } from './twig/misplaced-tag-diagnostics.js';
 import { findUnpairedTwigTag } from './twig/pairing.js';
 import { toSameLengthJavaScript } from './twig/javascript.js';
@@ -54,14 +54,14 @@ function convertTwigBlocks(blocks: readonly TwigBlock[], locate: (offset: number
     const javascript = toSameLengthJavaScript(block);
     if (javascript === undefined) {
       const isLoopWithoutIn = block.tagName === 'for';
-      if (isLoopWithoutIn) unparsedBlockDiagnostics.push({ code: 'x-unparsed-twig', message: 'This Twig block could not be parsed (a {% for %} needs "in").', range: [block.start, delimiterEndOf(block)] });
+      if (isLoopWithoutIn) unparsedBlockDiagnostics.push({ code: 'x-unparsed-twig', message: 'This Twig block could not be parsed (a {% for %} needs "in").', range: blockRangeOf(block) });
       else ignoredBlockCount += 1;
       continue;
     }
 
     const parsed = parseJavaScriptAt(javascript, block.start, locate);
     if (!parsed.isParsed) {
-      unparsedBlockDiagnostics.push({ code: 'x-unparsed-twig', message: `This Twig block could not be parsed (${parsed.reason}).`, range: [block.start, delimiterEndOf(block)] });
+      unparsedBlockDiagnostics.push({ code: 'x-unparsed-twig', message: `This Twig block could not be parsed (${parsed.reason}).`, range: blockRangeOf(block) });
       continue;
     }
 

@@ -22,6 +22,14 @@ export function isMarkupElement(node: MarkupTreeNode): node is MarkupElement {
   return ELEMENT_NODE_TYPES.includes(node.type) && 'openStart' in node;
 }
 
+export function openTagRangeOf(element: MarkupElement): Range {
+  return [element.openStart.range[0], element.openEnd?.range[1] ?? element.openStart.range[1]];
+}
+
+export function openTagTextOf(element: MarkupElement, text: string): string {
+  return `${text.slice(...element.openStart.range)}>`;
+}
+
 export function findMarkupElements(document: MarkupTreeNode): MarkupElement[] {
   const elements: MarkupElement[] = [];
   const toVisit = [document];
