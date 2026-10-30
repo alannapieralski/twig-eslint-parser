@@ -87,7 +87,7 @@ Each report names its code in brackets, so a code can be switched off by name.
 | The closing tag of a void element, such as `</link>` or `</br>` | RSS and other XML templates close elements that HTML leaves open | Built in |
 | An element whose end tag HTML lets you leave out (`li`, `p`, `td`, `tr`, `option` and the like) | The browser closes it | Built in |
 | A closing tag inside `{% if %}`, `{% for %}`, `{% guard %}`, `{% trans %}` or `{% verbatim %}`, and an element that opens or closes in a branch of one | The markup there may render differently or not at all, and the parser reads every branch as one document, so it cannot tell which branch closes the element | Built in |
-| A closing tag whose element name a closing tag inside one of those blocks already closed | The branch may have taken the element this tag was meant to close | Built in |
+| A closing tag named like an element that an earlier closing tag closed across one of those blocks, so that the element opens on one side of the block's edge and closes on the other | The branch may have taken the element this tag was meant to close | Built in |
 | The elements left open by a comment, tag or raw-text element that runs to the end of the file | Only the one that took in the rest is reported | Built in |
 | A problem whose code is switched off | You chose not to hear about it | Each code, default `true` |
 

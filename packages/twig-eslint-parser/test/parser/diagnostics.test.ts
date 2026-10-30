@@ -115,6 +115,13 @@ describe('x-invalid-end-tag', () => {
     expect(codesOf('<div />\n<section><p>x</p></div></section>')).toEqual(['x-invalid-end-tag']);
   });
 
+  it.each([
+    '{% for i in items %}<div>{{ i }}</div>{% endfor %}</div>',
+    '{% if a %}<p class="a">x</p>{% endif %}<span>y</span></p>',
+  ])('reports a stray closing tag after an element of its name that opens and closes inside one Twig branch: %s', (code) => {
+    expect(codesOf(code)).toEqual(['x-invalid-end-tag']);
+  });
+
   it('reports a closing tag outside Twig branches although another stands inside one', () => {
     expect(diagnosticsOf('{% if a %}</div>{% endif %}<p>x</p></span>').map((diagnostic) => diagnostic.range)).toEqual([[35, 42]]);
   });
