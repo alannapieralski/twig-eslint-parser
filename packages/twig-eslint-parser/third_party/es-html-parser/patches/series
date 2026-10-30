@@ -9,3 +9,4 @@ EHP-06-close-tag-name-keys.patch
 EHP-07-close-back-to-open-ancestor.patch
 EHP-08-slash-in-unquoted-attribute-value.patch
 EHP-09-void-elements.patch
+EHP-10-text-at-end-of-input.patch

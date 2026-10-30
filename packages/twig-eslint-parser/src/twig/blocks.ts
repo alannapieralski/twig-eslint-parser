@@ -19,7 +19,10 @@ export type TwigBlockSummary = {
   readonly range: Range;
   readonly depthChange: -1 | 0 | 1;
   readonly bracketPairs: readonly Range[];
+  readonly inlineComments: readonly Range[];
 };
+
+const LINE_BREAK_AFTER_DELIMITER = /(?:\r\n|\r|\n)$/;
 
 const OPENING_BRACKETS: ReadonlySet<string> = new Set(['{', '[', '(']);
 const CLOSING_BRACKETS: ReadonlySet<string> = new Set(['}', ']', ')']);
@@ -71,9 +74,34 @@ function nestingDepthChange(block: TwigBlock, closedTagNames: ReadonlySet<string
   return opensNesting(block, closedTagNames) ? 1 : 0;
 }
 
+function findInlineComments(block: TwigBlock): Range[] {
+  return block.tokens.filter((token) => token.type === 'INLINE_COMMENT').map((token): Range => [token.start, token.end]);
+}
+
+export function delimiterEndOf(block: TwigBlock): number {
+  const closingDelimiter = block.tokens.at(-1)?.value ?? '';
+  const lineBreakTwigRemoves = LINE_BREAK_AFTER_DELIMITER.exec(closingDelimiter)?.[0] ?? '';
+  return block.end - lineBreakTwigRemoves.length;
+}
+
+export function blockRangeOf(block: TwigBlock): Range {
+  return [block.start, delimiterEndOf(block)];
+}
+
+function summariseTwigBlock(block: TwigBlock, closedTagNames: ReadonlySet<string>): TwigBlockSummary {
+  return {
+    kind: block.kind,
+    tagName: block.tagName,
+    range: blockRangeOf(block),
+    depthChange: nestingDepthChange(block, closedTagNames),
+    bracketPairs: findBracketPairs(block),
+    inlineComments: findInlineComments(block),
+  };
+}
+
 export function summariseTwigBlocks(blocks: readonly TwigBlock[]): TwigBlockSummary[] {
   const closedTagNames = new Set(blocks.flatMap((block) => (block.tagName?.startsWith('end') ? [block.tagName.slice('end'.length)] : [])));
-  return blocks.map((block) => ({ kind: block.kind, tagName: block.tagName, range: [block.start, block.end], depthChange: nestingDepthChange(block, closedTagNames), bracketPairs: findBracketPairs(block) }));
+  return blocks.map((block) => summariseTwigBlock(block, closedTagNames));
 }
 
 const BLOCK_KIND_BY_OPENING_TYPE: Partial<Record<TwigTokenType, { kind: TwigBlockKind; closingType: TwigTokenType }>> = {

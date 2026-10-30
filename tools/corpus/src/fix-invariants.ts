@@ -14,6 +14,7 @@ type Range = readonly [number, number];
 type Leaf = { readonly type: string; readonly range: Range; readonly isPreformatted: boolean };
 type ParsedTemplate = { readonly result: TwigParseResult } | { readonly error: string };
 type OpenTagRange = { readonly start: number; readonly attributesStart: number; readonly closeBracketStart: number };
+type TwigRanges = { readonly expressions: readonly Range[]; readonly keptAsWritten: readonly Range[] };
 
 const KEYS_OUTSIDE_THE_HTML_TREE = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
 const CUBE_DELIMITERS = new Set(['[', ']', '|', '][']);
@@ -56,55 +57,62 @@ function collectLeaves(value: unknown, leaves: Leaf[] = [], seen = new Set<objec
   return leaves;
 }
 
-function withoutIndentationOutsideTwig(text: string): string {
-  let result = '';
-  let markupStart = 0;
-  for (const twig of text.matchAll(TWIG_SPAN)) {
-    result += text.slice(markupStart, twig.index).replace(INDENTATION_AFTER_LINE_BREAK, '$1') + twig[0];
-    markupStart = twig.index + twig[0].length;
+function findOutermostRanges(ranges: readonly Range[]): Range[] {
+  const outermost: Range[] = [];
+  for (const range of ranges.toSorted((first, second) => first[0] - second[0])) {
+    const previous = outermost.at(-1);
+    if (!previous || range[0] >= previous[1]) outermost.push(range);
   }
-  return result + text.slice(markupStart).replace(INDENTATION_AFTER_LINE_BREAK, '$1');
+  return outermost;
 }
 
-function withoutIndentationOutsideStrings(span: string): string {
-  let result = '';
-  let openQuote: string | undefined;
-  for (let index = 0; index < span.length; index += 1) {
-    const character = span[index] as string;
-    result += character;
-    if (openQuote) {
-      if (character === '\\') result += span[++index] ?? '';
-      else if (character === openQuote) openQuote = undefined;
-    } else if (character === '"' || character === "'") {
-      openQuote = character;
-    } else if (character === '\n') {
-      while (span[index + 1] === ' ' || span[index + 1] === '\t') index += 1;
-    }
-  }
-  return result;
+function readTwigRanges(result: TwigParseResult): TwigRanges {
+  const { blocks, strings } = result.services.twig;
+  const commentRanges = blocks.filter((block) => block.kind === 'comment').map((block) => block.range);
+
+  return {
+    expressions: blocks.filter((block) => block.kind !== 'comment').map((block) => block.range),
+    keptAsWritten: findOutermostRanges([...commentRanges, ...strings.map((string) => string.range)]),
+  };
 }
 
-function withoutIndentationInTwigExpressions(text: string): string {
-  return text.replace(TWIG_SPAN, (span) => (span.startsWith('{#') ? span : withoutIndentationOutsideStrings(span)));
+function isInsideAny(ranges: readonly Range[], offset: number): boolean {
+  let low = 0;
+  let high = ranges.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((ranges[middle]?.[0] ?? Infinity) <= offset) low = middle + 1;
+    else high = middle;
+  }
+  const lastRangeStartingBefore = ranges[low - 1];
+  return lastRangeStartingBefore !== undefined && offset < lastRangeStartingBefore[1];
+}
+
+function withoutIndentation(code: string, range: Range, twig: TwigRanges, isMarkupIncluded: boolean): string {
+  return code.slice(...range).replace(INDENTATION_AFTER_LINE_BREAK, (indented: string, lineBreak: string, offsetInRange: number) => {
+    const offset = range[0] + offsetInRange;
+    if (isInsideAny(twig.keptAsWritten, offset)) return indented;
+    if (isInsideAny(twig.expressions, offset)) return lineBreak;
+    return isMarkupIncluded ? lineBreak : indented;
+  });
 }
 
 function isLayoutText(leaf: Leaf): boolean {
   return LAYOUT_TEXT_TYPES.has(leaf.type) && !leaf.isPreformatted;
 }
 
-function layoutTextOf(leaf: Leaf, text: string): string {
-  if (isLayoutText(leaf)) return withoutIndentationInTwigExpressions(withoutIndentationOutsideTwig(text.trim()));
-  if (LEAVES_WITH_LOOSE_EDGES.has(leaf.type)) return withoutIndentationInTwigExpressions(text.trim());
-  return withoutIndentationInTwigExpressions(text);
+function layoutTextOf(leaf: Leaf, code: string, twig: TwigRanges): string {
+  if (isLayoutText(leaf)) return withoutIndentation(code, leaf.range, twig, true).trim();
+  if (LEAVES_WITH_LOOSE_EDGES.has(leaf.type)) return withoutIndentation(code, leaf.range, twig, false).trim();
+  return withoutIndentation(code, leaf.range, twig, false);
 }
 
 function layoutTokens(code: string, result: TwigParseResult): Token[] {
+  const twig = readTwigRanges(result);
+
   return collectLeaves(result.ast.body)
     .sort((first, second) => first.range[0] - second.range[0])
-    .map((leaf): Token => {
-      const text = code.slice(...leaf.range);
-      return { text: layoutTextOf(leaf, text), start: leaf.range[0] };
-    })
+    .map((leaf): Token => ({ text: layoutTextOf(leaf, code, twig), start: leaf.range[0] }))
     .filter((token) => token.text !== '');
 }
 

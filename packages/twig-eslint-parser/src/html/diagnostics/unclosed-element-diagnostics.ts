@@ -1,28 +1,26 @@
-import { isTwigBalancedWithin } from '../../twig/balance.js';
+import { isSameOnEveryTwigBranch } from '../../twig/balance.js';
+import { END_TAG_OPTIONAL_ELEMENT_NAMES } from '../syntax.js';
+import { openTagRangeOf, openTagTextOf } from './markup-elements.js';
 import type { TwigBlockSummary } from '../../twig/blocks.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
 import type { MarkupElement } from './markup-elements.js';
 
-const END_TAG_OPTIONAL_ELEMENTS: ReadonlySet<string> = new Set([
-  'body', 'caption', 'colgroup', 'dd', 'dt', 'head', 'html', 'li', 'optgroup', 'option', 'p', 'rp', 'rt', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr',
-]);
-
 function isMissingItsEndTag(element: MarkupElement): boolean {
   const isOpenTagComplete = element.openEnd !== undefined;
-  const isEndTagRequired = !END_TAG_OPTIONAL_ELEMENTS.has(element.name ?? '');
+  const isEndTagRequired = !END_TAG_OPTIONAL_ELEMENT_NAMES.has(element.name ?? '');
 
   return isOpenTagComplete && !element.selfClosing && !element.close && isEndTagRequired;
 }
 
-export function findUnclosedElementDiagnostics(elements: readonly MarkupElement[], blocks: readonly TwigBlockSummary[], text: string): TwigDiagnostic[] {
-  const isSameOnEveryTwigBranch = (element: MarkupElement) => isTwigBalancedWithin([element.openStart.range[0], element.range[1]], blocks);
+export function findUnclosedElementDiagnostics(elements: readonly MarkupElement[], text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic[] {
+  const isSameOnEveryBranch = (element: MarkupElement) => isSameOnEveryTwigBranch(element.range, blocks);
 
   return elements
     .filter(isMissingItsEndTag)
-    .filter(isSameOnEveryTwigBranch)
+    .filter(isSameOnEveryBranch)
     .map((element): TwigDiagnostic => ({
       code: 'x-unclosed-element',
-      message: `${text.slice(...element.openStart.range)}> is never closed. Add its closing tag.`,
-      range: [element.openStart.range[0], element.openEnd?.range[1] ?? element.openStart.range[1]],
+      message: `${openTagTextOf(element, text)} is never closed. Add its closing tag.`,
+      range: openTagRangeOf(element),
     }));
 }

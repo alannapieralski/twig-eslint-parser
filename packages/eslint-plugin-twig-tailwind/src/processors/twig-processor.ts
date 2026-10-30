@@ -3,6 +3,8 @@ import { isSilencedMessage } from './silence-messages.js';
 import type { Linter } from 'eslint';
 import type { FileSpans } from './file-spans.js';
 
+const BYTE_ORDER_MARK = '\uFEFF';
+
 const spansByFilename = new Map<string, FileSpans>();
 
 export function createProcessor(meta: { name: string; version: string }): Linter.Processor {
@@ -10,7 +12,8 @@ export function createProcessor(meta: { name: string; version: string }): Linter
     meta: { name: `${meta.name}/twig`, version: meta.version },
     supportsAutofix: true,
     preprocess(text, filename) {
-      spansByFilename.set(filename, readFileSpans(text));
+      const textWithoutByteOrderMark = text.startsWith(BYTE_ORDER_MARK) ? text.slice(BYTE_ORDER_MARK.length) : text;
+      spansByFilename.set(filename, readFileSpans(textWithoutByteOrderMark));
       return [text];
     },
     postprocess(messages, filename) {

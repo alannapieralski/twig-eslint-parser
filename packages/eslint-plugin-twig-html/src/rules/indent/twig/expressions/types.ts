@@ -11,6 +11,7 @@ export type LineContext = {
   readonly lineStart: number;
   readonly contentStart: number;
   readonly brackets: BracketLookup;
+  readonly continuesPreviousLine: boolean;
   readonly indentationOfLineAt: (offset: number) => string;
   readonly chainHeads: ReadonlyMap<number, number>;
 };

@@ -106,6 +106,11 @@ describe('twig-html/attrs-newline', () => {
     expect(await fixed(code)).toBe('<input\n  {% if checked %}checked disabled{% endif %}\n  type="checkbox"\n  name="a"\n>');
   });
 
+  it('keeps the attributes inside a Twig block together when its tags end their lines', async () => {
+    const code = '<li\n  {% if loop.first %}\n    class="a" id="b"\n  {% endif %}\n>x</li>';
+    expect(await lint(code)).toEqual({ output: code, messages: [] });
+  });
+
   it('does not count a Twig block spanning attributes as more than one', async () => {
     expect((await lint('<input {% if checked %}checked disabled{% endif %}>')).messages).toEqual([]);
   });
@@ -146,6 +151,7 @@ describe('twig-html/attrs-newline', () => {
     ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
     ['an open tag whose unquoted value ran into the next tag', '<li class="a" id=b<span>x</span></li>'],
+    ['an open tag with a / that does not end it', '<img src="a.png" alt="b" title="c" / >'],
   ])('reports but does not fix %s, so the markup it ran into is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);

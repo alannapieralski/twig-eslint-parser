@@ -22,7 +22,7 @@ extra config, Drupal's), and rules that keep Twig out of class values.
 npm install --save-dev eslint-plugin-twig-tailwind eslint eslint-plugin-better-tailwindcss@4.8.0 tailwindcss
 ```
 
-Requires Node.js 20.19 or later, ESLint 8.57 or later (flat config) and eslint-plugin-better-tailwindcss 4.8.0.
+Requires Node.js 20.19, 22.13 or 24 and later, ESLint 8.57 or later (flat config) and eslint-plugin-better-tailwindcss 4.8.0.
 The package is ESM only. `twig-eslint-parser` is installed with it.
 
 ## Usage

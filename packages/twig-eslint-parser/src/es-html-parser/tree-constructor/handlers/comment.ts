@@ -25,6 +25,7 @@ function handleCommentContent(
   token: AnyToken
 ) {
   state.currentNode.value = createNodeFrom(token) as CommentContentNode;
+  updateNodeEnd(state.currentNode, token);
   state.caretPosition++;
 
   return state;

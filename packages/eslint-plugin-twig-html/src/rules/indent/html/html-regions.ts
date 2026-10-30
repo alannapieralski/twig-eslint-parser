@@ -53,6 +53,11 @@ function findSkippedInElement(
   return attributeInteriors;
 }
 
+function findTextLeftUnread(document: MarkupNode, text: string): Range[] {
+  const treeEnd = document.range[1];
+  return treeEnd < text.length ? [[treeEnd, Infinity]] : [];
+}
+
 function findUnclosedContent(element: Element): Range | undefined {
   const hasUnclosedChildren = !element.close && (element.children ?? []).length > 0;
   if (!element.openEnd || !hasUnclosedChildren) return undefined;
@@ -72,7 +77,7 @@ export function findHtmlRegions(document: MarkupNode, source: HtmlSource): HtmlR
   return {
     elements,
     nestings: elements.map(bodyOf).filter(isDefined),
-    skipped: [...tokenInteriors, ...elementSkips],
+    skipped: [...tokenInteriors, ...elementSkips, ...findTextLeftUnread(document, source.text)],
     unclosedContent: elements.map(findUnclosedContent).filter(isDefined),
     closeTags: elements.flatMap((element) => (element.close ? [element.close.range] : [])),
   };

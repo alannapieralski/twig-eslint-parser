@@ -136,8 +136,42 @@ describe('twig-html/indent', () => {
       expect(await fixed('{% set a = b\n.c()\n      .d() %}\n{%\n  set e = f\n.g()\n%}')).toBe('{% set a = b\n  .c()\n  .d() %}\n{%\n  set e = f\n    .g()\n%}');
     });
 
+    it('leaves lines that continue the line before them alone inside brackets too', async () => {
+      await expectUntouched("{% include 'card.twig' with {\n  title: is_featured\n    ? title|upper\n    : title,\n  items: [\n    a\n      ~ b,\n  ],\n} %}");
+    });
+
+    it('measures a chain from the line that starts its element, not from a continuation line', async () => {
+      expect(await fixed("{% set a = {\n  attributes: attributes\n    |merge(x)\n.addClass('a'),\n} %}")).toBe("{% set a = {\n  attributes: attributes\n    |merge(x)\n    .addClass('a'),\n} %}");
+      expect(await fixed('{{ a\n? b\n      .c }}')).toBe('{{ a\n? b\n  .c }}');
+    });
+
+    it('reads past an inline # comment to find where an element starts', async () => {
+      expect(await fixed("{% set a = [\n'x', # first\n'y',\n] %}\n{% set b = { # options\ntitle: t,\n} %}")).toBe(
+        "{% set a = [\n  'x', # first\n  'y',\n] %}\n{% set b = { # options\n  title: t,\n} %}",
+      );
+    });
+
+    it('starts a method chain on the first line after a tag name that stands alone', async () => {
+      expect(await fixed('{% set\n  e = f\n.g() %}')).toBe('{% set\n  e = f\n    .g() %}');
+    });
+
+    it('lines up a closing bracket that ends the only argument of an inner call with the line that opened it', async () => {
+      expect(await fixed('{{ f(g({\n      a: 1\n    }), b) }}')).toBe('{{ f(g({\n  a: 1\n}), b) }}');
+    });
+
     it('leaves the closing bracket of one argument among several alone', async () => {
       await expectUntouched("{{ f(a, {\n  'b': 1,\n},\n  {\n    c: 2\n  })\n}}");
+    });
+
+    it('reads a one-line Twig tag as one line, so the text after it is indented once', async () => {
+      await expectUntouched('<p>\n  {% set x = 1 %}\n  .NET developers\n</p>');
+      expect(await messagesFor('<p>\n  {% if a %}\n.method text\n  {% endif %}\n</p>')).toMatchObject([{ line: 3 }]);
+    });
+
+    it('indents the content of an element whose attributes hold a Twig tag on its own line', async () => {
+      expect(await fixed('<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>\n      {{ item }}\n</li>')).toBe(
+        '<li\n  {% if loop.index < 3 %}\n    class="a"\n  {% endif %}\n>\n  {{ item }}\n</li>',
+      );
     });
 
     it('leaves lines outside any bracket and not part of a method chain alone', async () => {
@@ -160,6 +194,14 @@ describe('twig-html/indent', () => {
 
     it('leaves everything after an open tag with no > alone', async () => {
       await expectUntouched('<div>\n  <li\n  class="a"\n      id="b"\n');
+    });
+
+    it.each([
+      '<div>\n  <script src="a.js"></scirpt>\n  <pre>\n  code\n    more\n  </pre>\n</div>\n',
+      '<div>\n  <!-- note\n      <p>x</p>\n</div>\n',
+      '<div>\n  <p>x</p>\n    </div\n',
+    ])('leaves the text the parser could not read alone: %j', async (code) => {
+      await expectUntouched(code);
     });
 
     it('reports a parsing error, and nothing else, when Twig tags do not pair up', async () => {

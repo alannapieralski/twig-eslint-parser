@@ -55,21 +55,29 @@ Codes without a prefix are the names the HTML specification gives the error. Cod
 
 | Code | Reported when | Example |
 |---|---|---|
-| `eof-in-tag` | An open tag has no `>` before the end of the file. | `<div class="a"` |
+| `eof-in-comment` | A comment has no `-->` before the end of the file. | `<!-- note` |
+| `eof-in-tag` | An open or closing tag has no `>` before the end of the file. | `<div class="a"`, `<p>a</p` |
 | `unexpected-character-in-attribute-name` | An attribute name holds a quote or `<`, usually because an earlier value was quoted wrongly. | `<li class="a' data-x="y">` |
 | `unexpected-character-in-unquoted-attribute-value` | An unquoted value holds a quote or `<`, so the tag takes in the markup after it. | `<li id=b<span>x</span></li>` |
-| `x-invalid-end-tag` | A closing tag matches no open element. | `<p>a</p></div>` |
-| `x-unclosed-element` | An element that needs a closing tag never gets one. | `<div><p>a</p>` |
+| `unexpected-solidus-in-tag` | A `/` in an open tag is not followed by `>`, and no attribute before it holds a stray quote or `<`. The browser ignores it, but the parser does not read the attributes after it. | `<img src="a" / >` |
+| `x-invalid-end-tag` | A closing tag matches no open element. The message names the element that is open there, if any. | `<p>a</p></div>` |
+| `x-unclosed-element` | An element that needs a closing tag never gets one, including a `<script>`, `<style>`, `<textarea>` or `<title>` that takes in the rest of the file. | `<div><p>a</p>` |
 | `x-misplaced-twig-tag` | `{% else %}`, `{% elseif %}` or `{% plural %}` sits where Twig rejects it: `else` outside `if`, `for` and `guard`, `elseif` outside `if`, `plural` outside `trans`, or `else` and `elseif` after an `else`. | `{% if a %}{% else %}{% elseif b %}{% endif %}` |
 | `x-unparsed-twig` | A `{{ }}` or `{% %}` block holds an expression that is not valid Twig, or a `{% for %}` has no `in`. No other rule reads inside it. | `{{ title subtitle }}` |
 
-Each report names its code in brackets, so a code can be switched off by name.
+Each open tag gets at most one report, for the first problem in the order the tag is read: a stray
+character in an attribute comes before a `/` that does not end the tag. Each report names its code in
+brackets, so a code can be switched off by name.
 
 ### Working with other rules
 
-- **The other `twig-html` rules never fix a tag with one of the first three codes.** `quotes` and
-  `attrs-newline` may still report it without a fix, and `indent` and
-  `multiline-html-element-content-newline` leave the element's content alone.
+- **The other `twig-html` rules never fix a tag with `eof-in-tag`,
+  `unexpected-character-in-attribute-name`, `unexpected-character-in-unquoted-attribute-value` or
+  `unexpected-solidus-in-tag`.** `quotes` and `attrs-newline` may still report it without a fix, and
+  `indent` and `multiline-html-element-content-newline` leave the element's content alone.
+- **A comment or raw-text element that runs to the end of the file holds the rest of the file as its
+  text**, as in a browser, so the other rules leave that text alone. `indent` also leaves alone a
+  tag cut off by the end of the file.
 - **`x-unparsed-twig` is the only report of a Twig block the parser could not read.** Such a block is
   left out of the tree, so `eslint-plugin-twig-tailwind` never sees the classes inside it.
 
@@ -79,10 +87,11 @@ Each report names its code in brackets, so a code can be switched off by name.
 
 | Skipped | Why | Setting |
 |---|---|---|
-| The closing tag of a void element, such as `</link>` after `<link>` | RSS and other XML templates close elements that HTML leaves open | Built in |
+| The closing tag of a void element, such as `</link>` or `</br>` | RSS and other XML templates close elements that HTML leaves open | Built in |
 | An element whose end tag HTML lets you leave out (`li`, `p`, `td`, `tr`, `option` and the like) | The browser closes it | Built in |
-| An element that opens or closes inside a Twig block that another branch balances | The parser reads the markup as one document, so it cannot tell which branch closes it | Built in |
-| Every closing tag in a file where one stands inside a Twig block, once the markup pairs across Twig branches | The parser cannot tell which closing tag is the extra one | Built in |
+| A closing tag inside `{% if %}`, `{% for %}`, `{% guard %}` or `{% trans %}`, and an element that opens or closes in a branch of one | The markup there may render differently or not at all, and the parser reads every branch as one document, so it cannot tell which branch closes the element | Built in |
+| A closing tag inside `{% verbatim %}`, and an element that opens or closes across its edge | Its content is usually client-side template syntax, such as Handlebars or Mustache, whose own conditions can open an element in one branch and close it in another | Built in |
+| A closing tag named like an element that an earlier closing tag closed across one of the blocks above, so that the element opens on one side of the block's edge and closes on the other | The branch may have taken the element this tag was meant to close | Built in |
 | A problem whose code is switched off | You chose not to hear about it | Each code, default `true` |
 
 ### Not checked at all
@@ -93,15 +102,15 @@ Each report names its code in brackets, so a code can be switched off by name.
   no rule runs: Twig that cannot be tokenised (an unclosed `{{`, `{%`, `{#`, bracket or string), Twig
   tags that do not pair up (a stray `{% endif %}`), and an open tag whose `>` is missing before the
   next tag (`<div class="a"<p>`).
+- **An HTML element written as self-closing, such as `<div />`.** The parser reads `/>` as closing
+  any element, as the XML templates Drupal renders (RSS, OPML) need, so a closing tag after it is
+  reported as `x-invalid-end-tag`, not the `/`.
 
 ### Known gaps
 
-- **Markup problems inside Twig blocks are mostly not reported**, because the parser reads every Twig
-  branch as one document: a closing tag is never reported while any Twig block, `{% block %}` and
-  `{% for %}` included, is open before it.
+- **Markup problems inside `{% if %}`, `{% for %}` and the other branching blocks are not reported**,
+  because the parser reads every branch as one document.
 - Duplicate attributes and a missing space between attributes are not reported.
-- An unterminated `<!--` drops the markup after it, so the elements it left open are reported instead
-  of the comment.
 - `<<li` loses the attributes of the `li`, and nothing is reported.
 - A quote closed much later by another value's quote is only reported when it leaves a stray quote
   in an attribute name or an unquoted value.
@@ -112,9 +121,11 @@ Each report names its code in brackets, so a code can be switched off by name.
 
 | Option | Default | Description |
 |---|---|---|
-| `eof-in-tag` | `true` | Report open tags with no `>` before the end of the file. |
+| `eof-in-comment` | `true` | Report comments with no `-->` before the end of the file. |
+| `eof-in-tag` | `true` | Report tags with no `>` before the end of the file. |
 | `unexpected-character-in-attribute-name` | `true` | Report attribute names that hold a quote or `<`. |
 | `unexpected-character-in-unquoted-attribute-value` | `true` | Report unquoted values that hold a quote or `<`. |
+| `unexpected-solidus-in-tag` | `true` | Report a `/` in an open tag that is not followed by `>`. |
 | `x-invalid-end-tag` | `true` | Report closing tags that match no open element. |
 | `x-misplaced-twig-tag` | `true` | Report `else`, `elseif` and `plural` tags in the wrong place. |
 | `x-unclosed-element` | `true` | Report elements that never get a closing tag. |

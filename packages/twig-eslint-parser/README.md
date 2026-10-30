@@ -43,7 +43,7 @@ files, not general JavaScript rules such as `no-undef`.
 npm install --save-dev twig-eslint-parser eslint
 ```
 
-Requires Node.js 20.19 or later and ESLint 8.57 or later, using flat config. The package is ESM only.
+Requires Node.js 20.19, 22.13 or 24 and later, and ESLint 8.57 or later, using flat config. The package is ESM only.
 
 ## Usage
 
@@ -83,7 +83,7 @@ silently.
 | `convertedBlockCount` | Twig blocks turned into JavaScript nodes. |
 | `ignoredBlockCount` | Blocks with no expression worth parsing, such as `{% endif %}` or `{% extends %}`. |
 | `diagnostics` | Every problem the parser read past instead of throwing on, in source order: each has a `code`, a `message` and a `range`. The codes are `DIAGNOSTIC_CODES`, and [`twig-html/no-parse-errors`](../eslint-plugin-twig-html/docs/rules/no-parse-errors.md) lists what each one means and when it stays quiet. |
-| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. `bracketPairs` lists the offsets of each `{`, `[` or `(` and its closing bracket, read from the lexer, so strings and `#{ }` are never mistaken for brackets. The `twig-html` rules use it, for example to keep attributes wrapped in a Twig block together and to indent the lines inside brackets. |
+| `blocks` | Every Twig block (`print`, `tag` or `comment`) with its range, which ends at the closing delimiter and leaves out the line break Twig removes after a tag, its tag name and `depthChange`: `1` for a tag that opens a nested block such as `{% if %}`, `-1` for one that closes it, `0` otherwise, including the short forms `{% set x = 1 %}`, `{% block title page_title %}` and Drupal's `{% trans 'Hello' %}`, which have no body. `bracketPairs` lists the offsets of each `{`, `[` or `(` and its closing bracket, read from the lexer, so strings and `#{ }` are never mistaken for brackets. `inlineComments` lists the range of each `# comment` inside the block. The `twig-html` rules use it, for example to keep attributes wrapped in a Twig block together and to indent the lines inside brackets. |
 | `omittedAttributes` | Attributes left out by `ignoreInterpolatedAttributes`, with their name, range, the `Attribute` node itself and its `owner`, the `Tag`, `ScriptTag` or `StyleTag` node it was taken from. `twig-tailwind/no-twig-interpolation` reports them, and every `twig-html` rule puts them back in their place among the owner's attributes. |
 | `strings` | Every Twig string literal, read from the lexer, with its range (quotes included), its `quote` (`'` or `"`) and whether it interpolates `#{ }`. It covers tags that never become JavaScript nodes, such as `{% extends %}` and `{% trans %}`, and blocks that fail to convert. `twig-html/quotes` uses it. |
 
@@ -147,6 +147,7 @@ Rules import these instead of keeping their own copies.
 | `SINGLE_TOKEN_NODE_TYPES` | The node types that are one token, `Comment` and `Doctype`. |
 | `isOpeningTag(block)`, `isClosingTag(block)`, `isMiddleTag(block)` | Tell what a Twig block does to nesting: `{% if %}`, `{% endif %}`, `{% else %}`, `{% elseif %}` or `{% plural %}`. |
 | `depthChangeWithin(range, blocks)`, `isTwigBalancedWithin(range, blocks)` | Measure the Twig nesting inside a range. |
+| `isRangeWithin(inner, outer)` | Tell whether one range lies inside another, ends included. |
 | `isAttributeNode(value)`, `containsTwig(attribute)` | Tell an attribute node from the other nodes in an open tag, and whether its name or value holds Twig. |
 
 ## Known limitations
@@ -167,6 +168,10 @@ Rules import these instead of keeping their own copies.
   `blocks` service, whose `depthChange` shows where each Twig block opens and closes. The problems
   it hides are listed under Known gaps on the
   [`no-parse-errors`](../eslint-plugin-twig-html/docs/rules/no-parse-errors.md) page.
+- **Twig printed straight after Twig among attributes** is read as one attribute: in
+  `<div {{ attributes }}{{ title_attributes }}>` and `<div {{ attributes }}class="a">` the parser cannot
+  tell two attribute lists from one attribute name built from Twig, such as `{{ prefix }}{{ name }}="a"`.
+  A space between them keeps them apart.
 - **Very deep nesting.** ESLint itself overflows the call stack at roughly 4,000 nested elements (for example
   thousands of `<li>` without their close tags), and the run fails with "Maximum call stack size exceeded". Above
   roughly 7,000 levels the parser stops first with a "nested too deeply" error, which ESLint reports as a

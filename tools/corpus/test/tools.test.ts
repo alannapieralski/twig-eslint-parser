@@ -76,6 +76,8 @@ describe('reviewFix', () => {
   it('rejects re-indented lines inside pre, textarea or a Twig span when the rule promises layout only', () => {
     expect(describeFixProblems('<pre>\na\n  b</pre>', '<pre>\na\nb</pre>', 'layout')).toHaveLength(1);
     expect(describeFixProblems('<p>\n{{ "a\n  b" }}\n</p>', '<p>\n{{ "a\nb" }}\n</p>', 'layout')).toHaveLength(1);
+    expect(describeFixProblems('<p>\n{{ "a #{ b ~ "c\n  d" } e" }}\n</p>', '<p>\n{{ "a #{ b ~ "c\nd" } e" }}\n</p>', 'layout')).toHaveLength(1);
+    expect(describeFixProblems('<p>{{ "x }} y\n  z" }}</p>', '<p>{{ "x }} y\nz" }}</p>', 'layout')).toHaveLength(1);
   });
 
   it('rejects a change to text when the rule promises layout only', () => {

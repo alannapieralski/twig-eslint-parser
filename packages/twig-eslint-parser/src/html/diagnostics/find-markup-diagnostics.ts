@@ -1,19 +1,18 @@
+import { findEndOfFileDiagnostics } from './end-of-file-diagnostics.js';
 import { findEndTagDiagnostics } from './end-tag-diagnostics.js';
 import { findMarkupElements } from './markup-elements.js';
 import { findOpenTagDiagnostics } from './open-tag-diagnostics.js';
 import { findUnclosedElementDiagnostics } from './unclosed-element-diagnostics.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
-import type { TwigBlockSummary } from '../../twig/blocks.js';
-import type { MarkupTreeNode, SourceToken } from './markup-elements.js';
-
-export type MarkupSource = { readonly document: MarkupTreeNode; readonly tokens: readonly SourceToken[]; readonly text: string; readonly blocks: readonly TwigBlockSummary[] };
+import type { MarkupSource } from './markup-source.js';
 
 export function findMarkupDiagnostics({ document, tokens, text, blocks }: MarkupSource): TwigDiagnostic[] {
   const elements = findMarkupElements(document);
 
   return [
     ...findOpenTagDiagnostics(elements, text, blocks),
-    ...findEndTagDiagnostics(tokens, elements, blocks),
-    ...findUnclosedElementDiagnostics(elements, blocks, text),
+    ...findEndTagDiagnostics({ document, tokens, elements, blocks, text }),
+    ...findUnclosedElementDiagnostics(elements, text, blocks),
+    ...findEndOfFileDiagnostics(document, text),
   ];
 }

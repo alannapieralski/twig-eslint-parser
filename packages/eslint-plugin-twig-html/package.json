@@ -13,7 +13,7 @@
   "homepage": "https://github.com/alannapieralski/twig-lint/tree/main/packages/eslint-plugin-twig-html#readme",
   "type": "module",
   "engines": {
-    "node": ">=20.19"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "exports": {
     ".": {
