@@ -26,7 +26,6 @@ describe('twig-html/no-parse-errors', () => {
   it.each([
     ['<div>\n<!-- note', 'eof-in-comment', 2],
     ['<div class="a"', 'eof-in-tag', 1],
-    ['<span/>', 'non-void-html-element-start-tag-with-trailing-solidus', 1],
     ['<li class="a\' data-x="y">x</li>', 'unexpected-character-in-attribute-name', 1],
     ['<li id=b<span>x</span></li>', 'unexpected-character-in-unquoted-attribute-value', 1],
     ['<img src="a" / >', 'unexpected-solidus-in-tag', 1],

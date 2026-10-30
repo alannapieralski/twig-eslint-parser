@@ -57,7 +57,6 @@ Codes without a prefix are the names the HTML specification gives the error. Cod
 |---|---|---|
 | `eof-in-comment` | A comment has no `-->` before the end of the file. | `<!-- note` |
 | `eof-in-tag` | An open or closing tag has no `>` before the end of the file. | `<div class="a"`, `<p>a</p` |
-| `non-void-html-element-start-tag-with-trailing-solidus` | An HTML element that needs a closing tag is written as self-closing, so the browser leaves it open. Elements inside `<svg>` and `<math>`, names HTML does not define and elements whose end tag HTML lets you leave out may self-close. | `<div class="spacer" />` |
 | `unexpected-character-in-attribute-name` | An attribute name holds a quote or `<`, usually because an earlier value was quoted wrongly. | `<li class="a' data-x="y">` |
 | `unexpected-character-in-unquoted-attribute-value` | An unquoted value holds a quote or `<`, so the tag takes in the markup after it. | `<li id=b<span>x</span></li>` |
 | `unexpected-solidus-in-tag` | A `/` in an open tag is not followed by `>`. The browser ignores it, but the parser does not read the attributes after it. | `<img src="a" / >` |
@@ -100,6 +99,9 @@ Each report names its code in brackets, so a code can be switched off by name.
   no rule runs: Twig that cannot be tokenised (an unclosed `{{`, `{%`, `{#`, bracket or string), Twig
   tags that do not pair up (a stray `{% endif %}`), and an open tag whose `>` is missing before the
   next tag (`<div class="a"<p>`).
+- **An HTML element written as self-closing, such as `<div />`.** The parser reads `/>` as closing
+  any element, as the XML templates Drupal renders (RSS, OPML) need, so a closing tag after it is
+  reported as `x-invalid-end-tag`, not the `/`.
 
 ### Known gaps
 
@@ -118,7 +120,6 @@ Each report names its code in brackets, so a code can be switched off by name.
 |---|---|---|
 | `eof-in-comment` | `true` | Report comments with no `-->` before the end of the file. |
 | `eof-in-tag` | `true` | Report tags with no `>` before the end of the file. |
-| `non-void-html-element-start-tag-with-trailing-solidus` | `true` | Report HTML elements that need a closing tag written as self-closing. |
 | `unexpected-character-in-attribute-name` | `true` | Report attribute names that hold a quote or `<`. |
 | `unexpected-character-in-unquoted-attribute-value` | `true` | Report unquoted values that hold a quote or `<`. |
 | `unexpected-solidus-in-tag` | `true` | Report a `/` in an open tag that is not followed by `>`. |

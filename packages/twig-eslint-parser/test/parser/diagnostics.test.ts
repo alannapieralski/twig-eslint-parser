@@ -50,12 +50,8 @@ describe('unexpected-solidus-in-tag', () => {
   });
 });
 
-describe('non-void-html-element-start-tag-with-trailing-solidus', () => {
-  it.each(['<span/>', '<div class="a" />\n<p>b</p>'])('reports an HTML element that is not void written as self-closing: %j', (code) => {
-    expect(diagnosticsOf(code)[0]).toMatchObject({ code: 'non-void-html-element-start-tag-with-trailing-solidus', range: [0, code.indexOf('>') + 1] });
-  });
-
-  it.each(['<svg><path d="a"/><g><rect/></g></svg>', '<math><mi/></math>', '<br/><img src="a"/>', '<outline text="a"/>', '<drupal-render/>', '<table><colgroup span="2" /><tr><td>a</td></tr></table>'])('stays quiet for SVG, MathML, void, end-tag-optional and unknown elements: %j', (code) => {
+describe('elements written as self-closing', () => {
+  it.each(['<outline text="a"/>\n<outline text="b"/>', '<svg><path d="a"/></svg>', '<span/>\n<p>b</p>'])('reads them as closed, as XML templates such as OPML need: %j', (code) => {
     expect(codesOf(code)).toEqual([]);
   });
 });
@@ -115,8 +111,8 @@ describe('x-invalid-end-tag', () => {
     expect(codesOf(code)).toEqual([]);
   });
 
-  it('reports the closing tag of an element written as self-closing, which HTML does not close', () => {
-    expect(codesOf('<div />\n<section><p>x</p></div></section>')).toEqual(['non-void-html-element-start-tag-with-trailing-solidus', 'x-invalid-end-tag']);
+  it('reports the closing tag of an element written as self-closing, which the parser has already closed', () => {
+    expect(codesOf('<div />\n<section><p>x</p></div></section>')).toEqual(['x-invalid-end-tag']);
   });
 
   it('reports a closing tag outside Twig branches although another stands inside one', () => {

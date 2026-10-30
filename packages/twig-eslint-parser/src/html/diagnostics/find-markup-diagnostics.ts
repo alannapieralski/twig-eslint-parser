@@ -3,7 +3,6 @@ import { findEndTagDiagnostics } from './end-tag-diagnostics.js';
 import { findMarkupElements } from './markup-elements.js';
 import { readMarkupEnd } from './markup-end.js';
 import { findOpenTagDiagnostics } from './open-tag-diagnostics.js';
-import { findTrailingSolidusDiagnostics } from './trailing-solidus-diagnostics.js';
 import { findUnclosedElementDiagnostics } from './unclosed-element-diagnostics.js';
 import { findUnreadEndDiagnostics } from './unread-end-diagnostics.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
@@ -16,7 +15,6 @@ export function findMarkupDiagnostics({ document, tokens, text, blocks, rawConte
 
   return [
     ...findOpenTagDiagnostics(elements, text, blocks),
-    ...findTrailingSolidusDiagnostics(document, text),
     ...findEndTagDiagnostics({ document, tokens, elements, blocks, text }),
     ...findUnclosedElementDiagnostics(elements, blocks, text, markupEnd),
     ...findUnreadEndDiagnostics(markupEnd, text, rawTextNames),
