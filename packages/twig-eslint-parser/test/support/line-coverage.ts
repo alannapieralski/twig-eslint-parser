@@ -2,9 +2,11 @@ import { parseForESLint } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import { BRANCH_PAIRED_END_TAG_CHECK, compareWithHtmlOracle, twigRangesFromOracle } from './html-oracle.js';
+import { checkParserOutput } from './output-checks.js';
 import type { Golden } from '../lexer/parity.js';
-import { branchPairedEndTagCheck, compareWithHtmlOracle, twigRangesFromOracle, type TwigRange } from './html-oracle.js';
-import { checkParserOutput, type OutputIssue } from './output-checks.js';
+import type { TwigRange } from './html-oracle.js';
+import type { OutputIssue } from './output-checks.js';
 
 export type DamageCause = 'unparseable' | 'twig-unconverted' | 'unread' | 'misread' | 'misplaced' | 'malformed-node' | 'branch-split' | 'template-defect';
 export type LineStatus = 'parsed' | 'fault' | 'branchSplit' | 'templateDefect';
@@ -21,7 +23,7 @@ export type LineCoverage = {
 type Range = readonly [number, number];
 type LocatedIssue = { readonly cause: DamageCause; readonly range: Range | undefined; readonly line: number | undefined; readonly detail: string };
 
-export const damageCausesByPrecedence: readonly DamageCause[] = ['unparseable', 'twig-unconverted', 'unread', 'misread', 'misplaced', 'malformed-node', 'branch-split', 'template-defect'];
+export const DAMAGE_CAUSES_BY_PRECEDENCE: readonly DamageCause[] = ['unparseable', 'twig-unconverted', 'unread', 'misread', 'misplaced', 'malformed-node', 'branch-split', 'template-defect'];
 
 const statusOfCause: Readonly<Record<DamageCause, LineStatus>> = {
   'unparseable': 'fault',
@@ -51,28 +53,28 @@ const causeOfCheck: Readonly<Record<string, DamageCause>> = {
   'html-oracle: implied end tags': 'misplaced',
   'html: element opened and closed in different Twig branches': 'branch-split',
   'html: element left open in a Twig branch': 'branch-split',
-  [branchPairedEndTagCheck]: 'branch-split',
+  [BRANCH_PAIRED_END_TAG_CHECK]: 'branch-split',
   'html: stray close tag': 'template-defect',
   'html: element closes': 'template-defect',
   'html-oracle: unmatched end tags': 'template-defect',
 };
-const lineBreakPattern = /\r\n|[\r\n\u2028\u2029]/;
+const LINE_BREAK_PATTERN = /\r\n|[\r\n\u2028\u2029]/;
 
 function causeOf(check: string): DamageCause {
   return causeOfCheck[check] ?? 'malformed-node';
 }
 
 function countedLineNumbers(source: string): readonly number[] {
-  return source.split(lineBreakPattern).flatMap((text, index) => (text.trim() === '' ? [] : [index + 1]));
+  return source.split(LINE_BREAK_PATTERN).flatMap((text, index) => (text.trim() === '' ? [] : [index + 1]));
 }
 
-const closingDelimiterTypes: ReadonlySet<string> = new Set(['VARIABLE_END', 'TAG_END', 'COMMENT_END']);
-const closingDelimiterLength = 2;
+const CLOSING_DELIMITER_TYPES: ReadonlySet<string> = new Set(['VARIABLE_END', 'TAG_END', 'COMMENT_END']);
+const CLOSING_DELIMITER_LENGTH = 2;
 
 function twigRangesFromOwnLexer(source: string): TwigRange[] {
   return groupTwigBlocks(tokenizeTwig(source)).map((block) => {
-    const closingDelimiter = block.tokens.findLast((token) => closingDelimiterTypes.has(token.type));
-    return { start: block.start, end: closingDelimiter ? closingDelimiter.start + closingDelimiterLength : block.end, kind: block.kind };
+    const closingDelimiter = block.tokens.findLast((token) => CLOSING_DELIMITER_TYPES.has(token.type));
+    return { start: block.start, end: closingDelimiter ? closingDelimiter.start + CLOSING_DELIMITER_LENGTH : block.end, kind: block.kind };
   });
 }
 
@@ -120,7 +122,7 @@ function lineSpanOf(issue: LocatedIssue, lineOf: (offset: number) => number): re
 
 function mergeSpans(spans: readonly DamageSpan[]): DamageSpan[] {
   const merged: DamageSpan[] = [];
-  const sorted = [...spans].sort((first, second) => first.startLine - second.startLine || damageCausesByPrecedence.indexOf(first.cause) - damageCausesByPrecedence.indexOf(second.cause));
+  const sorted = [...spans].sort((first, second) => first.startLine - second.startLine || DAMAGE_CAUSES_BY_PRECEDENCE.indexOf(first.cause) - DAMAGE_CAUSES_BY_PRECEDENCE.indexOf(second.cause));
   for (const span of sorted) {
     const previous = merged.find((candidate) => candidate.cause === span.cause && span.startLine <= candidate.endLine + 1);
     if (!previous) {
@@ -134,7 +136,7 @@ function mergeSpans(spans: readonly DamageSpan[]): DamageSpan[] {
 
 function winningCauseOf(line: number, spans: readonly DamageSpan[]): DamageCause | undefined {
   const covering = spans.filter((span) => span.startLine <= line && line <= span.endLine).map((span) => span.cause);
-  return damageCausesByPrecedence.find((cause) => covering.includes(cause));
+  return DAMAGE_CAUSES_BY_PRECEDENCE.find((cause) => covering.includes(cause));
 }
 
 // Scores how many of a template's lines the parser read correctly, and names the damaged regions of the rest.

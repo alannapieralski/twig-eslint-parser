@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/defaults';
-import type { ParserOptions } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
-import twigTailwind, { createConfig, twigSelectors, type ClassSelector } from '../../src/index.js';
+import twigTailwind, { TWIG_SELECTORS, createConfig } from '../../src/index.js';
+import type { Linter } from 'eslint';
+import type { ParserOptions } from 'twig-eslint-parser';
+import type { ClassSelector } from '../../src/index.js';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
@@ -144,7 +146,7 @@ describe('createConfig({ drupal: true })', () => {
 
   it('lets a later selectors setting replace the Drupal selectors', async () => {
     const code = "<div{{ attributes.addClass('nope') }}>x</div>{% set classes = ['nope2'] %}";
-    const result = await lint(code, { selectors: [...getDefaultSelectors(), ...twigSelectors] });
+    const result = await lint(code, { selectors: [...getDefaultSelectors(), ...TWIG_SELECTORS] });
     expect(describeMessages(result.messages)).toEqual([unknownClassAt(code, 'nope2')]);
   });
 
@@ -170,12 +172,13 @@ describe('createConfig({ drupal: true })', () => {
 });
 
 describe('interpolated strings ("#{ }")', () => {
+  const betterTailwindcssMessages = (messages: { ruleId: string | null }[]) => messages.filter((message) => message.ruleId?.startsWith('better-tailwindcss/'));
   const interpolated = '{% set classes = "flex #{modifier} p-4 items-center" %}';
 
   it('silences better-tailwindcss inside them, so --fix cannot scramble the interpolation', async () => {
     const result = await lint(interpolated, { fix: true });
     expect(result.output ?? interpolated).toBe(interpolated);
-    expect(result.messages).toEqual([]);
+    expect(betterTailwindcssMessages(result.messages)).toEqual([]);
   });
 
   it.each([
@@ -186,7 +189,7 @@ describe('interpolated strings ("#{ }")', () => {
     const code = `<p>Intro${lineBreak}more</p>\n${interpolated}`;
     const result = await lint(code, { fix: true });
     expect(result.output ?? code).toBe(code);
-    expect(result.messages).toEqual([]);
+    expect(betterTailwindcssMessages(result.messages)).toEqual([]);
   });
 
   it('keeps linting and fixing every other string in the same file', async () => {
@@ -196,23 +199,31 @@ describe('interpolated strings ("#{ }")', () => {
   });
 });
 
-describe('twig-tailwind/no-interpolated-attributes', () => {
+describe('twig-tailwind/no-twig-interpolation', () => {
   it('reports Twig inside class="" once, while better-tailwindcss stays quiet about the {{ }} fragments', async () => {
     const code = '<p class="region--{{ region }}__inner flex {{ extra }}">x</p>';
     const result = await lint(code);
     expect(describeMessages(result.messages)).toEqual([
-      `1:${columnOf(code, 'class=')} twig-tailwind/no-interpolated-attributes Avoid Twig inside class="": linters cannot see what it produces. Build the value with {% set classes = [...] %} and attributes.addClass(), or pass it to an include as { classes: [...] }.`,
+      `1:${columnOf(code, 'class=')} twig-tailwind/no-twig-interpolation Avoid Twig inside class="": linters cannot see what it produces.`,
     ]);
   });
 
   it('reports Twig statements inside class="" too', async () => {
     const result = await lint('<p class="flex {% if active %}font-bold{% endif %}">x</p>');
-    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-tailwind/no-interpolated-attributes']);
+    expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-tailwind/no-twig-interpolation']);
   });
 
   it('also reports when the parser keeps interpolated attributes in the HTML AST', async () => {
     const result = await lint('<p class="flex {{ extra }}">x</p>', { parserOptions: { ignoreInterpolatedAttributes: [] } });
-    expect(result.messages.map((message) => message.ruleId)).toContain('twig-tailwind/no-interpolated-attributes');
+    expect(result.messages.map((message) => message.ruleId)).toContain('twig-tailwind/no-twig-interpolation');
+  });
+
+  it('reports a Twig string that interpolates with #{ }, but not one that does not', async () => {
+    const code = '{% set classes = [\'flex\', "card--#{variant}"] %}\n{% set other = [\'flex\', \'p-4\'] %}';
+    const result = await lint(code);
+    expect(describeMessages(result.messages)).toEqual([
+      `1:${columnOf(code, '"card')} twig-tailwind/no-twig-interpolation Avoid #{ } inside a Twig string: linters cannot see what it produces.`,
+    ]);
   });
 
   it('leaves other attributes alone by default', async () => {
@@ -221,25 +232,17 @@ describe('twig-tailwind/no-interpolated-attributes', () => {
   });
 
   it('checks any attributes listed in its options', async () => {
-    const result = await lint('<a href="{{ url }}" class="flex {{ extra }}">x</a>', { rules: { 'twig-tailwind/no-interpolated-attributes': ['error', { attributes: ['href'] }] } });
+    const result = await lint('<a href="{{ url }}" class="flex {{ extra }}">x</a>', { rules: { 'twig-tailwind/no-twig-interpolation': ['error', { attributes: ['href'] }] } });
     expect(result.messages.map((message) => message.message.split(':')[0])).toEqual(['Avoid Twig inside href=""']);
   });
 
   it('does not report the Twig-built class attributes the option hides when the rule is off', async () => {
-    const result = await lint('<p class="flex {{ extra }}">x</p>', { rules: { 'twig-tailwind/no-interpolated-attributes': 'off' } });
+    const result = await lint('<p class="flex {{ extra }}">x</p>', { rules: { 'twig-tailwind/no-twig-interpolation': 'off' } });
     expect(result.messages).toEqual([]);
   });
 });
 
-describe('twig-tailwind/no-unparsed-twig', () => {
-  it('reports a Twig block the parser could not read at its position', async () => {
-    const code = '<p>\n  {{ a b c }}\n</p>';
-    const result = await lint(code);
-    expect(describeMessages(result.messages)).toEqual([
-      '2:3 twig-tailwind/no-unparsed-twig This Twig block could not be parsed (Unexpected token b), so nothing inside it is linted. Check the expression is valid Twig.',
-    ]);
-  });
-
+describe('valid Twig', () => {
   it('stays quiet about valid Twig that mixes ?? with and', async () => {
     const result = await lint("{% set classes = [modifier ?? 'w-full' and active ? 'flex'] %}");
     expect(result.messages).toEqual([]);

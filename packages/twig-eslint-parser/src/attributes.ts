@@ -1,17 +1,19 @@
-type AttributeWrapper = { readonly value: string; readonly range: readonly [number, number] };
+import type { Range } from './range.js';
+
+type AttributeWrapper = { readonly value: string; readonly range: Range };
 
 export type AttributeNode = {
   readonly type: 'Attribute';
   readonly range: [number, number];
   readonly key: { readonly value: string };
-  readonly value?: { readonly value: string; readonly range: readonly [number, number]; readonly parts?: readonly { readonly type: string; readonly value: string }[] };
+  readonly value?: { readonly value: string; readonly range: Range; readonly parts?: readonly { readonly type: string; readonly value: string }[] };
   readonly startWrapper?: AttributeWrapper;
   readonly endWrapper?: AttributeWrapper;
 };
 
 export type AttributeOwner = { readonly type: string; readonly attributes: readonly AttributeNode[] };
 
-export type OmittedAttribute = { readonly name: string; readonly range: readonly [number, number]; readonly attribute: AttributeNode; readonly owner: AttributeOwner };
+export type OmittedAttribute = { readonly name: string; readonly range: Range; readonly attribute: AttributeNode; readonly owner: AttributeOwner };
 
 export function isAttributeNode(value: unknown): value is AttributeNode {
   return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'Attribute';

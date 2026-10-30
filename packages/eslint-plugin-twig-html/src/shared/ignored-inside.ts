@@ -1,23 +1,18 @@
+import { elementNameSet } from './ignores.js';
+import { elementNameOf } from './tag-node.js';
 import type { SourceCode } from 'eslint';
-import type { TagNode } from './tag-node.js';
+import type { ParsedTag } from './tag-node.js';
 
 type EslintNode = Parameters<SourceCode['getAncestors']>[0];
 
-function normaliseElementName(name: string | undefined): string {
-  return (name ?? '').toLowerCase();
-}
-
-export function createIgnoredInsideCheck(sourceCode: SourceCode, ignoreInside: readonly string[]): (tag: TagNode) => boolean {
-  const ignoredElementNames = new Set(ignoreInside.map(normaliseElementName));
+export function createIgnoredInsideCheck(sourceCode: SourceCode, ignores: readonly string[]): (tag: ParsedTag) => boolean {
+  const ignoredElementNames = elementNameSet(ignores);
 
   return (tag) => {
     const tagAsEslintNode = tag as unknown as EslintNode;
     const enclosingNodes = sourceCode.getAncestors(tagAsEslintNode);
     const nodesToCheck = [...enclosingNodes, tagAsEslintNode];
 
-    return nodesToCheck.some((candidate) => {
-      const candidateName = (candidate as unknown as TagNode).name;
-      return ignoredElementNames.has(normaliseElementName(candidateName));
-    });
+    return nodesToCheck.some((candidate) => ignoredElementNames.has(elementNameOf(candidate as unknown as ParsedTag)));
   };
 }

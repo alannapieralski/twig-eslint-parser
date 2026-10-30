@@ -1,12 +1,12 @@
-import { containsTwig, type AttributeNode } from 'twig-eslint-parser';
-import type { Problem } from '../../shared/problem.js';
-import { depthChangeWithin } from '../../shared/twig-blocks.js';
+import { containsTwig, depthChangeWithin } from 'twig-eslint-parser';
 import { htmlTextOf, printsTwigOutput } from './attribute-value.js';
 import { describeQuote } from './quote-style.js';
+import type { AttributeNode } from 'twig-eslint-parser';
+import type { Problem } from '../../shared/problem.js';
 import type { AttributeValue, AttributeWrapper, QuoteSource } from './types.js';
 
-const characterThatNeedsQuotes = /["'=<>`]/;
-const endOfUnquotedValue = /^(\s|>|$)/;
+const CHARACTER_THAT_NEEDS_QUOTES = /["'=<>`]/;
+const END_OF_UNQUOTED_VALUE = /^(\s|>|$)/;
 
 function findWrappedProblems(attribute: AttributeNode, startWrapper: AttributeWrapper, endWrapper: AttributeWrapper, isFixable: boolean, source: QuoteSource): Problem[] {
   const { htmlQuote } = source;
@@ -30,9 +30,9 @@ function findWrappedProblems(attribute: AttributeNode, startWrapper: AttributeWr
 
 function isSafeToWrap(attribute: AttributeNode, value: AttributeValue, isFixable: boolean, text: string): boolean {
   if (!isFixable || containsTwig(attribute)) return false;
-  if (characterThatNeedsQuotes.test(htmlTextOf(value))) return false;
+  if (CHARACTER_THAT_NEEDS_QUOTES.test(htmlTextOf(value))) return false;
 
-  return endOfUnquotedValue.test(text.charAt(value.range[1]));
+  return END_OF_UNQUOTED_VALUE.test(text.charAt(value.range[1]));
 }
 
 function findUnquotedProblems(attribute: AttributeNode, value: AttributeValue, isFixable: boolean, source: QuoteSource): Problem[] {
@@ -52,9 +52,9 @@ function findUnquotedProblems(attribute: AttributeNode, value: AttributeValue, i
   }];
 }
 
-export function findAttributeProblems(attribute: AttributeNode, isInSoundTag: boolean, source: QuoteSource): Problem[] {
+export function findAttributeProblems(attribute: AttributeNode, isInReadableTag: boolean, source: QuoteSource): Problem[] {
   const { value, startWrapper, endWrapper } = attribute;
-  const isFixable = isInSoundTag && (value === undefined || depthChangeWithin(value.range, source.blocks) === 0);
+  const isFixable = isInReadableTag && (value === undefined || depthChangeWithin(value.range, source.blocks) === 0);
 
   if (startWrapper && endWrapper) return findWrappedProblems(attribute, startWrapper, endWrapper, isFixable, source);
   if (startWrapper || endWrapper || !value || value.value === '') return [];

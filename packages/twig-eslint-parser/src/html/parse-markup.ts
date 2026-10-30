@@ -1,14 +1,14 @@
-import { drupalVoidElements } from '../drupal.js';
+import { DRUPAL_VOID_ELEMENTS } from '../drupal.js';
 import { createOffsetLocator } from '../source-text.js';
-import type { TwigBlock } from '../twig/blocks.js';
-import { parseHtmlProgram, visitorKeys, type HtmlProgram } from './program.js';
+import { parseHtmlProgram, visitorKeys } from './program.js';
 import { HtmlSyntaxError } from './syntax-error.js';
+import { ESCAPABLE_RAW_TEXT_ELEMENT_NAMES } from './syntax.js';
 import { templateInfosOf } from './template-infos.js';
 import { maskVerbatimDelimiters, restoreVerbatimDelimiters } from './verbatim-text.js';
+import type { TwigBlock } from '../twig/blocks.js';
+import type { HtmlProgram } from './program.js';
 
 type HtmlParseResult = { readonly ast: HtmlProgram; readonly visitorKeys: typeof visitorKeys };
-
-const rawTextElements: readonly string[] = ['textarea', 'title'];
 
 function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: number } {
   return error instanceof SyntaxError && typeof (error as { pos?: unknown }).pos === 'number';
@@ -17,9 +17,9 @@ function isPositionedSyntaxError(error: unknown): error is SyntaxError & { pos: 
 export function parseMarkup(source: string, blocks: readonly TwigBlock[], rawContentTags: ReadonlySet<string>): HtmlParseResult {
   const verbatim = maskVerbatimDelimiters(source, blocks);
   const parseOptions = {
-    templateInfos: templateInfosOf(source, blocks),
-    rawContentTags: [...new Set([...rawTextElements, ...rawContentTags])],
-    voidElements: drupalVoidElements,
+    templateInfos: templateInfosOf(blocks),
+    rawContentTags: [...new Set([...ESCAPABLE_RAW_TEXT_ELEMENT_NAMES, ...rawContentTags])],
+    voidElements: DRUPAL_VOID_ELEMENTS,
   };
   let result: HtmlParseResult;
   try {

@@ -1,7 +1,9 @@
 import { blankPreservingLineBreaks, createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { measureLineCoverage, statusOfDamage, type DamageSpan } from './line-coverage.js';
+import { measureLineCoverage, statusOfDamage } from './line-coverage.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
+import type { DamageSpan } from './line-coverage.js';
 
 export type MutationKind = 'defect' | 'harmless';
 export type Edit = { readonly start: number; readonly end: number; readonly replacement: string };
@@ -20,9 +22,9 @@ export type MutationOutcome = {
   readonly flaggedCauses: readonly string[];
 };
 
-const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
-const elementsWithOwnContentModel = /<(script|style|textarea|title)\b[^>]*>[\s\S]*?<\/\1>/gi;
-const htmlComment = /<!--[\s\S]*?-->/g;
+const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+const ELEMENTS_WITH_OWN_CONTENT_MODEL = /<(script|style|textarea|title)\b[^>]*>[\s\S]*?<\/\1>/gi;
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
 
 function allMatches(pattern: RegExp, text: string): RegExpExecArray[] {
   return [...text.matchAll(pattern)];
@@ -36,11 +38,11 @@ function reversedName(name: string): string {
   return [...name].reverse().join('');
 }
 
-export const mutators: readonly Mutator[] = [
+export const MUTATORS: readonly Mutator[] = [
   {
     name: 'drop-close-tag',
     kind: 'defect',
-    editsFor: (_source, markup) => allMatches(/<\/([a-z][\w-]*)\s*>/gi, markup).filter((match) => !voidElements.has((match[1] ?? '').toLowerCase())).map((match) => editOfMatch(match, '')),
+    editsFor: (_source, markup) => allMatches(/<\/([a-z][\w-]*)\s*>/gi, markup).filter((match) => !VOID_ELEMENTS.has((match[1] ?? '').toLowerCase())).map((match) => editOfMatch(match, '')),
   },
   {
     name: 'stray-close-tag',
@@ -108,7 +110,7 @@ export const mutators: readonly Mutator[] = [
 export function markupForMutation(source: string, blocks: readonly TwigBlock[]): string {
   let markup = source;
   for (const block of blocks) markup = markup.slice(0, block.start) + blankPreservingLineBreaks(markup.slice(block.start, block.end)) + markup.slice(block.end);
-  return markup.replace(htmlComment, blankPreservingLineBreaks).replace(elementsWithOwnContentModel, blankPreservingLineBreaks);
+  return markup.replace(HTML_COMMENT, blankPreservingLineBreaks).replace(ELEMENTS_WITH_OWN_CONTENT_MODEL, blankPreservingLineBreaks);
 }
 
 function applyEdit(source: string, edit: Edit): string {
@@ -148,7 +150,7 @@ export function runMutations(source: string, seed: number): MutationOutcome[] {
   const markup = markupForMutation(source, blocks);
   const originalSpans = measureLineCoverage(source, { kind: 'own-lexer' }).spans;
   const lineOf = createOffsetLocator(source);
-  return mutators.flatMap((mutator): MutationOutcome[] => {
+  return MUTATORS.flatMap((mutator): MutationOutcome[] => {
     const edit = pickEdit(mutator.editsFor(source, markup, blocks), seed + seedFrom(mutator.name));
     if (!edit) return [];
     const line = lineOf(edit.start).line;

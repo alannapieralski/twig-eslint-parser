@@ -1,13 +1,15 @@
 import { HtmlSyntaxError, parseForESLint, TwigSyntaxError } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { toSameLengthJavaScript } from '../../src/twig/javascript.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
-import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch, type BranchSegment } from './branches.js';
+import { branchSegmentsOf, isClosedInAnotherBranch, isInsideABranch } from './branches.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
+import type { BranchSegment } from './branches.js';
 
 export type OutputIssue = { readonly check: string; readonly detail: string; readonly line?: number; readonly range?: readonly [number, number] };
 
-export const templateDefectChecks: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: element left open in a Twig branch', 'html: stray close tag', 'html: element opened and closed in different Twig branches']);
+export const TEMPLATE_DEFECT_CHECKS: ReadonlySet<string> = new Set(['template is valid Twig and HTML', 'html: element closes', 'html: element left open in a Twig branch', 'html: stray close tag', 'html: element opened and closed in different Twig branches']);
 
 type Node = {
   readonly type: string;
@@ -19,7 +21,7 @@ type Token = { readonly value: string; readonly range: [number, number] };
 type Range = readonly [number, number];
 type ReportIssue = (check: string, detail: string, where?: number | Range) => void;
 
-const voidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+const VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 
 function isNode(value: unknown): value is Node {
   return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string';
@@ -58,9 +60,9 @@ type ParsedTag = Node & {
   readonly children?: readonly Node[];
 };
 
-const keysOutsideTheHtmlTree = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
-const closeTagPattern = /<\/\s*((?:\{\{.*?\}\}|[^\s>{])+)\s*>?/g;
-const twigTagOrComment = /\{%|\{#/;
+const KEYS_OUTSIDE_THE_HTML_TREE = new Set(['parent', 'loc', 'range', 'parts', 'stylesheet']);
+const CLOSE_TAG_PATTERN = /<\/\s*((?:\{\{.*?\}\}|[^\s>{])+)\s*>?/g;
+const TWIG_TAG_OR_COMMENT = /\{%|\{#/;
 
 function collectHtmlLeaves(value: unknown, leaves: Node[] = [], seen = new Set<object>()): Node[] {
   if (typeof value !== 'object' || value === null || seen.has(value)) return leaves;
@@ -71,7 +73,7 @@ function collectHtmlLeaves(value: unknown, leaves: Node[] = [], seen = new Set<o
   }
   if (isNode(value) && typeof value['value'] === 'string') leaves.push(value);
   for (const [key, child] of Object.entries(value)) {
-    if (!keysOutsideTheHtmlTree.has(key)) collectHtmlLeaves(child, leaves, seen);
+    if (!KEYS_OUTSIDE_THE_HTML_TREE.has(key)) collectHtmlLeaves(child, leaves, seen);
   }
   return leaves;
 }
@@ -127,7 +129,7 @@ function hasUnclosedElementNamed(name: string, openedBefore: number, tags: reado
 }
 
 function isLeftOpen(tag: TagNode): boolean {
-  return !tag.close && !tag.selfClosing && !voidElements.has(tag.name.toLowerCase());
+  return !tag.close && !tag.selfClosing && !VOID_ELEMENTS.has(tag.name.toLowerCase());
 }
 
 function containsUnclosedElement(tag: TagNode): boolean {
@@ -139,7 +141,7 @@ function containsUnclosedElement(tag: TagNode): boolean {
 }
 
 function isTwigGluedToName(name: string): boolean {
-  return twigTagOrComment.test(name) && /[\w-](?=\{[%#])|[%#]\}[\w-]/.test(name);
+  return TWIG_TAG_OR_COMMENT.test(name) && /[\w-](?=\{[%#])|[%#]\}[\w-]/.test(name);
 }
 
 function checkTreeShape(tags: readonly TagNode[], report: ReportIssue): void {
@@ -171,7 +173,7 @@ function describeUncoveredSource(code: string, [start, end]: Range, tags: readon
   const text = code.slice(start, end);
   const issues: OutputIssue[] = [];
   let remainder = text;
-  for (const match of text.matchAll(closeTagPattern)) {
+  for (const match of text.matchAll(CLOSE_TAG_PATTERN)) {
     const [closeTag, name = ''] = match;
     const closeStart = start + match.index;
     const isDroppedClose = hasUnclosedElementNamed(name, closeStart, tags);
@@ -207,7 +209,7 @@ function describeParseFailure(error: unknown): OutputIssue {
   return { check: 'parses', detail: error instanceof Error ? error.message.split('\n')[0] ?? '' : String(error) };
 }
 
-const rawTextElements: ReadonlySet<string> = new Set(['script', 'style', 'textarea', 'title']);
+const RAW_TEXT_ELEMENTS: ReadonlySet<string> = new Set(['script', 'style', 'textarea', 'title']);
 
 function blankOut(text: string, start: number, end: number): string {
   return text.slice(0, start) + ' '.repeat(end - start) + text.slice(end);
@@ -227,7 +229,7 @@ function maskCommentsAndRawText(markup: string): string {
       commentOrTag.lastIndex = end;
       continue;
     }
-    if (!rawTextElements.has(tagName.toLowerCase())) continue;
+    if (!RAW_TEXT_ELEMENTS.has(tagName.toLowerCase())) continue;
     const closeTag = masked.toLowerCase().indexOf(`</${tagName.toLowerCase()}`, contentStart);
     const end = closeTag === -1 ? masked.length : closeTag;
     masked = blankOut(masked, contentStart, end);
@@ -281,9 +283,10 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
   const allBlocks = groupTwigBlocks(tokenizeTwig(code));
   const expressionBlocks = allBlocks.filter((block) => block.kind !== 'comment');
   const services = result.services.twig;
-  for (const block of services.unconvertedBlocks) report('converts every Twig block', `${code.slice(...block.range)} (${block.reason})`, [block.range[0], block.range[1]]);
+  const unparsedBlocks = services.diagnostics.filter((diagnostic) => diagnostic.code === 'x-unparsed-twig');
+  for (const block of unparsedBlocks) report('converts every Twig block', `${code.slice(...block.range)} (${block.message})`, [block.range[0], block.range[1]]);
   const convertedRanges: Range[] = expressionBlocks
-    .filter((block) => toSameLengthJavaScript(block) !== undefined && !services.unconvertedBlocks.some((unconverted) => unconverted.range[0] === block.start))
+    .filter((block) => toSameLengthJavaScript(block) !== undefined && !unparsedBlocks.some((unparsed) => unparsed.range[0] === block.start))
     .map((block) => [block.start, block.end]);
 
   const stringCountByStart = new Map<number, number>();
@@ -340,7 +343,8 @@ export function checkParserOutput(code: string, parse: ParseForOutputChecks = pa
       const token = tag[part] as Token | undefined;
       if (token && code.slice(...token.range) !== token.value) report('html: tag parts match source', `${part} ${JSON.stringify(token.value).slice(0, 40)}`, token.range);
     }
-    if (tag.name.toLowerCase() !== code.slice(tag.openStart.range[0] + 1, tag.openStart.range[1]).toLowerCase()) report('html: tag name matches source', `${tag.name} vs ${code.slice(...tag.openStart.range)}`, tag.openStart.range);
+    const openStartAfterName = code.slice(tag.openStart.range[0] + 1, tag.openStart.range[1]).toLowerCase().slice(tag.name.length);
+    if (!code.slice(tag.openStart.range[0] + 1).toLowerCase().startsWith(tag.name.toLowerCase()) || !/^(\{|$)/.test(openStartAfterName)) report('html: tag name matches source', `${tag.name} vs ${code.slice(...tag.openStart.range)}`, tag.openStart.range);
     if (isTwigGluedToName(tag.name)) report('html: Twig block glued to a name', `<${tag.name.slice(0, 60)}`, tag.openStart.range);
     for (const attribute of tag.attributes ?? []) {
       if (code.slice(...attribute.key.range) !== attribute.key.value) report('html: attribute name matches source', JSON.stringify(attribute.key.value).slice(0, 40), attribute.key.range);

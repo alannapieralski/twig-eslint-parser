@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
 import { parseHtmlProgram } from '../../src/html/program.js';
-import { checkRewritesKeepTheTree, rewrites, type TreeParser } from './metamorphic.js';
+import { REWRITES, checkRewritesKeepTheTree } from './metamorphic.js';
+import type { TreeParser } from './metamorphic.js';
 
 const parseWithoutTwigKinds: TreeParser = (source) => {
   const templateInfos = groupTwigBlocks(tokenizeTwig(source)).map((block): [number, number] => [block.start, block.end]);
@@ -11,7 +12,7 @@ const parseWithoutTwigKinds: TreeParser = (source) => {
 };
 
 function rewrite(name: string, source: string): string {
-  const selected = rewrites.find((candidate) => candidate.name === name);
+  const selected = REWRITES.find((candidate) => candidate.name === name);
   if (!selected) throw new Error(`No rewrite named ${name}.`);
   return selected.apply(source, groupTwigBlocks(tokenizeTwig(source)));
 }
@@ -53,7 +54,7 @@ describe('checkRewritesKeepTheTree', () => {
   });
 
   it('flags a parser that glues a Twig tag to an attribute name, because spacing them changes the attributes', () => {
-    const issues = checkRewritesKeepTheTree('<span {% if x %}class="a"{% endif %}>b</span>', rewrites, parseWithoutTwigKinds);
+    const issues = checkRewritesKeepTheTree('<span {% if x %}class="a"{% endif %}>b</span>', REWRITES, parseWithoutTwigKinds);
     expect(issues.map((issue) => issue.check)).toContain('metamorphic: Twig tags spaced from attribute names: html');
   });
 });

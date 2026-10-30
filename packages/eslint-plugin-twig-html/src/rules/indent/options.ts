@@ -1,3 +1,5 @@
+import { ignoresSchema } from '../../shared/ignores.js';
+
 export type IndentSize = number | 'tab';
 
 export type CloseBracketOffsets = { startTag?: number; endTag?: number; selfClosingTag?: number };
@@ -19,7 +21,7 @@ export type ResolvedOptions = {
   readonly ignores: readonly string[];
 };
 
-const defaultIndentSize = 2;
+const DEFAULT_INDENT_SIZE = 2;
 
 const offsetSchema = { type: 'integer', minimum: 0 } as const;
 
@@ -40,14 +42,14 @@ export const optionsSchema = {
         },
       ],
     },
-    ignores: { type: 'array', items: { type: 'string', minLength: 1 }, uniqueItems: true },
+    ignores: ignoresSchema,
   },
   additionalProperties: false,
 } as const;
 
 function resolveUnit(indentSize: IndentSize | undefined): IndentUnit {
   if (indentSize === 'tab') return { text: '\t', name: 'tab' };
-  return { text: ' '.repeat(indentSize ?? defaultIndentSize), name: 'space' };
+  return { text: ' '.repeat(indentSize ?? DEFAULT_INDENT_SIZE), name: 'space' };
 }
 
 function resolveCloseBracket(closeBracket: Options['closeBracket']): Required<CloseBracketOffsets> {

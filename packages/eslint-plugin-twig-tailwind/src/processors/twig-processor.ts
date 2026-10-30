@@ -1,6 +1,7 @@
-import type { Linter } from 'eslint';
-import { readFileSpans, type FileSpans } from './file-spans.js';
+import { readFileSpans } from './file-spans.js';
 import { isSilencedMessage } from './silence-messages.js';
+import type { Linter } from 'eslint';
+import type { FileSpans } from './file-spans.js';
 
 const spansByFilename = new Map<string, FileSpans>();
 

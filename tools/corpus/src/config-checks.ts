@@ -1,16 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
+import { runLintCheck } from './lint-check.js';
+import type { Linter } from 'eslint';
 import type { FixKeeps } from './fix-invariants.js';
-import { runLintCheck, type LintTarget, type RootLinter } from './lint-check.js';
+import type { LintTarget, RootLinter } from './lint-check.js';
 import type { Check, CheckContext, CheckOutcome, CorpusRoot, Template } from './types.js';
 
 type TailwindResolution =
   | { readonly settings: { readonly cwd: string; readonly entryPoint?: string; readonly tsconfig?: string }; readonly isFallback: boolean }
   | { readonly unavailable: string };
 
-const oldestSupportedTailwind = [3, 3] as const;
-const configurationWarnings = /No tailwind css entry point found|No tsconfig found|Tailwind CSS is not installed/;
+const OLDEST_SUPPORTED_TAILWIND = [3, 3] as const;
+const CONFIGURATION_WARNINGS = /No tailwind css entry point found|No tsconfig found|Tailwind CSS is not installed/;
 
 type TailwindPackage = { readonly path: string; readonly version: string };
 
@@ -24,7 +26,7 @@ function findTailwindPackage(cwd: string): TailwindPackage | undefined {
 
 function isSupportedTailwind(version: string): boolean {
   const [major = 0, minor = 0] = version.split('.').map(Number);
-  return major > oldestSupportedTailwind[0] || (major === oldestSupportedTailwind[0] && minor >= oldestSupportedTailwind[1]);
+  return major > OLDEST_SUPPORTED_TAILWIND[0] || (major === OLDEST_SUPPORTED_TAILWIND[0] && minor >= OLDEST_SUPPORTED_TAILWIND[1]);
 }
 
 function resolveTailwind(rootPath: string, root: CorpusRoot | undefined, fallbackCwd: string): TailwindResolution {
@@ -32,7 +34,7 @@ function resolveTailwind(rootPath: string, root: CorpusRoot | undefined, fallbac
   const cwd = configured.cwd ?? (findTailwindPackage(rootPath) ? rootPath : fallbackCwd);
   const tailwind = findTailwindPackage(cwd);
   if (tailwind === undefined) return { unavailable: `Tailwind CSS cannot be found from ${cwd}. Set "tailwind.cwd" for this root in corpus.config.json.` };
-  if (!isSupportedTailwind(tailwind.version)) return { unavailable: `Tailwind CSS ${tailwind.version} is older than ${oldestSupportedTailwind.join('.')}, which better-tailwindcss cannot load.` };
+  if (!isSupportedTailwind(tailwind.version)) return { unavailable: `Tailwind CSS ${tailwind.version} is older than ${OLDEST_SUPPORTED_TAILWIND.join('.')}, which better-tailwindcss cannot load.` };
   for (const setting of ['entryPoint', 'tsconfig'] as const) {
     const path = configured[setting];
     if (path !== undefined && !existsSync(path)) return { unavailable: `"tailwind.${setting}" for this root does not exist: ${path}` };
@@ -78,7 +80,7 @@ function countReportsByRule(outcome: CheckOutcome): Record<string, number> {
 async function runConfigCheck(target: LintTarget, configs: readonly Linter.Config[], fallbackCwd: string, templates: readonly Template[], context: CheckContext): Promise<CheckOutcome> {
   const { linterFor, fallbackRoots } = createTailwindLinterPool(configs, context, fallbackCwd);
   const outcome = await runLintCheck(target, linterFor, templates, context);
-  const misconfigured = outcome.findings.filter((finding) => finding.severity === 'report' && configurationWarnings.test(finding.message) && !fallbackRoots.has(finding.template.root));
+  const misconfigured = outcome.findings.filter((finding) => finding.severity === 'report' && CONFIGURATION_WARNINGS.test(finding.message) && !fallbackRoots.has(finding.template.root));
   return {
     ...outcome,
     findings: [
@@ -108,7 +110,7 @@ export function configChecks(definition: {
       classRuleRoles: { rewritesClasses: new Set(definition.rulesThatRewriteClasses), removesDuplicateClasses: new Set(definition.rulesThatRemoveDuplicateClasses) },
       isOwnMessage: (message) => message.ruleId !== null,
       describeMessage: (message) => {
-        const warning = configurationWarnings.exec(message.message)?.[0];
+        const warning = CONFIGURATION_WARNINGS.exec(message.message)?.[0];
         return `${message.ruleId ?? 'eslint'}: ${firstLine(message.message)}${warning === undefined ? '' : ` [better-tailwindcss warns: ${warning}]`}`;
       },
     };

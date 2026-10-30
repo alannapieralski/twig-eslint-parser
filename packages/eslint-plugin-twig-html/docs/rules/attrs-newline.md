@@ -36,27 +36,24 @@ Examples of **correct** code:
 
 ### What counts as one attribute
 
-The parser decides what is an attribute and what builds the tag name, because Twig output cannot be
-known in advance. The rule counts whatever the parser gives it:
+The rule counts the attributes the parser gives it:
 
 - **HTML attributes:** every one, including those whose value contains Twig (`id="item-{{ id }}"`).
 - **A print separated from the previous token by whitespace**, such as `<div {{ attributes }} class="a">`.
   It counts as one attribute and moves to its own line. This renders the same HTML.
-- **A print touching the end of the tag name**, such as `<div{{ attributes }}>` or `<input{{ attrs }}>`.
-  It is read as attributes, whatever the expression is called, unless a close tag anywhere in the file
-  spells the same Twig into the name (`<h{{ level }}>...</h{{ level }}>`). Then it is part of the name.
+- **Twig touching the end of the tag name**, such as `<div{{ attributes }}` or `<h{{ level }}`, is part
+  of the tag, not an attribute, so it is not counted and stays on the tag's line. Twig output cannot be
+  known in advance, and a line break there could split a name the Twig builds. Put a space before it to
+  have it counted and moved.
 - **A print straight after `<`**, such as `<{{ html_element }}>`, is always the name.
-- **Conditional attributes:** `<div{% if id %} id="{{ id }}"{% endif %}>` counts as one.
+- **Conditional attributes:** `<div {% if id %}id="{{ id }}"{% endif %}>` counts as one.
 - **Twig blocks spanning attributes:** `{% if checked %}checked disabled{% endif %}` counts as one and
   stays together on one line, so the block is never split.
 
-Parts of the tag name are never counted and stay on the tag's line. See Known gaps for the case where
-the parser cannot tell.
+Parts of the tag name are never counted and stay on the tag's line.
 
 ### Which tags are checked
 
-- **`script` and `style`:** their opening tags are checked like any other tag, so `src`, `type` and
-  `defer` each go on their own line. Their content is never checked.
 - **Multi-line attribute values:** kept as they are. Only the whitespace between attributes changes.
 
 ### What the fix changes
@@ -78,32 +75,28 @@ at the tag's own indentation.
 
 ### Left alone
 
-- **Tags at or under the threshold**, however they are written, because the rule does not normalise
-  them.
-- **Tags inside `ignoreInside` elements, and those elements themselves** (by default `svg`). Inline SVG
-  puts many short tags on one line, and one attribute per line would make it much longer for no gain.
-- **`textarea` and `title` content.** It is text, so the rule never reads markup there.
+| Skipped | Why | Setting |
+|---|---|---|
+| Tags at or under the threshold, however they are written | The rule does not normalise them | `ifAttrsMoreThan`, default `1` |
+| Elements in `ignores`, and every tag inside them | Inline SVG puts many short tags on one line, and one attribute per line would make it much longer for no gain | `ignores`, default `['svg']` |
+| `<script>` and `<style>` elements | The whole element is left as written | Built in |
+| `textarea` and `title` content | It is text, so the rule never reads markup there | Built in |
 
 ### Reported but not fixed
 
 - **A tag with anything other than whitespace between two attributes**, such as a Twig comment. A fix
   would have to move or drop it.
-- **An open tag that is missing its `>`**, where the parser reads the markup after it as attributes
-  (including when it ends up inside an unquoted value). Splitting those "attributes" onto separate
-  lines would break the next tag.
+- **An open tag the parser could not read cleanly**: a quote or `<` left in an attribute name or an
+  unquoted value (`<li id=b<span>`). The parser reads the markup after it as attributes, and splitting
+  those "attributes" onto separate lines would break the next tag.
+  [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
 
 ### Not checked at all
 
 - **A tag where a Twig block opens or branches without closing inside the tag.** The tag has a
   different shape on each branch.
-
-### Known gaps
-
-- **A print that builds the tag name is read as an attribute when no close tag in the file spells it.**
-  In `<h{{ heading }} class="a" id="b">x</h1>` the fix puts `{{ heading }}` on its own line, which
-  renders as `<h`, a line break, then `1`, and breaks the tag. The same happens to an open tag with no
-  close tag at all. The reverse also happens: one matching close tag anywhere in the file makes every
-  open tag with the same print read it as part of the name.
+- **An open tag with no `>` before the end of the file.** There is no `>` to lay out.
+  [`no-parse-errors`](no-parse-errors.md) reports it as `eof-in-tag`.
 
 ## Options
 
@@ -111,7 +104,7 @@ at the tag's own indentation.
 |---|---|---|
 | `ifAttrsMoreThan` | `1` | Lay out a tag once it has more attributes than this. `0` lays out every tag that has an attribute. |
 | `closeStyle` | `'newline'` | `'newline'` puts `>` or `/>` on its own line; `'sameline'` keeps it after the last attribute. |
-| `ignoreInside` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Setting it replaces the list; `[]` lays SVG out too. |
+| `ignores` | `['svg']` | Leave tags inside these elements, and the elements themselves, alone. Setting it replaces the list; `[]` lays SVG out too. |
 
 ```js
 'twig-html/attrs-newline': ['warn', { ifAttrsMoreThan: 2, closeStyle: 'sameline' }],
@@ -131,7 +124,7 @@ export default [
     ...twigHtml.configs.recommended,
     files: ['**/*.svg.twig'],
     ignores: [],
-    rules: { 'twig-html/attrs-newline': ['warn', { ignoreInside: [] }] },
+    rules: { 'twig-html/attrs-newline': ['warn', { ignores: [] }] },
   },
 ];
 ```
@@ -159,7 +152,7 @@ Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-
 | | `@html-eslint/attrs-newline` | `twig-html/attrs-newline` |
 |---|---|---|
 | Threshold | More than 2 attributes | More than 1 |
-| Options | `ifAttrsMoreThan`, `closeStyle`, `maxLen`, `skip`, `inline` | `ifAttrsMoreThan`, `closeStyle`, `ignoreInside` |
+| Options | `ifAttrsMoreThan`, `closeStyle`, `maxLen`, `skip`, `inline` | `ifAttrsMoreThan`, `closeStyle`, `ignores` |
 | Indentation | None; left to `@html-eslint/indent` | None; left to `twig-html/indent` |
 | Twig block around attributes | Each Twig tag is an attribute of its own, so `{% if %}` and `{% endif %}` get their own lines and the block is split | The block stays together on one line |
 | Twig comment between attributes | Dropped by the fix, which rebuilds the tag from the attributes it parsed | Reported, not fixed |
@@ -167,7 +160,7 @@ Checked against `@html-eslint/eslint-plugin` 0.67 running on Twig through `twig-
 
 ## Testing
 
-- `test/attrs-newline.test.ts` covers the layout, the options, prints touching the tag name, Twig blocks that span
+- `test/attrs-newline.test.ts` covers the layout, the options, Twig touching the tag name, Twig blocks that span
   attributes, Twig in tag names, multi-line values, inline SVG, Windows line endings, text in
   `textarea`, the unfixable Twig-comment case and open tags missing their `>`.
 - `test/fix-safety.test.ts` fixes every parser fixture and checks the result changes only whitespace

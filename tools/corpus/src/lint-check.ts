@@ -1,6 +1,7 @@
-import type { ESLint, Linter } from 'eslint';
-import { reviewFix, type ClassRuleRoles, type FixKeeps, type FixProblem } from './fix-invariants.js';
+import { reviewFix } from './fix-invariants.js';
 import { describeFixOutcome, fixUntilSettled } from './fixing.js';
+import type { ESLint, Linter } from 'eslint';
+import type { ClassRuleRoles, FixKeeps, FixProblem } from './fix-invariants.js';
 import type { CheckContext, CheckOutcome, Finding, FixChange, Template } from './types.js';
 
 export type LintTarget = {

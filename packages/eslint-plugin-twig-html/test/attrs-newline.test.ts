@@ -1,11 +1,13 @@
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
+import type { Linter } from 'eslint';
 
 async function lint(code: string, ruleOptions?: Record<string, unknown>, indentRule: Linter.RuleEntry = 'warn') {
   const rules: Linter.RulesRecord = {
     'twig-html/indent': indentRule,
     'twig-html/multiline-html-element-content-newline': 'off',
+    'twig-html/no-parse-errors': 'off',
     'twig-html/quotes': 'off',
     ...(ruleOptions && { 'twig-html/attrs-newline': ['warn', ruleOptions] }),
   };
@@ -67,10 +69,12 @@ describe('twig-html/attrs-newline', () => {
   });
 
   it.each([
-    ["<nav{{ attributes|without('role') }} role=\"navigation\" aria-labelledby=\"a\">x</nav>", "<nav\n  {{ attributes|without('role') }}\n  role=\"navigation\"\n  aria-labelledby=\"a\"\n>x</nav>"],
-    ['<legend{{ legend.attributes }} class="a" id="b">x</legend>', '<legend\n  {{ legend.attributes }}\n  class="a"\n  id="b"\n>x</legend>'],
-    ["<div{{ create_attribute({'id': 'a'}) }} class=\"b\" role=\"c\">x</div>", "<div\n  {{ create_attribute({'id': 'a'}) }}\n  class=\"b\"\n  role=\"c\"\n>x</div>"],
-  ])('counts Drupal attributes printed straight after the tag name as an attribute, and moves them to their own line: %s', async (code, expected) => {
+    ["<nav{{ attributes|without('role') }} role=\"navigation\" aria-labelledby=\"a\">x</nav>", "<nav{{ attributes|without('role') }}\n  role=\"navigation\"\n  aria-labelledby=\"a\"\n>x</nav>"],
+    ['<h{{ heading }} class="a" id="b">x</h1>', '<h{{ heading }}\n  class="a"\n  id="b"\n>x</h1>'],
+    ['<div{% if id %} id="{{ id }}"{% endif %} class="a" role="b">x</div>', '<div{% if id %}\n    id="{{ id }}"{% endif %}\n  class="a"\n  role="b"\n>x</div>'],
+    ['<legend{{ legend.attributes }} class="a" id="b">x</legend>', '<legend{{ legend.attributes }}\n  class="a"\n  id="b"\n>x</legend>'],
+    ["<div{{ create_attribute({'id': 'a'}) }} class=\"b\" role=\"c\">x</div>", "<div{{ create_attribute({'id': 'a'}) }}\n  class=\"b\"\n  role=\"c\"\n>x</div>"],
+  ])('keeps Twig printed straight after the tag name on the tag line, without counting it: %s', async (code, expected) => {
     expect(await fixed(code)).toBe(expected);
   });
 
@@ -141,8 +145,8 @@ describe('twig-html/attrs-newline', () => {
   it.each([
     ['an open tag missing its >', '<li class="a" id="b"{{ title }}</li>'],
     ['an open tag missing its > before plain text', '<li class="a" id="b"text</li>'],
-    ['an open tag whose unquoted value swallowed the next tag', '<li class="a" id=b<span>x</span></li>'],
-  ])('reports but does not fix %s, so the markup it swallowed is never split', async (_name, code) => {
+    ['an open tag whose unquoted value ran into the next tag', '<li class="a" id=b<span>x</span></li>'],
+  ])('reports but does not fix %s, so the markup it ran into is never split', async (_name, code) => {
     const result = await lint(code);
     expect(result.output).toBe(code);
     expect(result.messages.map((message) => message.ruleId)).toEqual(['twig-html/attrs-newline']);
@@ -156,8 +160,9 @@ describe('twig-html/attrs-newline', () => {
     expect(result.messages.filter((message) => message.fatal)).toEqual([]);
   });
 
-  it('checks <script> and <style> tags too', async () => {
-    expect(await fixed('<script src="a.js" type="module" defer></script>')).toBe('<script\n  src="a.js"\n  type="module"\n  defer\n></script>');
+  it('leaves <script> and <style> tags alone', async () => {
+    const code = '<script src="a.js" type="module" defer></script><style media="print" id="a" data-x></style>';
+    expect(await fixed(code)).toBe(code);
   });
 
   it('is not applied to .svg.twig templates by the recommended config', async () => {
@@ -174,7 +179,7 @@ describe('twig-html/attrs-newline', () => {
       overrideConfigFile: true,
       overrideConfig: [
         twigHtml.configs.recommended,
-        { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [], rules: { 'twig-html/attrs-newline': ['warn', { ignoreInside: [] }] } },
+        { ...twigHtml.configs.recommended, files: ['**/*.svg.twig'], ignores: [], rules: { 'twig-html/attrs-newline': ['warn', { ignores: [] }] } },
       ],
     });
     const [sprite] = await eslint.lintText('<svg xmlns="a" viewBox="0 0 1 1" width="1"></svg>', { filePath: 'sprite.svg.twig' });
@@ -197,18 +202,24 @@ describe('twig-html/attrs-newline', () => {
 
   it('can lay out inline SVG, or skip other elements', async () => {
     const svg = '<svg class="icon" viewBox="0 0 24 24"></svg>';
-    expect(await fixed(svg, { ignoreInside: [] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 24 24"\n></svg>');
+    expect(await fixed(svg, { ignores: [] })).toBe('<svg\n  class="icon"\n  viewBox="0 0 24 24"\n></svg>');
     const math = '<math display="block" class="a"></math>';
-    expect(await fixed(math, { ignoreInside: ['math'] })).toBe(math);
+    expect(await fixed(math, { ignores: ['math'] })).toBe(math);
   });
 
   it('keeps Windows line endings when it breaks a tag', async () => {
     expect(await fixed('<div>\r\n  <a href="#" class="a">x</a>\r\n</div>')).toBe('<div>\r\n  <a\r\n    href="#"\r\n    class="a"\r\n  >x</a>\r\n</div>');
   });
 
-  it('never touches markup inside textarea or title, which is text', async () => {
+  it('never touches markup inside textarea, which is text', async () => {
     const code = '<textarea name="a" rows="2"><p class="x" id="y">typed</p></textarea>';
     expect(await fixed(code)).toBe('<textarea\n  name="a"\n  rows="2"\n><p class="x" id="y">typed</p></textarea>');
+  });
+
+  it('breaks the opening tag of a title but never reads its text as markup', async () => {
+    expect(await fixed('<title id="a" class="b" lang="en"><p class="x" id="y" lang="z"></title>')).toBe(
+      '<title\n  id="a"\n  class="b"\n  lang="en"\n><p class="x" id="y" lang="z"></title>',
+    );
   });
 });
 

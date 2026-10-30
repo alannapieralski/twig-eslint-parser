@@ -7,7 +7,7 @@ Before adding a function, type or constant, look for it in this order and use wh
 1. The rule's own folder.
 2. The plugin's `src/shared/`.
 3. The parser's public API: `packages/twig-eslint-parser/src/index.ts` (for example
-   `readTwigServices`, `containsTwig`, `isAttributeNode`, `drupalClassMethods`).
+   `readTwigServices`, `containsTwig`, `isAttributeNode`).
 4. The other plugin's `src/shared/`.
 
 Useful searches:
@@ -32,7 +32,7 @@ duplicate. Fix it by moving the first one to where both can import it.
 
 Move code on its second use, in the same change that adds the second use. Do not copy it first.
 
-A helper that only one rule uses but is clearly nameable (`isOpenTagSwallowingMarkup`) is allowed
+A helper that only one rule uses but is clearly nameable (`isOpenTagUnreadable`) is allowed
 to start in that rule's folder. Anything that reads Twig structure, HTML whitespace or ESLint
 reporting is shared from the start, because the next rule will want it.
 
@@ -57,7 +57,6 @@ below, kept identical, and nothing else may be copied between plugins. Ask the u
 an item to this list.
 
 - The `Range` type (`readonly [number, number]`) and the other small types that cross files.
-- The tag node types a rule listens to (`Tag`, `ScriptTag`, `StyleTag`).
 - The function that builds an ESLint location from a range.
 - The `Problem` type and `reportProblems`.
 - The docs URL builder for a rule id.

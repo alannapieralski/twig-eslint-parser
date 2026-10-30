@@ -1,7 +1,8 @@
-import { parse as parseCss, toPlainObject, type CssNodePlain } from 'css-tree';
+import { parse as parseCss, toPlainObject } from 'css-tree';
 import { parse as parseMarkupTree, TokenTypes } from '../es-html-parser/index.js';
-import type { TemplateInfo } from '../es-html-parser/types/index.js';
 import { cssVisitorKeys, htmlVisitorKeys } from './visitor-keys.js';
+import type { CssNodePlain } from 'css-tree';
+import type { TemplateInfo } from '../es-html-parser/types/index.js';
 
 type Position = { line: number; column: number };
 type Node = { type: string; range: [number, number]; loc: { start: Position; end: Position }; [key: string]: unknown };
@@ -18,7 +19,7 @@ export type HtmlProgram = {
 };
 export type HtmlParseOptions = { readonly templateInfos: readonly TemplateInfo[]; readonly rawContentTags?: readonly string[]; readonly voidElements?: readonly string[] };
 
-const commentTokenTypes: ReadonlySet<string> = new Set([TokenTypes.CommentOpen, TokenTypes.CommentContent, TokenTypes.CommentClose]);
+const COMMENT_TOKEN_TYPES: ReadonlySet<string> = new Set([TokenTypes.CommentOpen, TokenTypes.CommentContent, TokenTypes.CommentClose]);
 
 function visit<Visited extends { type: string }>(node: Visited, keysByType: Readonly<Record<string, readonly string[]>>, typeOf: (node: Visited) => string, visitor: (node: Visited) => void): void {
   const childKeys = keysByType[typeOf(node)] ?? [];
@@ -66,7 +67,7 @@ export function parseHtmlProgram(text: string, options: HtmlParseOptions): HtmlP
     body: [document],
     range: document.range,
     loc: document.loc,
-    tokens: tokens.filter((token) => !commentTokenTypes.has(token.type)),
+    tokens: tokens.filter((token) => !COMMENT_TOKEN_TYPES.has(token.type)),
     comments,
   };
 }

@@ -1,7 +1,7 @@
-import type { TwigStringSummary } from 'twig-eslint-parser';
-import type { Problem } from '../../shared/problem.js';
 import { describeQuote } from './quote-style.js';
 import { requote } from './requote.js';
+import type { TwigStringSummary } from 'twig-eslint-parser';
+import type { Problem } from '../../shared/problem.js';
 import type { QuoteSource } from './types.js';
 
 function findStringProblem(string: TwigStringSummary, source: QuoteSource): Problem[] {

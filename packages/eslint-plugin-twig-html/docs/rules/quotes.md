@@ -33,7 +33,7 @@ Examples of **correct** code:
 
 ### HTML attribute values
 
-- **Every attribute of every tag** is checked, `<script>` and `<style>` tags included. Attributes left
+- **Every attribute of every tag** is checked, except on `<script>` and `<style>`. Attributes left
   out of the AST by the parser option `ignoreInterpolatedAttributes`, such as `class` under
   `eslint-plugin-twig-tailwind`'s recommended config, are still checked.
 - **Twig inside a value is opaque to HTML.** In `class='{{ "a" }}'` only the outer quotes are HTML
@@ -64,15 +64,14 @@ Every string the Twig lexer reads is checked. That includes:
 
 The rule never changes what a template renders. It does not report:
 
-- **A value or string that contains the wanted quote**, such as `title='say "hi"'` or `{{ "it's" }}`,
-  because switching would need an escape.
-- **With `twig: 'single'`, a double-quoted Twig string that interpolates**, such as `"a #{b}"`, since
-  only double quotes interpolate.
-- **With `twig: 'double'`, a single-quoted Twig string containing `#{`**, since double quotes would
-  start interpolating it.
-- **Quotes in text, comments, `<script>` and `<style>` content, and `<textarea>` and `<title>`
-  text**, and DOCTYPE identifiers, because they have no meaning to HTML.
-- **Strings in `{# #}` comments and `{% verbatim %}`**, because they are text to Twig.
+| Skipped | Why | Setting |
+|---|---|---|
+| A value or string that contains the wanted quote, such as `title='say "hi"'` or `{{ "it's" }}` | Switching would need an escape | Built in |
+| With `twig: 'single'`, a double-quoted Twig string that interpolates, such as `"a #{b}"` | Only double quotes interpolate | Built in |
+| With `twig: 'double'`, a single-quoted Twig string containing `#{` | Double quotes would start interpolating it | Built in |
+| Attributes of `<script>` and `<style>` tags | The elements are left as written | Built in |
+| Quotes in text, comments, `<script>` and `<style>` content, and `<textarea>` and `<title>` text, and DOCTYPE identifiers | They have no meaning to HTML | Built in |
+| Strings in `{# #}` comments and `{% verbatim %}` | They are text to Twig | Built in |
 
 ### Reported but not fixed
 
@@ -85,8 +84,10 @@ The rule never changes what a template renders. It does not report:
 - **An unquoted value holding any Twig**, such as `data-id={{ id }}` or
   `class={% if a %}"a"{% else %}'b'{% endif %}`, since that Twig may print spaces, attributes or quotes
   of its own.
-- **An attribute in an open tag that swallowed the markup after it**, such as `<li id=b<span>`, where
-  the `li` open tag has no `>` of its own, since the parser has misread where that tag ends.
+- **An attribute in an open tag the parser could not read cleanly**, such as `<li id=b<span>`, where
+  the `li` open tag has no `>` of its own, a tag with a quote left in an attribute name, or a tag with
+  no `>` before the end of the file, since the parser has misread where that tag ends. [`no-parse-errors`](no-parse-errors.md) reports the tag
+  itself.
 
 ## Options
 

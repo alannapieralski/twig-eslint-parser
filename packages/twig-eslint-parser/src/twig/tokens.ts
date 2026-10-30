@@ -5,10 +5,10 @@ import type { TokenType } from '../lexer/TokenType.js';
 export type TwigTokenType = TokenType;
 export type TwigToken = { readonly type: TwigTokenType; readonly value: string; readonly start: number; readonly end: number };
 
-const nonSignificantTypes: ReadonlySet<TwigTokenType> = new Set(['WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER', 'INLINE_COMMENT']);
+const NON_SIGNIFICANT_TYPES: ReadonlySet<TwigTokenType> = new Set(['WHITESPACE', 'TRIMMING_MODIFIER', 'LINE_TRIMMING_MODIFIER', 'INLINE_COMMENT']);
 
 export function isSignificant(token: TwigToken): boolean {
-  return !nonSignificantTypes.has(token.type);
+  return !NON_SIGNIFICANT_TYPES.has(token.type);
 }
 
 export class TwigSyntaxError extends Error {

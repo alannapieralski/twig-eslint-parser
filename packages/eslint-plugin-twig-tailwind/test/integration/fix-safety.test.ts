@@ -1,10 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import { parseForESLint } from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../src/index.js';
+import type { Linter } from 'eslint';
 
 const fixturesDirectory = fileURLToPath(new URL('../fixtures/', import.meta.url));
 const parserFixturesDirectory = new URL('../../../twig-eslint-parser/test/fixtures/twig/', import.meta.url);
@@ -29,8 +30,8 @@ function fixWith(rules: Linter.RulesRecord) {
   });
 }
 
-function unconvertedBlockCount(code: string): number {
-  return parseForESLint(code).services.twig.unconvertedBlocks.length;
+function diagnosticCount(code: string): number {
+  return parseForESLint(code).services.twig.diagnostics.length;
 }
 
 describe.each([
@@ -43,7 +44,7 @@ describe.each([
     const output = result?.output ?? code;
     expect(result?.messages.filter((message) => message.fatal)).toEqual([]);
     expect(() => parseForESLint(output)).not.toThrow();
-    expect(unconvertedBlockCount(output)).toBe(unconvertedBlockCount(code));
+    expect(diagnosticCount(output)).toBe(diagnosticCount(code));
     expect(output.split('`').length).toBe(code.split('`').length);
   });
 

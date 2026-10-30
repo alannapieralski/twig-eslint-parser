@@ -9,8 +9,8 @@ export type CoverageTotals = {
   readonly score: number;
 };
 
-const maxListedTemplates = 15;
-const maxListedSpansPerTemplate = 3;
+const MAX_LISTED_TEMPLATES = 15;
+const MAX_LISTED_SPANS_PER_TEMPLATE = 3;
 
 export function scoreOf(lines: number, uncovered: number, excused: number): number {
   const scoredLines = lines - excused;
@@ -34,7 +34,7 @@ export function summariseCoverage(coverage: readonly TemplateCoverage[]): Covera
 }
 
 function describeTemplate(entry: TemplateCoverage): string {
-  const spans = entry.spans.filter((span) => !span.isExcused).slice(0, maxListedSpansPerTemplate);
+  const spans = entry.spans.filter((span) => !span.isExcused).slice(0, MAX_LISTED_SPANS_PER_TEMPLATE);
   const where = spans.map((span) => `${span.startLine}${span.endLine === span.startLine ? '' : `-${span.endLine}`} ${span.label}`).join('; ');
   return `- ${entry.template.root} :: ${entry.template.relativePath}: ${entry.uncovered} of ${entry.lines} lines (${where})`;
 }
@@ -56,8 +56,8 @@ export function renderCoverage(id: string, coverage: readonly TemplateCoverage[]
     const rootTotals = summariseCoverage(entries);
     lines.push(`| ${root} | ${rootTotals.templates} | ${rootTotals.lines} | ${rootTotals.uncovered} | ${rootTotals.excused} | ${formatScore(rootTotals.score)} |`);
   }
-  const worst = scored.filter((entry) => entry.uncovered > 0).sort((first, second) => second.uncovered - first.uncovered).slice(0, maxListedTemplates);
-  if (worst.length > 0) lines.push('', `Templates with the most lines not read (first ${maxListedTemplates}):`, '', ...worst.map(describeTemplate));
+  const worst = scored.filter((entry) => entry.uncovered > 0).sort((first, second) => second.uncovered - first.uncovered).slice(0, MAX_LISTED_TEMPLATES);
+  if (worst.length > 0) lines.push('', `Templates with the most lines not read (first ${MAX_LISTED_TEMPLATES}):`, '', ...worst.map(describeTemplate));
   return `${lines.join('\n')}\n`;
 }
 

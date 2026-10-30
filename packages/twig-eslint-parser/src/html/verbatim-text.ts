@@ -1,7 +1,6 @@
+import { TWIG_DELIMITERS } from '../twig/syntax.js';
 import type { TwigBlock } from '../twig/blocks.js';
-import { twigDelimiters } from '../twig/syntax.js';
-
-type Range = readonly [number, number];
+import type { Range } from '../range.js';
 
 export type VerbatimMaskedText = { readonly text: string; readonly maskedRanges: readonly Range[] };
 
@@ -32,7 +31,7 @@ export function maskVerbatimDelimiters(source: string, blocks: readonly TwigBloc
   const maskedRanges: Range[] = [];
   for (const [start, end] of findVerbatimBodies(blocks)) {
     const body = source.slice(start, end);
-    const masked = body.replace(twigDelimiters, '  ');
+    const masked = body.replace(TWIG_DELIMITERS, '  ');
     if (masked === body) continue;
     text = text.slice(0, start) + masked + text.slice(end);
     maskedRanges.push([start, end]);

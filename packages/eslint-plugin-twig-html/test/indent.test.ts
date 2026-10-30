@@ -1,11 +1,13 @@
-import { ESLint, type Linter } from 'eslint';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import twigHtml from '../src/index.js';
+import type { Linter } from 'eslint';
 
 async function lint(code: string, ruleOptions: unknown[] = [], fix = true, parserOptions: Record<string, unknown> = {}) {
   const rules: Linter.RulesRecord = {
     'twig-html/attrs-newline': 'off',
     'twig-html/multiline-html-element-content-newline': 'off',
+    'twig-html/no-parse-errors': 'off',
     'twig-html/quotes': 'off',
     'twig-html/indent': ['warn', ...ruleOptions],
   };
@@ -110,8 +112,46 @@ describe('twig-html/indent', () => {
       expect(await fixed('{%- if a -%}\n<p>a</p>\n{%- endif -%}')).toBe('{%- if a -%}\n  <p>a</p>\n{%- endif -%}');
     });
 
-    it('leaves the inner lines of a multi-line Twig tag or print alone', async () => {
-      await expectUntouched('<div>\n  {{ include("a", {\n        b: 1,\n  }) }}\n  {% set c = {\n      d: 2,\n    } %}\n</div>');
+    it('indents the lines inside brackets one step from the line that opened them', async () => {
+      expect(await fixed('<div>\n  {{ include("a", {\n        b: [\n1,\n  ],\n  }) }}\n  {% set c = {\n      d: 2,\n    } %}\n</div>')).toBe(
+        '<div>\n  {{ include("a", {\n    b: [\n      1,\n    ],\n  }) }}\n  {% set c = {\n    d: 2,\n  } %}\n</div>',
+      );
+    });
+
+    it('indents the parameters of an include', async () => {
+      expect(await fixed("{% if a %}\n{% include 'x.twig' with {\ntitle: t,\nitems: [a, b],\n} only %}\n{% endif %}")).toBe(
+        "{% if a %}\n  {% include 'x.twig' with {\n    title: t,\n    items: [a, b],\n  } only %}\n{% endif %}",
+      );
+    });
+
+    it('measures from the line that opened the bracket, as written', async () => {
+      await expectUntouched("{%\n  set classes = [\n    'b',\n  ]\n%}\n{% set a = b\n  .c([\n    'd',\n  ])\n%}");
+      expect(await fixed("{% set a = b\n  .c([\n'd',\n])\n%}")).toBe("{% set a = b\n  .c([\n    'd',\n  ])\n%}");
+    });
+
+    it('indents a method chain one step from the line that starts it, inside brackets or not', async () => {
+      expect(await fixed("{% include 'x' with {\nattributes: attributes\n.addClass([\n'a',\n])\n.setAttribute('b', c),\ntitle: t,\n} %}")).toBe(
+        "{% include 'x' with {\n  attributes: attributes\n    .addClass([\n      'a',\n    ])\n    .setAttribute('b', c),\n  title: t,\n} %}",
+      );
+      expect(await fixed('{% set a = b\n.c()\n      .d() %}\n{%\n  set e = f\n.g()\n%}')).toBe('{% set a = b\n  .c()\n  .d() %}\n{%\n  set e = f\n    .g()\n%}');
+    });
+
+    it('leaves the closing bracket of one argument among several alone', async () => {
+      await expectUntouched("{{ f(a, {\n  'b': 1,\n},\n  {\n    c: 2\n  })\n}}");
+    });
+
+    it('leaves lines outside any bracket and not part of a method chain alone', async () => {
+      await expectUntouched("{% set a = b and\n      c %}\n{{ c\n? 'd'\n   : 'e' }}\n{% set f = g\n|h %}");
+    });
+
+    it('measures a Twig print between attributes from its own line', async () => {
+      expect(await fixed('<p>text {{ f({\nid: 1,\n}) }}</p>\n<div\n  {{ attrs({\nid: 1,\n}) }}\n>\n</div>')).toBe(
+        '<p>text {{ f({\n  id: 1,\n}) }}</p>\n<div\n  {{ attrs({\n    id: 1,\n  }) }}\n>\n</div>',
+      );
+    });
+
+    it('leaves lines inside a multi-line string, a comment and an attribute value alone', async () => {
+      await expectUntouched('<div class="{{ {\n    a: 1,\n} }}">\n  {{ f("a\n   b") }}\n  {# {\n     two #}\n</div>');
     });
 
     it('leaves verbatim and raw bodies alone', async () => {
@@ -122,9 +162,9 @@ describe('twig-html/indent', () => {
       await expectUntouched('<div>\n  <li\n  class="a"\n      id="b"\n');
     });
 
-    it('reports nothing when Twig tags do not pair up', async () => {
-      await expectUntouched('<div>\n<p>a</p>\n{% endif %}\n</div>');
-      await expectUntouched('{% if a %}\n<p>a</p>\n{% endfor %}');
+    it('reports a parsing error, and nothing else, when Twig tags do not pair up', async () => {
+      const { messages } = await lint('<div>\n<p>a</p>\n{% endif %}\n</div>', [], false);
+      expect(messages).toMatchObject([{ ruleId: null, fatal: true, line: 3, column: 1, message: expect.stringContaining("Twig tags don't pair up") }]);
     });
 
     it('leaves the content of an element opened and closed in different Twig branches alone', async () => {
@@ -155,6 +195,10 @@ describe('twig-html/indent', () => {
 
     it('indents attributes one step from the tag when the first one is on its own line', async () => {
       expect(await fixed('  <div>\n<input\nclass="a"\n        id="b"\n>\n  </div>')).toBe('<div>\n  <input\n    class="a"\n    id="b"\n  >\n</div>');
+    });
+
+    it('indents attributes one step from the tag when only Twig glued to the tag name is on the tag line', async () => {
+      expect(await fixed('<div{{ attributes }}\n      class="a"\n id="b"\n>\n</div>')).toBe('<div{{ attributes }}\n  class="a"\n  id="b"\n>\n</div>');
     });
 
     it('indents attributes one step when alignAttributesVertically is off', async () => {

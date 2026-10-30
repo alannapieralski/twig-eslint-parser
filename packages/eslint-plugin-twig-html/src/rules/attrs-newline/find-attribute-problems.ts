@@ -1,19 +1,19 @@
-import { isOpenTagSwallowingMarkup } from '../../shared/swallowed-markup.js';
+import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
+import { describeSeparators } from './describe-separators.js';
+import { groupAttributes } from './group-attributes.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
-import { describeSeparators } from './describe-separators.js';
-import { groupAttributes } from './group-attributes.js';
 import type { CloseStyle, Options } from './options.js';
 import type { TagSource } from '../../shared/tag-source.js';
 import type { AttributeSeparator } from './types.js';
 
-const whitespaceOnly = /^\s*$/;
-const ignoredIndentation = /^[ \t]*$/;
+const WHITESPACE_ONLY = /^\s*$/;
+const IGNORED_INDENTATION = /^[ \t]*$/;
 
 function isSeparatorCorrect(separatorText: string, separator: AttributeSeparator, lineBreak: string): boolean {
   if (!separator.isLineBreak) return separatorText === separator.expected;
-  return separatorText.startsWith(lineBreak) && ignoredIndentation.test(separatorText.slice(lineBreak.length));
+  return separatorText.startsWith(lineBreak) && IGNORED_INDENTATION.test(separatorText.slice(lineBreak.length));
 }
 
 function messageIdForSeparator(separator: AttributeSeparator, closeStyle: CloseStyle): string {
@@ -29,9 +29,9 @@ function findReportedEnd(separator: AttributeSeparator, tag: TagNode, groups: re
 }
 
 export function findAttributeProblems(tag: TagNode, source: TagSource, options: Required<Options>): Problem[] {
-  const { text, lineBreak, blocks, attributesOf, isIgnored } = source;
+  const { text, lineBreak, blocks, attributesOf, isIgnored, unreadableTagStarts } = source;
   const attributes = attributesOf(tag);
-  const groups = groupAttributes(attributes, blocks);
+  const groups = groupAttributes(tag, attributes, blocks);
   if (groups.length <= options.ifAttrsMoreThan || isIgnored(tag)) return [];
 
   const separators = describeSeparators(tag, groups, text, lineBreak, options.closeStyle);
@@ -39,8 +39,8 @@ export function findAttributeProblems(tag: TagNode, source: TagSource, options: 
   const firstWrongSeparator = wrongSeparators[0];
   if (!firstWrongSeparator) return [];
 
-  const areAllSeparatorsWhitespace = separators.every((separator) => whitespaceOnly.test(text.slice(...separator.range)));
-  const isFixable = areAllSeparatorsWhitespace && !isOpenTagSwallowingMarkup({ openEnd: tag.openEnd, attributes }, text);
+  const areAllSeparatorsWhitespace = separators.every((separator) => WHITESPACE_ONLY.test(text.slice(...separator.range)));
+  const isFixable = areAllSeparatorsWhitespace && !isOpenTagUnreadable(tag, unreadableTagStarts);
 
   return [{
     range: [firstWrongSeparator.range[1], findReportedEnd(firstWrongSeparator, tag, groups)],

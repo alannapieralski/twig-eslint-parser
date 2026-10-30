@@ -1,6 +1,7 @@
-import { drupalClassMethods } from 'twig-eslint-parser';
 import type { ClassSelector } from './class-selector.js';
 
-export const drupalSelectors: readonly ClassSelector[] = [
-  { kind: 'callee', name: `^(?:${drupalClassMethods.join('|')})$`, match: [{ type: 'strings' }] },
+const DRUPAL_CLASS_METHODS: readonly string[] = ['addClass', 'removeClass'];
+
+export const DRUPAL_SELECTORS: readonly ClassSelector[] = [
+  { kind: 'callee', name: `^(?:${DRUPAL_CLASS_METHODS.join('|')})$`, match: [{ type: 'strings' }] },
 ];

@@ -1,19 +1,19 @@
-import type { ClassSelector } from '../selectors/class-selector.js';
 import { isSelector } from './selector-validation.js';
+import type { ClassSelector } from '../selectors/class-selector.js';
 
 export type ConfigOptions = {
   readonly drupal?: boolean;
   readonly selectors?: readonly ClassSelector[];
 };
 
-const knownOptionNames: ReadonlySet<string> = new Set(['drupal', 'selectors']);
+const KNOWN_OPTION_NAMES: ReadonlySet<string> = new Set(['drupal', 'selectors']);
 
 export function parseConfigOptions(options: unknown): Required<ConfigOptions> {
   if (typeof options !== 'object' || options === null || Array.isArray(options)) {
     throw new TypeError('createConfig() takes an options object, such as { drupal: true }.');
   }
 
-  const unknownNames = Object.keys(options).filter((optionName) => !knownOptionNames.has(optionName));
+  const unknownNames = Object.keys(options).filter((optionName) => !KNOWN_OPTION_NAMES.has(optionName));
   if (unknownNames.length > 0) throw new TypeError(`createConfig() has no option named ${unknownNames.join(', ')}. Its options are drupal and selectors.`);
 
   const { drupal = false, selectors = [] } = options as ConfigOptions;

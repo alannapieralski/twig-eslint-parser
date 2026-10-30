@@ -2,19 +2,22 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { Linter, Rule } from 'eslint';
 import twigParser from 'twig-eslint-parser';
 import { describe, expect, it } from 'vitest';
 import { canaryRoot, evaluateCanaries, isExpectedCanaryFailure } from '../src/canaries.js';
 import { baselineCoverageOf, findingKey, findStaleBaselineKeys, updateBaselineKeys } from '../src/baseline.js';
 import { discoverTemplates, loadConfig } from '../src/config.js';
 import { formatScore, renderCoverage, scoreOf, summariseCoverage } from '../src/coverage.js';
-import { reviewFix, type FixKeeps } from '../src/fix-invariants.js';
-import { applyOnePass, type AppliedFix } from '../src/fixing.js';
+import { reviewFix } from '../src/fix-invariants.js';
+import { applyOnePass } from '../src/fixing.js';
 import { compareRuns, describeStrictViolations, mergeHistory, recordRun, renderComparison } from '../src/history.js';
 import { createProgressReporter } from '../src/progress.js';
-import { ruleChecks, type CorpusPlugin } from '../src/rule-checks.js';
+import { ruleChecks } from '../src/rule-checks.js';
 import { selectChecks } from '../src/select.js';
+import type { Linter, Rule } from 'eslint';
+import type { FixKeeps } from '../src/fix-invariants.js';
+import type { AppliedFix } from '../src/fixing.js';
+import type { CorpusPlugin } from '../src/rule-checks.js';
 import type { Check, CheckOutcome, Finding, Template, TemplateCoverage } from '../src/types.js';
 
 function createCorpusDirectory(files: Record<string, string>): string {
@@ -328,7 +331,8 @@ describe('createProgressReporter', () => {
     const progress = reporter.track('x', 100);
     advance(300);
     progress(2);
-    expect(written[0]).toMatch(/^\r\x1b\[2K\[corpus\] x {2}2\/100/);
+    expect(written[0]).toMatch(/^\r/);
+    expect(written[0]).toContain('\x1b[2K[corpus] x  2/100');
     expect(written[0]).not.toContain('\n');
   });
 });

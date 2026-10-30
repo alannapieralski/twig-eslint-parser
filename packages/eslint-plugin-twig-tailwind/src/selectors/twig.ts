@@ -1,9 +1,9 @@
 import type { ClassSelector } from './class-selector.js';
 
-const classesName = '(?:(?:.*_)?class(?:es)?|[a-z]\\w*Class(?:es)?)';
+const CLASSES_NAME = '(?:(?:.*_)?class(?:es)?|[a-z]\\w*Class(?:es)?)';
 
-export const twigSelectors: readonly ClassSelector[] = [
-  { kind: 'variable', name: `^${classesName}$`, match: [{ type: 'strings' }] },
-  { kind: 'callee', name: '^\\w+$', match: [{ type: 'objectValues', path: `^(?:.*\\.)?${classesName}(?:\\[\\d+\\])?$` }] },
-  { kind: 'callee', path: `^${classesName}\\.merge$`, match: [{ type: 'strings' }] },
+export const TWIG_SELECTORS: readonly ClassSelector[] = [
+  { kind: 'variable', name: `^${CLASSES_NAME}$`, match: [{ type: 'strings' }] },
+  { kind: 'callee', name: '^\\w+$', match: [{ type: 'objectValues', path: `^(?:.*\\.)?${CLASSES_NAME}(?:\\[\\d+\\])?$` }] },
+  { kind: 'callee', path: `^${CLASSES_NAME}\\.merge$`, match: [{ type: 'strings' }] },
 ];

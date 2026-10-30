@@ -1,7 +1,8 @@
 import { parseForESLint } from '../../src/index.js';
 import { createOffsetLocator } from '../../src/source-text.js';
-import { groupTwigBlocks, type TwigBlock } from '../../src/twig/blocks.js';
+import { groupTwigBlocks } from '../../src/twig/blocks.js';
 import { tokenizeTwig } from '../../src/twig/tokens.js';
+import type { TwigBlock } from '../../src/twig/blocks.js';
 import type { OutputIssue } from './output-checks.js';
 
 export type Rewrite = { readonly name: string; readonly apply: (source: string, blocks: readonly TwigBlock[]) => string };
@@ -11,9 +12,9 @@ type Edit = { readonly at: number; readonly remove: number; readonly insert: str
 type Entry = { readonly depth: number; readonly description: string; readonly offset: number };
 type Tree = { readonly html: readonly Entry[]; readonly twig: readonly Entry[] };
 
-const keysNeverCompared = new Set(['parent', 'loc', 'range', 'start', 'end', 'raw', 'parts', 'stylesheet', 'tokens', 'comments', 'openStart', 'openEnd', 'close', 'startWrapper', 'endWrapper', 'open']);
-const delimiterNeighbours = /[-~{}%#]/;
-const attributeNameCharacter = /[\w:@.-]/;
+const KEYS_NEVER_COMPARED = new Set(['parent', 'loc', 'range', 'start', 'end', 'raw', 'parts', 'stylesheet', 'tokens', 'comments', 'openStart', 'openEnd', 'close', 'startWrapper', 'endWrapper', 'open']);
+const DELIMITER_NEIGHBOURS = /[-~{}%#]/;
+const ATTRIBUTE_NAME_CHARACTER = /[\w:@.-]/;
 
 function applyEdits(source: string, edits: readonly Edit[]): string {
   let result = source;
@@ -33,7 +34,7 @@ function innerWhitespaceTokens(block: TwigBlock): { readonly leading?: TwigBlock
 function tightenDelimiters(source: string, blocks: readonly TwigBlock[]): string {
   const edits = blocks.filter((block) => block.kind !== 'comment').flatMap((block): Edit[] => {
     const { leading, trailing } = innerWhitespaceTokens(block);
-    const safe = (token: TwigBlock['tokens'][number] | undefined, neighbour: string | undefined) => token && neighbour !== undefined && !delimiterNeighbours.test(neighbour);
+    const safe = (token: TwigBlock['tokens'][number] | undefined, neighbour: string | undefined) => token && neighbour !== undefined && !DELIMITER_NEIGHBOURS.test(neighbour);
     return [
       ...(safe(leading, leading && source[leading.end]) && leading ? [{ at: leading.start, remove: leading.end - leading.start, insert: '' }] : []),
       ...(safe(trailing, trailing && source[trailing.start - 1]) && trailing ? [{ at: trailing.start, remove: trailing.end - trailing.start, insert: '' }] : []),
@@ -77,10 +78,14 @@ function findBlocksInsideStartTags(source: string, blocks: readonly TwigBlock[])
   return insideTags;
 }
 
+function isGluedToTagName(source: string, block: TwigBlock): boolean {
+  return /^<[A-Za-z][^\s>]*$/.test(source.slice(source.lastIndexOf('<', block.start), block.start));
+}
+
 function separateTwigTagsFromAttributeNames(source: string, blocks: readonly TwigBlock[]): string {
-  const edits = findBlocksInsideStartTags(source, blocks).filter((block) => block.kind !== 'print').flatMap((block): Edit[] => [
-    ...(attributeNameCharacter.test(source[block.start - 1] ?? '') ? [{ at: block.start, remove: 0, insert: ' ' }] : []),
-    ...(attributeNameCharacter.test(source[block.end] ?? '') ? [{ at: block.end, remove: 0, insert: ' ' }] : []),
+  const edits = findBlocksInsideStartTags(source, blocks).filter((block) => block.kind !== 'print' && !isGluedToTagName(source, block)).flatMap((block): Edit[] => [
+    ...(ATTRIBUTE_NAME_CHARACTER.test(source[block.start - 1] ?? '') ? [{ at: block.start, remove: 0, insert: ' ' }] : []),
+    ...(ATTRIBUTE_NAME_CHARACTER.test(source[block.end] ?? '') ? [{ at: block.end, remove: 0, insert: ' ' }] : []),
   ]);
   return applyEdits(source, edits);
 }
@@ -89,7 +94,7 @@ function useWindowsLineEndings(source: string): string {
   return source.replace(/\r?\n/g, '\r\n');
 }
 
-export const rewrites: readonly Rewrite[] = [
+export const REWRITES: readonly Rewrite[] = [
   { name: 'Twig delimiters without inner spaces', apply: tightenDelimiters },
   { name: 'Twig delimiters with inner spaces', apply: padDelimiters },
   { name: 'Twig tags spaced from attribute names', apply: separateTwigTagsFromAttributeNames },
@@ -102,7 +107,7 @@ function normaliseText(text: string): string {
 
 function describeNode(node: Record<string, unknown>): string {
   const fields = Object.entries(node)
-    .filter(([key, value]) => !keysNeverCompared.has(key) && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'))
+    .filter(([key, value]) => !KEYS_NEVER_COMPARED.has(key) && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'))
     .map(([key, value]) => `${key}=${typeof value === 'string' ? JSON.stringify(normaliseText(value)) : String(value)}`);
   const closure = 'openStart' in node ? [`closed=${String(node['close'] !== undefined || node['selfClosing'] === true)}`] : [];
   return [String(node['type']), ...fields, ...closure].join(' ');
@@ -125,7 +130,7 @@ function flatten(root: unknown): Entry[] {
       entries.push({ depth, description: describeNode(node), offset: range?.[0] ?? 0 });
     }
     for (const [key, child] of Object.entries(node)) {
-      if (!keysNeverCompared.has(key)) visit(child, isNode ? depth + 1 : depth);
+      if (!KEYS_NEVER_COMPARED.has(key)) visit(child, isNode ? depth + 1 : depth);
     }
   };
   visit(root, 0);
@@ -156,7 +161,7 @@ function describeEntry(entry: Entry | undefined): string {
   return entry ? `${'  '.repeat(Math.min(entry.depth, 3))}${entry.description}`.slice(0, 80) : '(nothing)';
 }
 
-export function checkRewritesKeepTheTree(source: string, selected: readonly Rewrite[] = rewrites, parse: TreeParser = parseForESLint): OutputIssue[] {
+export function checkRewritesKeepTheTree(source: string, selected: readonly Rewrite[] = REWRITES, parse: TreeParser = parseForESLint): OutputIssue[] {
   let blocks: TwigBlock[];
   try {
     blocks = groupTwigBlocks(tokenizeTwig(source));

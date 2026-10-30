@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseForESLint } from '../src/index.js';
-import { convertedTags, tagsLeftUnconverted, twoWordTests } from '../src/twig/syntax.js';
+import { CONVERTED_TAGS, TAGS_LEFT_UNCONVERTED, TWO_WORD_TESTS } from '../src/twig/syntax.js';
 import { tokenizeTwig } from '../src/twig/tokens.js';
 import { checkParserOutput } from './support/output-checks.js';
 
@@ -26,9 +26,9 @@ const fixtures: Fixture[] = readdirSync(fixturesDirectory)
     return { name, code: readFileSync(new URL(name, fixturesDirectory), 'utf8'), twig: golden.twig, tokens: golden.tokens ?? [] };
   });
 
-const statementStarts = new Set(['begin of print statement', 'begin of statement block', 'begin of string interpolation']);
-const openers = new Set(['(', '[', '{']);
-const prefixContexts = new Set(['(', '[', '{', ',', ':', '?', '=>', '=']);
+const STATEMENT_STARTS = new Set(['begin of print statement', 'begin of statement block', 'begin of string interpolation']);
+const OPENERS = new Set(['(', '[', '{']);
+const PREFIX_CONTEXTS = new Set(['(', '[', '{', ',', ':', '?', '=>', '=']);
 
 const syntaxForms: Record<string, (fixture: Fixture, significant: readonly GoldenToken[]) => boolean> = {
   'single-quoted string': ({ code }, tokens) => tokens.some((token) => token.type === 'string' && code[token.offset] === "'"),
@@ -69,8 +69,8 @@ function numberSources(code: string, tokens: readonly GoldenToken[]): string[] {
 function innermostOpener(tokens: readonly GoldenToken[], index: number): string | undefined {
   const stack: string[] = [];
   for (const token of tokens.slice(0, index)) {
-    if (statementStarts.has(token.type)) stack.length = 0;
-    if (openers.has(String(token.value))) stack.push(String(token.value));
+    if (STATEMENT_STARTS.has(token.type)) stack.length = 0;
+    if (OPENERS.has(String(token.value))) stack.push(String(token.value));
     if ([')', ']', '}'].includes(String(token.value))) stack.pop();
   }
   return stack.at(-1);
@@ -86,7 +86,7 @@ function hashKeyFollows(tokens: readonly GoldenToken[], isKey: (token: GoldenTok
 
 function isPrefixPosition(tokens: readonly GoldenToken[], index: number): boolean {
   const previous = tokens[index - 1];
-  return !previous || statementStarts.has(previous.type) || (previous.type === 'operator' && !['(', '[', '.', '|', '?.'].includes(String(previous.value))) || prefixContexts.has(String(previous.value));
+  return !previous || STATEMENT_STARTS.has(previous.type) || (previous.type === 'operator' && !['(', '[', '.', '|', '?.'].includes(String(previous.value))) || PREFIX_CONTEXTS.has(String(previous.value));
 }
 
 function significantTokens(fixture: Fixture): GoldenToken[] {
@@ -144,13 +144,13 @@ describe(`Twig ${inventory.twig} syntax coverage`, () => {
   });
 
   it('knows whether to convert or skip every Twig tag', () => {
-    const unclassified = inventory.tags.map((tag) => tag.name).filter((tag) => !convertedTags.has(tag) && !tagsLeftUnconverted.has(tag));
-    expect(unclassified, 'Add these to convertedTags or tagsLeftUnconverted in src/twig/syntax.ts').toEqual([]);
+    const unclassified = inventory.tags.map((tag) => tag.name).filter((tag) => !CONVERTED_TAGS.has(tag) && !TAGS_LEFT_UNCONVERTED.has(tag));
+    expect(unclassified, 'Add these to CONVERTED_TAGS or TAGS_LEFT_UNCONVERTED in src/twig/syntax.ts').toEqual([]);
   });
 
   it('knows the second word of every two-word test', () => {
     const twoWordTestNames = inventory.tests.filter((test) => test.includes(' '));
-    expect(Object.entries(twoWordTests).map(([first, second]) => `${first} ${second}`).sort(), 'Update twoWordTests in src/twig/syntax.ts').toEqual(twoWordTestNames.sort());
+    expect(Object.entries(TWO_WORD_TESTS).map(([first, second]) => `${first} ${second}`).sort(), 'Update TWO_WORD_TESTS in src/twig/syntax.ts').toEqual(twoWordTestNames.sort());
   });
 
   const binaryOperators = inventory.expressions
@@ -158,17 +158,17 @@ describe(`Twig ${inventory.twig} syntax coverage`, () => {
     .flatMap((expression) => [expression.name, ...expression.aliases]);
   it.each(binaryOperators)('converts the binary operator %s', (operator) => {
     const code = /^has (some|every)$/.test(operator) ? `{{ a ${operator} x => x }}` : `{{ a ${operator} b }}`;
-    expect(checkParserOutput(code), 'Map the operator in javascriptByTwigOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(code), 'Map the operator in JAVASCRIPT_BY_TWIG_OPERATOR in src/twig/syntax.ts').toEqual([]);
     expect(parseForESLint(code).ast.twigBody).toHaveLength(1);
   });
 
   const unaryOperators = inventory.expressions.filter((expression) => expression.parser === 'UnaryOperatorExpressionParser').map((expression) => expression.name);
   it.each(unaryOperators)('converts the unary operator %s', (operator) => {
     const code = operator === '...' ? '{{ [...a] }}' : `{{ ${operator} a }}`;
-    expect(checkParserOutput(code), 'Map the operator in javascriptByTwigOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(code), 'Map the operator in JAVASCRIPT_BY_TWIG_OPERATOR in src/twig/syntax.ts').toEqual([]);
   });
 
   it.each(inventory.tests.flatMap((test) => [`is ${test}`, `is not ${test}`]))('converts the test "a %s"', (test) => {
-    expect(checkParserOutput(`{{ a ${test} }}`), 'Update twoWordTests or javascriptByTwigTestOperator in src/twig/syntax.ts').toEqual([]);
+    expect(checkParserOutput(`{{ a ${test} }}`), 'Update TWO_WORD_TESTS or JAVASCRIPT_BY_TWIG_TEST_OPERATOR in src/twig/syntax.ts').toEqual([]);
   });
 });

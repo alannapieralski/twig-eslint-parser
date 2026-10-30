@@ -1,8 +1,8 @@
 import type { ClassSelector } from '../selectors/class-selector.js';
 
-const selectorKinds: ReadonlySet<unknown> = new Set(['attribute', 'callee', 'tag', 'variable']);
-const kindsThatMatchByPath: ReadonlySet<unknown> = new Set(['callee', 'tag']);
-const matcherTypes: ReadonlySet<unknown> = new Set(['strings', 'objectKeys', 'objectValues']);
+const SELECTOR_KINDS: ReadonlySet<unknown> = new Set(['attribute', 'callee', 'tag', 'variable']);
+const KINDS_THAT_MATCH_BY_PATH: ReadonlySet<unknown> = new Set(['callee', 'tag']);
+const MATCHER_TYPES: ReadonlySet<unknown> = new Set(['strings', 'objectKeys', 'objectValues']);
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
@@ -22,7 +22,7 @@ function isMatcher(value: unknown): boolean {
   if (!isObject(value)) return false;
   if (value['type'] === 'anonymousFunctionReturn') return Array.isArray(value['match']) && value['match'].every(isMatcher);
 
-  return matcherTypes.has(value['type']) && isOptionalPattern(value['path']);
+  return MATCHER_TYPES.has(value['type']) && isOptionalPattern(value['path']);
 }
 
 export function isSelector(value: unknown): boolean {
@@ -30,12 +30,12 @@ export function isSelector(value: unknown): boolean {
 
   const { kind, name, path, match } = value as Partial<Record<keyof ClassSelector, unknown>>;
 
-  if (!selectorKinds.has(kind)) return false;
+  if (!SELECTOR_KINDS.has(kind)) return false;
   if (!isOptionalPattern(name) || !isOptionalPattern(path)) return false;
   if (match !== undefined && !(Array.isArray(match) && match.every(isMatcher))) return false;
 
   const hasName = name !== undefined;
-  const hasUsablePath = path !== undefined && kindsThatMatchByPath.has(kind);
+  const hasUsablePath = path !== undefined && KINDS_THAT_MATCH_BY_PATH.has(kind);
 
   return hasName || hasUsablePath;
 }

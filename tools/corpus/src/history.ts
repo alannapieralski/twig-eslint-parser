@@ -30,18 +30,18 @@ export type CheckComparison = {
   readonly coverage?: CoverageComparison;
 };
 
-const maxExamples = 5;
-const strictChangeRatio = 0.2;
-const strictMinimumChange = 5;
+const MAX_EXAMPLES = 5;
+const STRICT_CHANGE_RATIO = 0.2;
+const STRICT_MINIMUM_CHANGE = 5;
 
-const emptyHistory: RunHistory = { templates: {}, checks: {} };
+const EMPTY_HISTORY: RunHistory = { templates: {}, checks: {} };
 
 function templateKey(template: Template): string {
   return `${template.root} :: ${template.relativePath}`;
 }
 
 export function loadHistory(path: string): RunHistory {
-  if (!existsSync(path)) return emptyHistory;
+  if (!existsSync(path)) return EMPTY_HISTORY;
   const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
   if (typeof parsed !== 'object' || parsed === null || !('templates' in parsed) || !('checks' in parsed)) {
     throw new Error(`${path} is not a corpus run history. Delete it to start a new one.`);
@@ -159,7 +159,7 @@ export function compareRuns(previous: RunHistory, current: RunHistory): CheckCom
 function isLargeSwing(before: number, after: number): boolean {
   if (before === after) return false;
   if (before === 0 || after === 0) return true;
-  return Math.abs(after - before) >= strictMinimumChange && Math.abs(after - before) / before > strictChangeRatio;
+  return Math.abs(after - before) >= STRICT_MINIMUM_CHANGE && Math.abs(after - before) / before > STRICT_CHANGE_RATIO;
 }
 
 export function describeStrictViolations(comparisons: readonly CheckComparison[]): string[] {
@@ -202,10 +202,10 @@ export function renderComparison(comparisons: readonly CheckComparison[], strict
   }
   for (const { id, added, removed } of comparisons.filter((comparison) => comparison.added.length + comparison.removed.length > 0)) {
     lines.push('', `### ${id}`, '');
-    for (const example of added.slice(0, maxExamples)) lines.push(`- added: ${describeExample(example)}`);
-    if (added.length > maxExamples) lines.push(`- ... and ${added.length - maxExamples} more added`);
-    for (const example of removed.slice(0, maxExamples)) lines.push(`- removed: ${describeExample(example)}`);
-    if (removed.length > maxExamples) lines.push(`- ... and ${removed.length - maxExamples} more removed`);
+    for (const example of added.slice(0, MAX_EXAMPLES)) lines.push(`- added: ${describeExample(example)}`);
+    if (added.length > MAX_EXAMPLES) lines.push(`- ... and ${added.length - MAX_EXAMPLES} more added`);
+    for (const example of removed.slice(0, MAX_EXAMPLES)) lines.push(`- removed: ${describeExample(example)}`);
+    if (removed.length > MAX_EXAMPLES) lines.push(`- ... and ${removed.length - MAX_EXAMPLES} more removed`);
   }
   if (strictViolations && strictViolations.length > 0) {
     lines.push('', '## Strict check failed', '', ...strictViolations.map((violation) => `- ${violation}`), '', 'Review the changes, then run again without --strict to record this run as the new comparison point.');

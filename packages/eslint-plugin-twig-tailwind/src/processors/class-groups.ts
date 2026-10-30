@@ -1,12 +1,12 @@
-const groupDelimiters: ReadonlySet<string> = new Set(['[', ']', '|', '][']);
-const surroundingQuote = /^["'`]|["'`]$/g;
-const whitespaceRun = /\s+/;
+const GROUP_DELIMITERS: ReadonlySet<string> = new Set(['[', ']', '|', '][']);
+const SURROUNDING_QUOTE = /^["'`]|["'`]$/g;
+const WHITESPACE_RUN = /\s+/;
 
 export function isGroupDelimiter(text: string): boolean {
-  return groupDelimiters.has(text.trim());
+  return GROUP_DELIMITERS.has(text.trim());
 }
 
 export function containsGroupDelimiter(classList: string): boolean {
-  const tokens = classList.replace(surroundingQuote, '').split(whitespaceRun);
-  return tokens.some((token) => groupDelimiters.has(token));
+  const tokens = classList.replace(SURROUNDING_QUOTE, '').split(WHITESPACE_RUN);
+  return tokens.some((token) => GROUP_DELIMITERS.has(token));
 }

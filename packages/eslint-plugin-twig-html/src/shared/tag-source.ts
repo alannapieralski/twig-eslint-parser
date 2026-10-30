@@ -1,8 +1,10 @@
-import type { SourceCode } from 'eslint';
-import type { TwigBlockSummary, TwigParserServices } from 'twig-eslint-parser';
 import { createIgnoredInsideCheck } from './ignored-inside.js';
 import { lineBreakUsedIn } from './line-ending.js';
-import { createAttributesOf, type AttributesOf } from './tag-attributes.js';
+import { findUnreadableTagStarts } from './unreadable-open-tags.js';
+import { createAttributesOf } from './tag-attributes.js';
+import type { SourceCode } from 'eslint';
+import type { TwigBlockSummary, TwigParserServices } from 'twig-eslint-parser';
+import type { AttributesOf } from './tag-attributes.js';
 import type { TagNode } from './tag-node.js';
 
 export type TagSource = {
@@ -11,9 +13,10 @@ export type TagSource = {
   readonly blocks: readonly TwigBlockSummary[];
   readonly attributesOf: AttributesOf;
   readonly isIgnored: (tag: TagNode) => boolean;
+  readonly unreadableTagStarts: ReadonlySet<number>;
 };
 
-export function createTagSource(sourceCode: SourceCode, services: TwigParserServices, ignoreInside: readonly string[]): TagSource {
+export function createTagSource(sourceCode: SourceCode, services: TwigParserServices, ignores: readonly string[] = []): TagSource {
   const { text } = sourceCode;
 
   return {
@@ -21,6 +24,7 @@ export function createTagSource(sourceCode: SourceCode, services: TwigParserServ
     lineBreak: lineBreakUsedIn(text),
     blocks: services.blocks,
     attributesOf: createAttributesOf(services.omittedAttributes),
-    isIgnored: createIgnoredInsideCheck(sourceCode, ignoreInside),
+    isIgnored: createIgnoredInsideCheck(sourceCode, ignores),
+    unreadableTagStarts: findUnreadableTagStarts(services.diagnostics),
   };
 }

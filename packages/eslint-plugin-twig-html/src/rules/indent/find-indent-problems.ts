@@ -1,51 +1,24 @@
-import type { TwigBlockSummary } from 'twig-eslint-parser';
+import { buildIndentLayout } from './layout.js';
+import { findNestingProblems } from './nesting-problems.js';
+import { findExpressionProblems } from './twig/expressions/find-expression-problems.js';
+import { findTwigSegments } from './twig/twig-frames.js';
+import type { TwigStringSummary } from 'twig-eslint-parser';
 import type { Problem } from '../../shared/problem.js';
-import type { AttributesOf } from '../../shared/tag-attributes.js';
-import { describeIndentation } from './describe-indentation.js';
-import { expectedIndentAt, isChecked } from './expected-indent.js';
-import { buildIndentLayout } from './indent-regions.js';
-import { findLineStarts } from './line-starts.js';
+import type { MarkupNode } from './html/types.js';
+import type { LayoutSource } from './layout.js';
 import type { ResolvedOptions } from './options.js';
-import { findTwigSegments } from './twig-frames.js';
-import type { IndentLayout, LineStart, MarkupNode } from './types.js';
 
 export type MarkupProgram = { readonly body: readonly MarkupNode[] };
 
-export type IndentSource = {
-  readonly text: string;
-  readonly blocks: readonly TwigBlockSummary[];
-  readonly attributesOf: AttributesOf;
-  readonly rawContentTags: readonly string[];
-};
-
-function findLineProblem(line: LineStart, layout: IndentLayout, text: string, options: ResolvedOptions): Problem[] {
-  const actual = text.slice(line.lineStart, line.contentStart);
-  const expected = expectedIndentAt(line.contentStart, layout, options);
-  if (actual === expected) return [];
-
-  const range = [line.lineStart, line.contentStart] as const;
-
-  return [{
-    range,
-    messageId: 'wrongIndentation',
-    data: {
-      expected: describeIndentation(expected, options.unit.name),
-      actual: describeIndentation(actual, options.unit.name),
-    },
-    edits: [{ range, text: expected }],
-  }];
-}
+export type IndentSource = Omit<LayoutSource, 'ignores'> & { readonly strings: readonly TwigStringSummary[] };
 
 export function findIndentProblems(program: MarkupProgram, source: IndentSource, options: ResolvedOptions): Problem[] {
-  const { text, blocks, attributesOf, rawContentTags } = source;
+  const { text, blocks, attributesOf, rawContentTags, strings, unreadableTagStarts } = source;
   const [document] = program.body;
   if (!document) return [];
 
   const segments = findTwigSegments(blocks, text);
-  if (!segments) return [];
+  const layout = buildIndentLayout(document, segments, { text, blocks, attributesOf, ignores: options.ignores, rawContentTags, unreadableTagStarts });
 
-  const layout = buildIndentLayout(document, segments, { text, blocks, attributesOf, ignores: options.ignores, rawContentTags });
-  const checkedLines = findLineStarts(text).filter((line) => isChecked(line.contentStart, layout));
-
-  return checkedLines.flatMap((line) => findLineProblem(line, layout, text, options));
+  return [...findNestingProblems(layout, text, options), ...findExpressionProblems(blocks, layout, text, options, strings)];
 }

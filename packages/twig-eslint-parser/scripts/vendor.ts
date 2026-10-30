@@ -18,7 +18,7 @@ type ListedTest = { readonly name: string; readonly file: string };
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const resolveDependency = createRequire(import.meta.url).resolve;
-const regExpSpecialCharacters = /[.*+?^${}()|[\]\\]/g;
+const REG_EXP_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 
 function runTwigLexerTests(patchedRoot: string): void {
   const testFiles = ['src/test/unit/lib/Lexer/index.ts', 'src/test/unit/lib/Token/index.ts', 'src/test/unit/lib/SyntaxError/index.ts'];
@@ -48,7 +48,7 @@ function runTwigLexerTests(patchedRoot: string): void {
 }
 
 function escapeForRegExp(text: string): string {
-  return text.replace(regExpSpecialCharacters, '\\$&');
+  return text.replace(REG_EXP_SPECIAL_CHARACTERS, '\\$&');
 }
 
 function renameJestSnapshotKeys(snapshot: string, vitestTestNames: readonly string[]): string {
@@ -86,7 +86,7 @@ function runEsHtmlParserTests(patchedRoot: string): void {
   execFileSync(process.execPath, [vitest, 'run', '--config', configPath], { cwd: patchedRoot, stdio: 'inherit', env: failOnMissingSnapshots });
 }
 
-const units: readonly VendoredUnit[] = [
+const UNITS: readonly VendoredUnit[] = [
   {
     name: 'twig-lexer',
     patchPrefix: 'TL',
@@ -191,15 +191,15 @@ function createPatchWorkspace(unit: VendoredUnit, workspaceDirectory: string): v
 }
 
 function selectUnits(names: readonly string[]): readonly VendoredUnit[] {
-  if (names.length === 0) return units;
+  if (names.length === 0) return UNITS;
   return names.map((name) => {
-    const unit = units.find((candidate) => candidate.name === name);
-    if (!unit) throw new Error(`No vendored unit named ${name}. Known: ${units.map((candidate) => candidate.name).join(', ')}.`);
+    const unit = UNITS.find((candidate) => candidate.name === name);
+    if (!unit) throw new Error(`No vendored unit named ${name}. Known: ${UNITS.map((candidate) => candidate.name).join(', ')}.`);
     return unit;
   });
 }
 
-const usage = 'Usage: node scripts/vendor.ts --check | --write | --test [unit...] | --workspace <unit> <empty directory>';
+const USAGE = 'Usage: node scripts/vendor.ts --check | --write | --test [unit...] | --workspace <unit> <empty directory>';
 const [command, ...rest] = process.argv.slice(2);
 
 switch (command) {
@@ -214,11 +214,11 @@ switch (command) {
     break;
   case '--workspace': {
     const [name, directory] = rest;
-    if (!name || !directory) throw new Error(usage);
+    if (!name || !directory) throw new Error(USAGE);
     const [unit] = selectUnits([name]);
     if (unit) createPatchWorkspace(unit, resolve(directory));
     break;
   }
   default:
-    throw new Error(usage);
+    throw new Error(USAGE);
 }

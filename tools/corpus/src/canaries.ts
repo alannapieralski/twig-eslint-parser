@@ -15,7 +15,7 @@ export type CanaryResult = { readonly missed: readonly string[]; readonly stillP
 
 export const canaryRoot = join(import.meta.dirname, '../canaries');
 const expectationsPath = join(canaryRoot, 'expectations.json');
-const kinds: readonly Kind[] = ['reports', 'failures', 'clean', 'noFailures'];
+const KINDS: readonly Kind[] = ['reports', 'failures', 'clean', 'noFailures'];
 
 function isLineList(value: unknown): value is number[] {
   return Array.isArray(value) && value.every((line) => Number.isInteger(line) && line > 0);
@@ -27,13 +27,13 @@ function parseEntry(file: string, entry: unknown): Expectation[] {
   }
   const { check, pending, output, ...rest } = entry as { check: string; pending?: unknown; output?: unknown } & Record<string, unknown>;
   if (pending !== undefined && typeof pending !== 'string') throw new Error(`${expectationsPath}: "pending" for ${file} must say why, as a string.`);
-  const unknownKeys = Object.keys(rest).filter((key) => !kinds.includes(key as Kind));
+  const unknownKeys = Object.keys(rest).filter((key) => !KINDS.includes(key as Kind));
   if (unknownKeys.length > 0) throw new Error(`${expectationsPath}: ${file} has unknown keys ${unknownKeys.join(', ')}.`);
   if (output !== undefined && (typeof output !== 'string' || output.endsWith('.twig') || !existsSync(join(canaryRoot, output)))) {
     throw new Error(`${expectationsPath}: "output" for ${file} must name a file in ${canaryRoot} that does not end in .twig.`);
   }
   const outputExpectation: Expectation[] = output === undefined ? [] : [{ file, check, kind: 'output', lines: 'all', expectedOutputFile: output, ...(pending !== undefined && { pending }) }];
-  return [...outputExpectation, ...kinds.flatMap((kind): Expectation[] => {
+  return [...outputExpectation, ...KINDS.flatMap((kind): Expectation[] => {
     const lines = rest[kind];
     if (lines === undefined) return [];
     if (lines !== 'all' && !isLineList(lines)) throw new Error(`${expectationsPath}: "${kind}" for ${file} must be "all" or a list of line numbers.`);
