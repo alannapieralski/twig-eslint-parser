@@ -7,16 +7,7 @@ import { findTrailingSolidusDiagnostics } from './trailing-solidus-diagnostics.j
 import { findUnclosedElementDiagnostics } from './unclosed-element-diagnostics.js';
 import { findUnreadEndDiagnostics } from './unread-end-diagnostics.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
-import type { TwigBlockSummary } from '../../twig/blocks.js';
-import type { MarkupTreeNode, SourceToken } from './markup-elements.js';
-
-export type MarkupSource = {
-  readonly document: MarkupTreeNode;
-  readonly tokens: readonly SourceToken[];
-  readonly text: string;
-  readonly blocks: readonly TwigBlockSummary[];
-  readonly rawContentTags: ReadonlySet<string>;
-};
+import type { MarkupSource } from './markup-source.js';
 
 export function findMarkupDiagnostics({ document, tokens, text, blocks, rawContentTags }: MarkupSource): TwigDiagnostic[] {
   const elements = findMarkupElements(document);

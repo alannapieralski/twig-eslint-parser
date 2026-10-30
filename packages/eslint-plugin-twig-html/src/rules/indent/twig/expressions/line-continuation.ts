@@ -2,14 +2,14 @@ import type { TwigBlockSummary } from 'twig-eslint-parser';
 
 const WHITESPACE = /\s/;
 const WHITESPACE_CONTROL = /[-~]/;
-const ELEMENT_SEPARATORS: ReadonlySet<string> = new Set([',', '(', '[', '{']);
+const CHARACTERS_BEFORE_NEW_ELEMENT: ReadonlySet<string> = new Set([',', '(', '[', '{']);
 
 function inlineCommentAt(block: TwigBlockSummary, offset: number): TwigBlockSummary['inlineComments'][number] | undefined {
   return block.inlineComments.find(([start, end]) => start <= offset && offset < end);
 }
 
-function lastVisibleOffsetBefore(text: string, block: TwigBlockSummary, offset: number): number {
-  let index = offset - 1;
+function findLastCodeOffsetBefore(text: string, block: TwigBlockSummary, lineStart: number): number {
+  let index = lineStart - 1;
 
   while (index >= 0) {
     const comment = inlineCommentAt(block, index);
@@ -21,7 +21,7 @@ function lastVisibleOffsetBefore(text: string, block: TwigBlockSummary, offset: 
   return index;
 }
 
-function openingEndOf(block: TwigBlockSummary, text: string): number {
+function findOpenerEnd(text: string, block: TwigBlockSummary): number {
   const afterBraces = block.range[0] + 2;
   const delimiterEnd = WHITESPACE_CONTROL.test(text[afterBraces] ?? '') ? afterBraces + 1 : afterBraces;
   if (block.kind !== 'tag' || !block.tagName) return delimiterEnd;
@@ -31,9 +31,11 @@ function openingEndOf(block: TwigBlockSummary, text: string): number {
 }
 
 export function continuesPreviousLine(text: string, block: TwigBlockSummary, lineStart: number): boolean {
-  const lastVisibleOffset = lastVisibleOffsetBefore(text, block, lineStart);
-  const isFirstLineOfContent = lastVisibleOffset < openingEndOf(block, text);
-  if (isFirstLineOfContent) return false;
+  const lastCodeOffset = findLastCodeOffsetBefore(text, block, lineStart);
+  const openerEnd = findOpenerEnd(text, block);
+  const isFirstLineAfterOpener = lastCodeOffset < openerEnd;
+  if (isFirstLineAfterOpener) return false;
 
-  return !ELEMENT_SEPARATORS.has(text[lastVisibleOffset] ?? '');
+  const isNewElementExpected = CHARACTERS_BEFORE_NEW_ELEMENT.has(text[lastCodeOffset] ?? '');
+  return !isNewElementExpected;
 }

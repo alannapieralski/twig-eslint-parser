@@ -5,11 +5,14 @@ const SEPARATORS_AND_WHITESPACE = /[\s,]/g;
 
 function isOneArgumentAmongSeveral(pair: BracketPair, line: LineContext): boolean {
   const { text, block } = line;
-  const outerPairsOpenedOnTheSameLine = block.bracketPairs.filter(([open, close]) => open < pair[0] && pair[1] < close && !text.slice(open, pair[0]).includes('\n'));
+  const [pairOpen, pairClose] = pair;
+  const isAroundPair = ([open, close]: BracketPair) => open < pairOpen && pairClose < close;
+  const isOpenedOnSameLine = ([open]: BracketPair) => !text.slice(open, pairOpen).includes('\n');
+  const outerPairsOpenedOnTheSameLine = block.bracketPairs.filter((outerPair) => isAroundPair(outerPair) && isOpenedOnSameLine(outerPair));
   const outerPair = outerPairsOpenedOnTheSameLine.at(-1);
   if (!outerPair) return false;
 
-  const textAfterPair = text.slice(pair[1] + 1, outerPair[1]);
+  const textAfterPair = text.slice(pairClose + 1, outerPair[1]);
   return textAfterPair.replace(SEPARATORS_AND_WHITESPACE, '') !== '';
 }
 

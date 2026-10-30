@@ -59,7 +59,8 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
     const contentStart = contentStartOf(text, lineStart);
     if (isBlankFrom(text, contentStart) || isInsideString(lineStart, strings)) continue;
 
-    const line: LineContext = { text, block, unitText, lineStart, contentStart, continuesPreviousLine: continuesPreviousLine(text, block, lineStart), indentationOfLineAt, chainHeads };
+    const isContinuation = continuesPreviousLine(text, block, lineStart);
+    const line: LineContext = { text, block, unitText, lineStart, contentStart, continuesPreviousLine: isContinuation, indentationOfLineAt, chainHeads };
     const indentation = findFirstIndentation(LINE_RULES, line);
 
     if (indentation !== undefined) {
@@ -67,7 +68,9 @@ export function findExpressionLines(input: ExpressionLayoutInput): ExpressionLin
       expressionLines.push({ lineStart, contentStart, indentation });
     }
 
-    const startsElement = !line.continuesPreviousLine && !isChainLine(text, contentStart) && !findClosedPair(line);
+    const isChain = isChainLine(text, contentStart);
+    const closesBracket = findClosedPair(line) !== undefined;
+    const startsElement = !isContinuation && !isChain && !closesBracket;
     if (startsElement) chainHeads.set(bracketLevelOf(line), lineStart);
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { depthChangeWithin, isTwigBalancedWithin } from '../../src/twig/balance.js';
+import { depthChangeWithin, isSameOnEveryTwigBranch, isTwigBalancedWithin } from '../../src/twig/balance.js';
 import type { TwigBlockSummary } from '../../src/twig/blocks.js';
 
 const block = (tagName: string, start: number, depthChange: TwigBlockSummary['depthChange']): TwigBlockSummary => ({
@@ -47,5 +47,45 @@ describe('isTwigBalancedWithin', () => {
 
   it('accepts a range with no blocks', () => {
     expect(isTwigBalancedWithin([30, 40], BLOCKS)).toBe(true);
+  });
+});
+
+describe('isSameOnEveryTwigBranch', () => {
+  const forBlock = block('for', 0, 1);
+  const innerIfBlock = block('if', 10, 1);
+  const innerEndifBlock = block('endif', 20, -1);
+  const endforBlock = block('endfor', 30, -1);
+  const NESTED_BLOCKS = [forBlock, innerIfBlock, innerEndifBlock, endforBlock];
+
+  it('accepts a range with no blocks', () => {
+    expect(isSameOnEveryTwigBranch([30, 40], BLOCKS)).toBe(true);
+  });
+
+  it('accepts a range holding a whole if and endif', () => {
+    expect(isSameOnEveryTwigBranch([0, 25], BLOCKS)).toBe(true);
+  });
+
+  it('accepts a range holding an if nested in a for', () => {
+    expect(isSameOnEveryTwigBranch([0, 35], NESTED_BLOCKS)).toBe(true);
+  });
+
+  it('rejects a range that opens an if without closing it', () => {
+    expect(isSameOnEveryTwigBranch([0, 15], BLOCKS)).toBe(false);
+  });
+
+  it('rejects a range that starts at an else', () => {
+    expect(isSameOnEveryTwigBranch([10, 25], BLOCKS)).toBe(false);
+  });
+
+  it('rejects a range that closes an if it did not open', () => {
+    expect(isSameOnEveryTwigBranch([20, 25], BLOCKS)).toBe(false);
+  });
+
+  it('rejects a range that closes the for around an if it did not start in', () => {
+    expect(isSameOnEveryTwigBranch([10, 35], NESTED_BLOCKS)).toBe(false);
+  });
+
+  it('accepts a range that opens a tag whose body always renders', () => {
+    expect(isSameOnEveryTwigBranch([0, 5], [block('block', 0, 1)])).toBe(true);
   });
 });

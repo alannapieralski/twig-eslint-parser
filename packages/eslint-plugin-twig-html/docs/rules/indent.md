@@ -67,13 +67,18 @@ Examples of **correct** code:
   in line with the opening tag.
 - **Short forms:** an inline `set` and the short `{% block title page_title %}` have no body, so they
   add no level.
-- **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** a line that starts an element,
-  after a `,`, the opening bracket or the tag name (an inline `# comment` before the line break does
-  not count), is one step in from the line that opened the innermost bracket,
-  and a line that starts with the closing bracket lines up with the line that opened it. The opening
-  line keeps whatever indentation it has, so `.addClass([` on a continuation line works. A closing
-  bracket is left alone when it ends one argument of a call that has more arguments after it. This
-  covers the parameters of `{% include 'x' with { ... } %}`, hashes and arrays:
+- **Inside `{ }`, `[ ]` and `( )` in multi-line `{{ }}` and `{% %}`:** this covers the parameters of
+  `{% include 'x' with { ... } %}`, hashes and arrays.
+  - **A line that starts an element** is one step in from the line that opened the innermost bracket.
+    A line starts an element when the line above it ends with `,` or an opening bracket, or when it is
+    the first line after the opening delimiter or the tag name. An inline `# comment` at the end of the
+    line above does not count.
+  - **A line that continues the one above** (a `?`, `:`, `~` or `|filter` line) keeps the author's
+    indentation.
+  - **A closing bracket** lines up with the line that opened it, and is left alone when it ends one
+    argument of a call that has more arguments after it.
+  - **The opening line** keeps whatever indentation it has, so `.addClass([` on a continuation line
+    works.
 
   ```twig
   {% include 'card.twig' with {

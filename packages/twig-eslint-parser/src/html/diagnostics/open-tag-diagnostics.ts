@@ -15,8 +15,6 @@ const OPEN_TAG_ENDINGS: ReadonlySet<string> = new Set(['>', '/>']);
 
 export const UNTERMINATED_TAG_MESSAGE = 'This tag never ends with ">", so the markup after it is read as part of the tag. Add the ">".';
 
-const STRAY_SOLIDUS_MESSAGE = 'A "/" in this tag is not followed by ">". Browsers ignore it, but the attributes after it are not read. Remove the "/".';
-
 const STRAY_CHARACTER_IN_NAME: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-attribute-name',
   message: 'An attribute name contains a quote or "<", so an attribute value was probably quoted wrongly. Check the quotes before it.',
@@ -64,7 +62,7 @@ function findOpenTagDiagnostic(element: MarkupElement, text: string, blocks: rea
 
   const openTagRange = openTagRangeOf(element);
   const hasStraySolidus = !OPEN_TAG_ENDINGS.has(element.openEnd.value);
-  if (hasStraySolidus) return { code: 'unexpected-solidus-in-tag', message: STRAY_SOLIDUS_MESSAGE, range: openTagRange };
+  if (hasStraySolidus) return { code: 'unexpected-solidus-in-tag', message: 'A "/" in this tag is not followed by ">". Browsers ignore it, but the attributes after it are not read. Remove the "/".', range: openTagRange };
 
   const strayCharacter = element.attributes.map((attribute) => describeStrayCharacter(attribute, text, blocks)).find((description) => description !== undefined);
   if (!strayCharacter) return undefined;

@@ -5,16 +5,10 @@ import { findTwigBranchSpans, isInsideTwigBranch } from '../../twig/balance.js';
 import { VOID_ELEMENT_NAMES } from '../syntax.js';
 import { findInnermostOpenElement, openTagTextOf } from './markup-elements.js';
 import type { TwigDiagnostic } from '../../diagnostics.js';
-import type { TwigBlockSummary } from '../../twig/blocks.js';
-import type { MarkupElement, MarkupTreeNode, SourceToken } from './markup-elements.js';
+import type { MarkupElement, SourceToken } from './markup-elements.js';
+import type { MarkupSource } from './markup-source.js';
 
-export type EndTagSource = {
-  readonly document: MarkupTreeNode;
-  readonly tokens: readonly SourceToken[];
-  readonly elements: readonly MarkupElement[];
-  readonly blocks: readonly TwigBlockSummary[];
-  readonly text: string;
-};
+export type EndTagSource = Pick<MarkupSource, 'document' | 'tokens' | 'blocks' | 'text'> & { readonly elements: readonly MarkupElement[] };
 
 const VOID_ELEMENTS: ReadonlySet<string> = new Set([...VOID_ELEMENT_NAMES, ...DRUPAL_VOID_ELEMENTS]);
 
@@ -24,7 +18,10 @@ function nameOfEndTag(token: SourceToken): string {
 
 function findNamesClosedBy(element: MarkupElement, unclosedElements: readonly MarkupElement[]): string[] {
   const isInside = (inner: MarkupElement) => isRangeWithin(inner.range, element.range);
-  return [element, ...unclosedElements.filter(isInside)].map((closed) => closed.name ?? '');
+  const elementsClosed = [element, ...unclosedElements.filter(isInside)];
+  const namesClosed = elementsClosed.map((closed) => closed.name ?? '');
+
+  return namesClosed;
 }
 
 function describeStrayEndTag(token: SourceToken, source: EndTagSource): string {

@@ -2,9 +2,9 @@ import { isTwigBalancedWithin } from 'twig-eslint-parser';
 import { ELEMENTS_WITH_UNRENDERED_EDGE_WHITESPACE } from '../../shared/html-elements.js';
 import { lineIndentationAt, lineStartOf } from '../../shared/line-text.js';
 import { isOpenTagUnreadable } from '../../shared/unreadable-open-tags.js';
+import { abbreviateTwigInTag } from './abbreviate-twig-in-tag.js';
 import { findContentEdges } from './find-content-edges.js';
 import { countLineBreaks, indentationAfterLastLineBreak } from './line-breaks.js';
-import { describeWrittenTag } from './written-tag.js';
 import type { Problem } from '../../shared/problem.js';
 import type { Range } from '../../shared/range.js';
 import type { TagNode } from '../../shared/tag-node.js';
@@ -18,9 +18,9 @@ function isLineBreakCountInvalid(lineBreaks: number, allowEmptyLines: boolean): 
   return allowEmptyLines ? lineBreaks === 0 : lineBreaks !== 1;
 }
 
-function writtenTagAt(edge: ContentEdge, tag: TagNode, source: TagSource): string {
-  if (edge.messageId === 'unexpectedBeforeOpeningBracket' && tag.close) return describeWrittenTag(tag.close.range, source.text, source.blocks);
-  return `${describeWrittenTag(tag.openStart.range, source.text, source.blocks)}>`;
+function describeTagInMessage(edge: ContentEdge, tag: TagNode, source: TagSource): string {
+  if (edge.messageId === 'unexpectedBeforeOpeningBracket' && tag.close) return abbreviateTwigInTag(tag.close.range, source.text, source.blocks);
+  return `${abbreviateTwigInTag(tag.openStart.range, source.text, source.blocks)}>`;
 }
 
 function describeEdgeProblem(edge: ContentEdge, tag: TagNode, tagIndentation: string, source: TagSource, options: Required<Options>, isFixable: boolean): Problem | undefined {
@@ -34,7 +34,7 @@ function describeEdgeProblem(edge: ContentEdge, tag: TagNode, tagIndentation: st
   return {
     range: edge.range,
     messageId: edge.messageId,
-    data: { tag: writtenTagAt(edge, tag, source), actual: lineBreaksFound },
+    data: { writtenTag: describeTagInMessage(edge, tag, source), actual: lineBreaksFound },
     ...(isFixable && { edits: [{ range: edge.range, text: `${source.lineBreak}${keptIndentation}` }] }),
   };
 }
