@@ -6,5 +6,4 @@ export type MarkupSource = {
   readonly tokens: readonly SourceToken[];
   readonly text: string;
   readonly blocks: readonly TwigBlockSummary[];
-  readonly rawContentTags: ReadonlySet<string>;
 };

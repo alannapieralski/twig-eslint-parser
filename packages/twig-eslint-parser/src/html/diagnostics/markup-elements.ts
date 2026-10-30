@@ -5,13 +5,12 @@ import type { Range } from '../../range.js';
 
 type MarkupToken = { readonly range: Range; readonly value: string };
 
-export type MarkupTreeNode = { readonly type: string; readonly range: Range; readonly children?: readonly MarkupTreeNode[] };
+export type MarkupTreeNode = { readonly type: string; readonly range: Range; readonly close?: MarkupToken | null; readonly children?: readonly MarkupTreeNode[] };
 
 export type MarkupElement = MarkupTreeNode & {
   readonly name?: string;
   readonly openStart: MarkupToken;
   readonly openEnd?: MarkupToken;
-  readonly close?: MarkupToken | null;
   readonly selfClosing?: boolean;
   readonly attributes: readonly AttributeNode[];
 };

@@ -69,3 +69,21 @@ function parseClosingCustomTag(state: TokenizerState) {
   state.currentContext = TokenizerContextTypes.Data;
   state.sourceCode.next();
 }
+
+export function handleContentEnd(state: TokenizerState) {
+  state.accumulatedContent.concatBuffer(state.decisionBuffer);
+  state.decisionBuffer.clear();
+  if (state.accumulatedContent.value() === "") {
+    return;
+  }
+
+  const position = calculateTokenPosition(state, { keepBuffer: false });
+  state.tokens.push({
+    type: TokenTypes.RawContent,
+    value: state.accumulatedContent.value(),
+    range: position.range,
+    loc: position.loc,
+    parts: createParts(state, TokenTypes.RawContent),
+  });
+  state.accumulatedContent.clear();
+}

@@ -75,8 +75,9 @@ brackets, so a code can be switched off by name.
   `unexpected-character-in-attribute-name`, `unexpected-character-in-unquoted-attribute-value` or
   `unexpected-solidus-in-tag`.** `quotes` and `attrs-newline` may still report it without a fix, and
   `indent` and `multiline-html-element-content-newline` leave the element's content alone.
-- **`indent` leaves the text the parser could not read alone**: everything after a comment, tag or
-  raw-text element that runs to the end of the file.
+- **A comment or raw-text element that runs to the end of the file holds the rest of the file as its
+  text**, as in a browser, so the other rules leave that text alone. `indent` also leaves alone a
+  tag cut off by the end of the file.
 - **`x-unparsed-twig` is the only report of a Twig block the parser could not read.** Such a block is
   left out of the tree, so `eslint-plugin-twig-tailwind` never sees the classes inside it.
 
@@ -90,7 +91,6 @@ brackets, so a code can be switched off by name.
 | An element whose end tag HTML lets you leave out (`li`, `p`, `td`, `tr`, `option` and the like) | The browser closes it | Built in |
 | A closing tag inside `{% if %}`, `{% for %}`, `{% guard %}`, `{% trans %}` or `{% verbatim %}`, and an element that opens or closes in a branch of one | The markup there may render differently or not at all, and the parser reads every branch as one document, so it cannot tell which branch closes the element | Built in |
 | A closing tag named like an element that an earlier closing tag closed across one of those blocks, so that the element opens on one side of the block's edge and closes on the other | The branch may have taken the element this tag was meant to close | Built in |
-| The elements left open by a comment, tag or raw-text element that runs to the end of the file | Only the one that took in the rest is reported | Built in |
 | A problem whose code is switched off | You chose not to hear about it | Each code, default `true` |
 
 ### Not checked at all

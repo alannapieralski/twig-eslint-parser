@@ -21,8 +21,11 @@ describe('eof-in-tag', () => {
     expect(codesOf('<p>a</p>\n<li class="a"\n')).toEqual(['eof-in-tag']);
   });
 
-  it('reports an attribute quote that is never closed', () => {
-    expect(codesOf('<div class="a><p>x</p></div>')).toContain('eof-in-tag');
+  it.each([
+    ['<div class="a><p>x</p></div>', [0, 28]],
+    ['<span class="abc', [0, 16]],
+  ])('reports an attribute quote that is never closed once, over the rest of the file: %j', (code, range) => {
+    expect(diagnosticsOf(code)).toEqual([expect.objectContaining({ code: 'eof-in-tag', range })]);
   });
 
   it('stays quiet for a tag that ends with > or />', () => {
@@ -32,15 +35,33 @@ describe('eof-in-tag', () => {
   it.each([
     ['<p>a</p>\n<div', [9, 13]],
     ['<div{{ attributes }}', [0, 20]],
-    ['<div>x</div', [6, 11]],
-  ])('reports a tag cut off by the end of the file, and not the elements it leaves open: %j', (code, range) => {
+    ['<div>a</div><!-- ok --></div', [23, 28]],
+    ['<!DOCTYPE html', [0, 14]],
+  ])('reports a tag cut off by the end of the file: %j', (code, range) => {
     expect(diagnosticsOf(code)).toEqual([expect.objectContaining({ code: 'eof-in-tag', range })]);
+  });
+
+  it.each([
+    '<section><div><span class="a',
+    '<section><span class="a></span></section>',
+    '<div>x</div',
+  ])('reports the elements a cut-off tag leaves open, as a browser leaves them open: %j', (code) => {
+    expect(codesOf(code).filter((diagnosticCode) => diagnosticCode === 'eof-in-tag')).toHaveLength(1);
+    expect(codesOf(code)).toContain('x-unclosed-element');
   });
 });
 
 describe('eof-in-comment', () => {
   it('reports a comment that never ends, at its <!--', () => {
-    expect(diagnosticsOf('<div>\n<!-- note\n<p>b</p>')).toEqual([expect.objectContaining({ code: 'eof-in-comment', range: [6, 10] })]);
+    expect(diagnosticsOf('<p>a</p>\n<!-- note\n<p>b</p>')).toEqual([expect.objectContaining({ code: 'eof-in-comment', range: [9, 13] })]);
+  });
+
+  it('reads the rest of the file as the comment and reports the elements it leaves open', () => {
+    expect(codesOf('<div>\n<!-- note\n<p>b</p>\n</div>')).toEqual(['x-unclosed-element', 'eof-in-comment']);
+  });
+
+  it('stays quiet for a comment that ends', () => {
+    expect(codesOf('<div></div><!-- ok -->')).toEqual([]);
   });
 });
 
@@ -158,8 +179,8 @@ describe('x-unclosed-element', () => {
     expect(codesOf('<div><script src="a">')).toEqual(expect.arrayContaining(['x-unclosed-element']));
   });
 
-  it('reports a raw-text element that takes in the rest of the file, and not the elements around it', () => {
-    expect(diagnosticsOf('<div><style>a{}</stlye>\n<p>x</p></div>')).toEqual([expect.objectContaining({ code: 'x-unclosed-element', range: [5, 12] })]);
+  it('reports a raw-text element that takes in the rest of the file, and the elements it leaves open', () => {
+    expect(diagnosticsOf('<div><style>a{}</stlye>\n<p>x</p></div>').map((diagnostic) => diagnostic.range)).toEqual([[0, 5], [5, 12]]);
   });
 
   it('reports an element left open inside a Twig block whose markup renders once', () => {

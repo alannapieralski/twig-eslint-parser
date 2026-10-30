@@ -13,8 +13,6 @@ const CHARACTER_THAT_BREAKS_AN_ATTRIBUTE = /["'<]/;
 
 const OPEN_TAG_ENDINGS: ReadonlySet<string> = new Set(['>', '/>']);
 
-export const UNTERMINATED_TAG_MESSAGE = 'This tag never ends with ">", so the markup after it is read as part of the tag. Add the ">".';
-
 const STRAY_CHARACTER_IN_NAME: StrayCharacterDiagnostic = {
   code: 'unexpected-character-in-attribute-name',
   message: 'An attribute name contains a quote or "<", so an attribute value was probably quoted wrongly. Check the quotes before it.',
@@ -46,19 +44,8 @@ function describeStrayCharacter(attribute: AttributeNode, text: string, blocks: 
   return CHARACTER_THAT_BREAKS_AN_ATTRIBUTE.test(name) ? STRAY_CHARACTER_IN_NAME : STRAY_CHARACTER_IN_VALUE;
 }
 
-function findUnterminatedOpenTag(element: MarkupElement): TwigDiagnostic {
-  const attributeEnds = element.attributes.map((attribute) => attribute.range[1]);
-  const end = Math.max(element.openStart.range[1], ...attributeEnds);
-
-  return {
-    code: 'eof-in-tag',
-    message: UNTERMINATED_TAG_MESSAGE,
-    range: [element.openStart.range[0], end],
-  };
-}
-
 function findOpenTagDiagnostic(element: MarkupElement, text: string, blocks: readonly TwigBlockSummary[]): TwigDiagnostic | undefined {
-  if (!element.openEnd) return findUnterminatedOpenTag(element);
+  if (!element.openEnd) return undefined;
 
   const openTagRange = openTagRangeOf(element);
   const strayCharacter = element.attributes.map((attribute) => describeStrayCharacter(attribute, text, blocks)).find((description) => description !== undefined);

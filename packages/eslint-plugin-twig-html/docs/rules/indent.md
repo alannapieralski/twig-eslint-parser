@@ -163,9 +163,10 @@ These lines keep whatever indentation the author wrote:
   left in an attribute name, markup taken in by an unquoted attribute value that runs into the
   next tag (`<li id=b<span>`), or a `/` that does not end the tag. Anywhere else a missing `>` is a
   parsing error and no rule runs. [`no-parse-errors`](no-parse-errors.md) reports the tag itself.
-- **Everything after a comment, tag or raw-text element that runs to the end of the file**, such as
-  `<!-- note` with no `-->` or `<script>` with a misspelt `</scirpt>`. The parser reads no markup
-  there. [`no-parse-errors`](no-parse-errors.md) reports where it starts.
+- **A comment or raw-text element that runs to the end of the file**, such as `<!-- note` with no
+  `-->` or `<script>` with a misspelt `</scirpt>`. The rest of the file is its text, as in a browser,
+  so it is left alone like any comment or script. A tag cut off by the end of the file is left alone
+  too. [`no-parse-errors`](no-parse-errors.md) reports both.
 - **The content of an element that is never closed**, meaning an element with no closing tag that holds
   other nodes. In `<ul><li>a<li>b</ul>` the second `li` becomes a child of the first, so its content
   is skipped. The parser cannot tell where these elements end.

@@ -107,8 +107,8 @@
     { "check": "twig-html/quotes", "noFailures": "all" }
   ],
   "broken/html-comment-unterminated.html.twig": [
-    { "check": "twig-html/no-parse-errors", "reports": [2] },
-    { "check": "parser/output-matches-source", "noFailures": [2, 8], "pending": "the markup after an unterminated <!-- is dropped instead of read as comment text to the end of the file" },
+    { "check": "twig-html/no-parse-errors", "reports": [1, 2] },
+    { "check": "parser/output-matches-source", "noFailures": [2, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-html-element-content-newline", "noFailures": "all" },
     { "check": "twig-html/quotes", "noFailures": "all" }
@@ -206,10 +206,10 @@
     { "check": "twig-html/quotes", "noFailures": "all" }
   ],
   "broken/html-script-unterminated.html.twig": [
-    { "check": "twig-html/no-parse-errors", "reports": [2] },
+    { "check": "twig-html/no-parse-errors", "reports": [1, 2] },
     { "check": "parser/line-coverage", "noFailures": "all" },
     { "check": "parser/output-matches-source", "reports": [2] },
-    { "check": "parser/output-matches-source", "noFailures": [2, 8], "pending": "the markup after an unterminated <script> is dropped instead of read as script text to the end of the file" },
+    { "check": "parser/output-matches-source", "noFailures": [2, 8] },
     { "check": "twig-html/attrs-newline", "noFailures": "all" },
     { "check": "twig-html/multiline-html-element-content-newline", "noFailures": "all" },
     { "check": "twig-html/quotes", "noFailures": "all" }
