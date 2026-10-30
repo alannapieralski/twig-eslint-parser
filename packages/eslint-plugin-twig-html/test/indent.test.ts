@@ -315,9 +315,9 @@ describe('twig-html/indent', () => {
       expect(await linesReportedFor(3_000)).toEqual(await linesReportedFor(3));
     });
 
-    it('checks 40,000 lines of markup within the test timeout', async () => {
+    it('checks 40,000 lines of markup within 15 seconds', async () => {
       await expectUntouched(`<div>\n${'  <p class="a">{{ b }}</p>\n'.repeat(40_000)}</div>\n`);
-    });
+    }, 15_000);
 
     it('lays out a 40,000-line Twig hash within the test timeout', async () => {
       const entries = Array.from({ length: 40_000 }, (_, index) => `  key${index}: [${index}, 'a'],`).join('\n');
