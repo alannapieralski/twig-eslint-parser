@@ -6,7 +6,7 @@ paths:
 
 # Readability
 
-Found in review of PR 51. `common-mistakes.md` covers duplication, naming and imports. This file
+`common-mistakes.md` covers duplication, naming and imports. This file
 covers how code reads. Before finishing, read each exported function top to bottom. If you have to
 open a helper to understand a line, fix the line or the helper's name.
 
